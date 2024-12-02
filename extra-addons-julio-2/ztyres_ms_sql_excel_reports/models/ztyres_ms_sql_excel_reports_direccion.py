@@ -128,14 +128,15 @@ class MyModel(models.TransientModel):
             SELECT 
         	    am.currency_id AS moneda_pedido, 
                 pp.product_tmpl_id AS id,
+                pt.default_code AS codigo,
                 aml.quantity as cantidad,
                 aml.costo_final AS costo_final_promedio,
                 am."date" AS fecha_pedido_compra
-                from account_move am 
+                FROM account_move am 
                 JOIN account_move_line aml ON am.id = aml.move_id
                 JOIN product_product pp ON aml.product_id = pp.id 
                 JOIN product_template pt ON pp.product_tmpl_id = pt.id 
-                where am.state in ('posted')
+                WHERE am.state in ('posted')
                 AND am.move_type in ('in_invoice') 
                 AND aml.display_type in ('product')
                 AND aml.costo_final is not null 
@@ -148,7 +149,7 @@ class MyModel(models.TransientModel):
         df2 = pd.DataFrame(result2)
         
         # Nuevo DataFrame para almacenar los registros
-        nuevo_df = pd.DataFrame(columns=['moneda_pedido', 'id', 'cantidad', 'costo_final_promedio', 'fecha_pedido_compra'])
+        nuevo_df = pd.DataFrame(columns=['moneda_pedido', 'id', 'codigo', 'cantidad', 'costo_final_promedio', 'fecha_pedido_compra'])
         
         # Iterar sobre los registros del segundo DataFrame
         for index, row in df2.iterrows():
@@ -177,11 +178,12 @@ class MyModel(models.TransientModel):
                         break
                     
         reports_core = self.env['ztyres_ms_sql_excel_core']
-        reports_core.action_insert_dataframe(nuevo_df, 'pmp2')
                     
         nuevo_df['monto_en_moneda_empresa'] = nuevo_df.apply(lambda row: self.convert_to_company_currency(row['moneda_pedido'], row['costo_final_promedio'], row['fecha_pedido_compra']), axis=1)
         # Calcular la suma ponderada del costo por ID
         nuevo_df['Costo Ponderado'] = nuevo_df['cantidad'] * nuevo_df['monto_en_moneda_empresa']
+        
+        reports_core.action_insert_dataframe(nuevo_df, 'pmp2')
         # Agrupar por ID y calcular la suma ponderada del costo y la suma de la cantidad
         grupo = nuevo_df.groupby('id').agg({'Costo Ponderado': 'sum', 'cantidad': 'sum'})
         # Calcular el costo promedio por ID
