@@ -65,6 +65,7 @@ RUN curl https://packages.microsoft.com/keys/microsoft.asc | tee /etc/apt/truste
 RUN curl https://packages.microsoft.com/config/ubuntu/$(lsb_release -rs)/prod.list | tee /etc/apt/sources.list.d/mssql-release.list
 RUN apt-get update
 RUN ACCEPT_EULA=Y apt-get install -y msodbcsql17
+
 # Set permissions and Mount /var/lib/odoo to allow restoring filestore and /mnt/extra-addons for users addons
 RUN chown odoo:odoo /etc/odoo/odoo.conf \
     && mkdir -p /mnt/extra-addons \
@@ -73,7 +74,9 @@ RUN chown odoo:odoo /etc/odoo/odoo.conf \
     && mkdir -p /mnt/out_files \
     && chmod 777 -R /mnt/out_files \
     && chown -R odoo:odoo /mnt/out_files \
-    && chown -R odoo:odoo /var/lib/odoo
+    && chown -R odoo:odoo /var/lib/odoo \
+    && mkdir -p /var/lib/odoo/.local/share/Odoo/sessions \
+    && chown -R odoo:odoo /var/lib/odoo/.local/share/Odoo
 
 VOLUME ["/etc/odoo","/var/lib/odoo","/mnt/extra-addons","/mnt/out_files"]
 RUN chmod 777 -R /var/lib/odoo
