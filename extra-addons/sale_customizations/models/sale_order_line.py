@@ -7,14 +7,7 @@ from odoo.addons.inv_promo.models.inv_promo_variables import PAQUETES as PROMO_M
 
 class SaleOrderLine(models.Model):
     _inherit = 'sale.order.line'
-
-    # @api.constrains('price_unit')
-    # def _check_price(self):
-    #     for line in self:
-    #         if line.price_unit == 0:
-    #             if not line.order_id.is_expo:
-    #                 raise ValidationError('El precio unitario no puede ser 0.')
-                
+    
     price_unit_discount = fields.Float(compute='_compute_price_unit_discount', string='Precio Unitario con descuento', digits=(6, 2))
     discount_string = fields.Char(string='Descuento')    
     list_origin = fields.Char(string='Lista de Origen')
@@ -121,4 +114,4 @@ class SaleOrderLine(models.Model):
         price = self.pricelist_item_id._compute_price(
             product, qty, uom, order_date, currency=currency)
         
-        return price                   
+        return price
