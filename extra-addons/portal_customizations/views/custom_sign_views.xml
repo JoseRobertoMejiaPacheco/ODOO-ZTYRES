@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<odoo>
-    <template id="custom_sign_name_and_signature" inherit_id="web.sign_name_and_signature">
-        <xpath expr="//div[@class='col-auto']/a[contains(@class, 'o_web_sign_auto_button')]" position="replace"/>
-    </template>
-</odoo>
