@@ -51,6 +51,10 @@ build/
 
 # Archivos de configuración de Odoo
 etc/odoo.conf
+
+# No ignorar el resto de la carpeta etc/
+!etc/
+
 *.pid
 *.sock
 
