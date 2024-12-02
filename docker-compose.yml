@@ -13,7 +13,7 @@ services:
     # command: --
     volumes:
       - ./etc:/etc/odoo
-      - ./extra-addons-julio-2:/mnt/extra-addons
+      - ./extra-addons:/mnt/extra-addons
       - filrestore:/var/lib/odoo/.local/share/Odoo
     restart: always
 volumes:
