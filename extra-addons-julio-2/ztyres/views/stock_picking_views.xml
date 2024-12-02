@@ -1,0 +1,32 @@
+<?xml version='1.0' encoding='utf-8'?>
+<odoo>
+    <data>
+        <record id="view_picking_form_inherit_stock" model="ir.ui.view">
+            <field name="name">stock.picking.form</field>
+            <field name="model">stock.picking</field>
+            <field name="inherit_id" ref="stock.view_picking_form" />
+            <field name="arch" type="xml">
+                <xpath expr="/form/header[last()]" position="after">
+                    <header>
+                        <field name="state_sale_id" widget="statusbar" />
+                        <!-- <field name="separation_status" widget="statusbar" /> -->
+                        <!-- <button name="separation_status_done"
+                            string="Marcar como separado"
+                            type="object"                            
+                            default_focus="1"
+                            icon="fa-refresh"
+                            confirm="¿Está seguro de que el apartado ha sido realizado?"
+                            help="message" />
+                        <button name="separation_status_draft"
+                            string="Cancelar Separación"
+                            type="object"                            
+                            default_focus="1"
+                            icon="fa-refresh"
+                            confirm="¿Está seguro de cancelar el apartado?"
+                            help="message" /> -->
+                    </header>
+                </xpath>
+            </field>
+        </record>
+    </data>
+</odoo>

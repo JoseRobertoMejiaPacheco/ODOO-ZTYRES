@@ -1,0 +1,27 @@
+<odoo>
+    <record id="manager" model="res.groups">
+        <field name="name">Payment Appication Report Manager</field>
+    </record>
+
+    <record id="discount_report_manager" model="ir.model.access">
+        <field name="name">Payment Appication Report Manager Access</field>
+        <field name="model_id" ref="model_payment_ap_report_report"/>
+        <field name="group_id" ref="manager"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="1"/>
+        <field name="perm_create" eval="1"/>
+        <field name="perm_unlink" eval="1"/>
+    </record>
+
+<!-- Cambiar -->
+    <record id="discount_report_wizard" model="ir.model.access">
+        <field name="name">Payment Appication Report Wizard Access</field>
+        <field name="model_id" ref="model_payment_ap_report_wizard"/>
+        <field name="group_id" ref="manager"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="1"/>
+        <field name="perm_create" eval="1"/>
+        <field name="perm_unlink" eval="1"/>
+    </record>
+
+</odoo>

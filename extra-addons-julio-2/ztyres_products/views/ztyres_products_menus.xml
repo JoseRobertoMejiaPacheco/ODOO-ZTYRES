@@ -1,0 +1,170 @@
+<?xml version='1.0' encoding='utf-8'?>
+<odoo>
+        <data>
+                <menuitem id="menu_ztyres_products_in_config_purchase" name="Propiedades de llantas"
+                        parent="purchase.menu_purchase_root" sequence="100"
+                        groups="ztyres_products.products_admin" />
+
+
+                <menuitem id="menu_tire_measure"
+                        name="Medida"
+                        parent="menu_ztyres_products_in_config_purchase"
+                        action="ztyres_products.tire_measure_action"
+                        groups="ztyres_products.products_admin"
+                        sequence="1" />
+
+
+                <menuitem id="menu_face_action"
+                        name="Cara"
+                        parent="menu_ztyres_products_in_config_purchase"
+                        action="ztyres_products.face_action"
+                        groups="ztyres_products.products_admin"
+                        sequence="2" />
+
+                <menuitem id="menu_layer_action"
+                        name="Capas"
+                        parent="menu_ztyres_products_in_config_purchase"
+                        action="ztyres_products.layer_action"
+                        groups="ztyres_products.products_admin"
+                        sequence="3" />
+
+                <menuitem id="menu_manufacturer_action"
+                        name="Fabricante"
+                        parent="menu_ztyres_products_in_config_purchase"
+                        action="ztyres_products.manufacturer_action"
+                        groups="ztyres_products.products_admin"
+                        sequence="4" />
+
+                <menuitem id="menu_brand_action"
+                        name="Marca"
+                        parent="menu_ztyres_products_in_config_purchase"
+                        action="ztyres_products.brand_action"
+                        groups="ztyres_products.products_admin"
+                        sequence="5" />
+
+                <menuitem id="menu_model_action"
+                        name="Modelo"
+                        parent="menu_ztyres_products_in_config_purchase"
+                        action="ztyres_products.model_action"
+                        groups="ztyres_products.products_admin"
+                        sequence="6" />
+
+                <menuitem id="menu_speed_action"
+                        name="Indice de velocidad"
+                        parent="menu_ztyres_products_in_config_purchase"
+                        action="ztyres_products.speed_action"
+                        groups="ztyres_products.products_admin"
+                        sequence="7" />
+
+                <menuitem id="menu_index_of_load_action"
+                        name="Indice de carga"
+                        parent="menu_ztyres_products_in_config_purchase"
+                        action="ztyres_products.index_of_load_action"
+                        groups="ztyres_products.products_admin"
+                        sequence="8" />
+
+                        <menuitem id="menu_floor_depth_action"
+                        name="Profundidad de Dibujo"
+                        parent="menu_ztyres_products_in_config_purchase"
+                        action="ztyres_products.floor_depth_action"
+                        groups="ztyres_products.products_admin"
+                        sequence="9"/>
+
+                <menuitem id="menu_segment_action"
+                        name="Segmento"
+                        parent="menu_ztyres_products_in_config_purchase"
+                        action="ztyres_products.segment_action"
+                        groups="ztyres_products.products_admin"
+                        sequence="10" />
+
+                <menuitem id="menu_tier_action"
+                        name="Nivel(Tier)"
+                        parent="menu_ztyres_products_in_config_purchase"
+                        action="ztyres_products.tier_action"
+                        groups="ztyres_products.products_admin"
+                        sequence="11" />
+
+                <menuitem id="menu_type_action"
+                        name="Tipo"
+                        parent="menu_ztyres_products_in_config_purchase"
+                        action="ztyres_products.type_action"
+                        groups="ztyres_products.products_admin"
+                        sequence="11" />
+
+                <menuitem id="menu_supplier_segment_action"
+                        name="Segmento de proveedor"
+                        parent="menu_ztyres_products_in_config_purchase"
+                        action="ztyres_products.supplier_segment_action"
+                        groups="ztyres_products.products_admin"
+                        sequence="12" />
+
+                <menuitem id="menu_original_equipment_action"
+                        name="Equipamiento Original"
+                        parent="menu_ztyres_products_in_config_purchase"
+                        action="ztyres_products.original_equipment_action"
+                        groups="ztyres_products.products_admin"
+                        sequence="13" />
+
+                <menuitem id="menu_usage_action"
+                        name="Uso"
+                        parent="menu_ztyres_products_in_config_purchase"
+                        action="ztyres_products.usage_action"
+                        groups="ztyres_products.products_admin"
+                        sequence="14" />
+
+                <menuitem id="menu_e_mark_action"
+                        name="E-Mark"
+                        parent="menu_ztyres_products_in_config_purchase"
+                        action="ztyres_products.e_mark_action"
+                        groups="ztyres_products.products_admin"
+                        sequence="15" />
+
+                <menuitem id="menu_s_mark_action"
+                        name="S-Mark"
+                        parent="menu_ztyres_products_in_config_purchase"
+                        action="ztyres_products.s_mark_action"
+                        groups="ztyres_products.products_admin"
+                        sequence="16" />
+
+                <menuitem id="menu_ccc_action"
+                        name="Certificado obligatorio de China(CCC)"
+                        parent="menu_ztyres_products_in_config_purchase"
+                        action="ztyres_products.ccc_action"
+                        groups="ztyres_products.products_admin"
+                        sequence="17" />
+
+                <menuitem id="menu_tire_measure_config"
+                        name="Configuraciones de medidas"
+                        parent="menu_ztyres_products_in_config_purchase"
+                        groups="ztyres_products.products_admin"
+                        sequence="18" />
+
+                <menuitem id="menu_width_action"
+                        name="Ancho"
+                        action="ztyres_products.width_action"
+                        parent="menu_tire_measure_config"
+                        groups="ztyres_products.products_admin"
+                        sequence="19" />
+
+                <menuitem id="menu_separator_action"
+                        name="Separador"
+                        action="ztyres_products.separator_action"
+                        parent="menu_tire_measure_config"
+                        groups="ztyres_products.products_admin"
+                        sequence="20" />
+
+                <menuitem id="menu_profile_action"
+                        name="Perfil"
+                        action="ztyres_products.profile_action"
+                        parent="menu_tire_measure_config"
+                        groups="ztyres_products.products_admin"
+                        sequence="21" />
+
+                <menuitem id="menu_rim_action"
+                        name="Rin"
+                        action="ztyres_products.rim_action"
+                        parent="menu_tire_measure_config"
+                        groups="ztyres_products.products_admin"
+                        sequence="22" />
+        </data>
+</odoo>

@@ -1,0 +1,20 @@
+<odoo>
+    <data>
+        <!-- Define el nuevo grupo de permisos -->
+        <record id="group_lista_precios_custom" model="res.groups">
+            <field name="name">Descarga de Lista de Precios</field>
+            <!-- Opcional: puedes agregar una descripción -->
+            <field name="comment">Permisos personalizados para Lista de Precios</field>
+        </record>
+
+        <record id="rule_lista_precios_custom" model="ir.model.access">
+            <field name="name">Regla de acceso para Custom Lista de Precios</field>
+            <field name="model_id" ref="model_inv_promo_lista_precios_wizard"/>
+            <field name="group_id" ref="group_lista_precios_custom"/>
+            <field name="perm_read" eval="True"/>
+            <field name="perm_write" eval="True"/>
+            <field name="perm_create" eval="True"/>
+            <field name="perm_unlink" eval="True"/>
+        </record>    
+    </data>
+</odoo>

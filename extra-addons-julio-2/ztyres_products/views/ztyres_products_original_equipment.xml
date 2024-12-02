@@ -1,0 +1,36 @@
+<?xml version='1.0' encoding='utf-8'?>
+<odoo>
+    <data>
+
+        <record id="ztyres_products.original_equipment_tree" model="ir.ui.view">
+            <field name="name">ztyres_products.original_equipment.tree</field>
+            <field name="model">ztyres_products.original_equipment</field>
+            <field name="arch" type="xml">
+                <tree>
+                    <field name="name"/>                    
+                </tree>
+            </field>
+        </record>
+
+        <record id="ztyres_products.original_equipment_view_form" model="ir.ui.view">
+            <field name="name">ztyres_products.original_equipment.view.form</field>
+            <field name="model">ztyres_products.original_equipment</field>
+            <field name="arch" type="xml">
+                <form>
+                    <sheet>
+                        <group>
+                            <field name="name"/>
+                        </group>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+
+        <record id="ztyres_products.original_equipment_action" model="ir.actions.act_window">
+            <field name="name">Equipamiento original</field>
+            <field name="res_model">ztyres_products.original_equipment</field>            
+            <field name="view_mode">tree,form</field>
+        </record>
+
+    </data>
+</odoo>

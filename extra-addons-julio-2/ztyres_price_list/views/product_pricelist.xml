@@ -1,0 +1,29 @@
+<?xml version='1.0' encoding='utf-8'?>
+<odoo>
+    <data>
+
+<record id="view_order_form_inherit" model="ir.ui.view">
+    <field name="name">sale.order.form.inherit</field>
+    <field name="model">sale.order</field>
+    <field name="inherit_id" ref="sale.view_order_form"/>
+    <field name="arch" type="xml">
+        <xpath expr="//field[@name='pricelist_id']" position="attributes">
+            <attribute name="domain">[('exclude_from_export_lists', '=', False)]</attribute>
+        </xpath>
+    </field>
+</record>
+
+        <record id="product_pricelist_form" model="ir.ui.view">
+            <field name="name">product_pricelist.form</field>
+            <field name="model">product.pricelist</field>
+            <field name="inherit_id" ref="product.product_pricelist_view" />
+            <field name="arch" type="xml">
+                <field name='currency_id' position='after'>
+                    <field name='terms' />
+                    <field name='exclude_from_export_lists' />
+                    <field name='exclude_from_order' />
+                </field>
+            </field>
+        </record>
+    </data>
+</odoo>

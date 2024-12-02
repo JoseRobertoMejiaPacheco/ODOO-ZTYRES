@@ -1,0 +1,75 @@
+<odoo>
+    <template id="inv_promo.report_template">
+        <t t-name="inv_promo.report_template">
+            <t t-call="web.layout">
+                <div class="oe_structure">
+                    <div class="container"><br/>
+                        <!-- Agrega el campo partner_id como una opción de selección antes de la tabla -->
+                        <table class="table-striped table">
+                            <thead>
+                                <tr>
+                                    <th>Producto</th>
+                                    <th>Cantidad</th>
+                                    <th>Medida</th>
+                                    <th>Modelo</th>
+                                    <th>Marca</th>
+                                    <th>Fabricante</th>
+                                    <th>Segmento</th>
+                                    <th>Tier</th>
+                                    <th>Mayoreo</th>
+                                    <th>Política</th>
+                                    <th>Promoción</th> 
+                                    <th>Mejor Precio</th>
+                                    <th>Financiero</th>
+                                    
+                                    <th>Mayoreo</th>
+                                    <th>Política</th>
+                                    <th>Promoción</th> 
+                                    <th>Mejor Precio</th>
+                                    <th>Financiero</th>                            
+                                    
+                                    
+                                    
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr t-foreach="objects" t-as="record">
+                                    <td><t t-esc="record.product_id.name"/></td>
+                                    <td><t t-esc="record.available"/></td>
+                                    <td><t t-esc="record.tire_measure_id.name"/></td>
+                                    <td><t t-esc="record.model_id.name"/></td>
+                                    <td><t t-esc="record.brand_id.name"/></td>
+                                    <td><t t-esc="record.manufacturer_id.name"/></td>
+                                    <td><t t-esc="record.segment_id.name"/></td>
+                                    <td><t t-esc="record.tier_id.name"/></td>
+                                    <td><t t-esc="record.mayoreo"/></td>
+                                    <td><t t-esc="record.politica"/></td>
+                                    <td><t t-esc="record.promocion"/></td>
+                                    <td><t t-esc="record.mejor_precio"/></td>
+                                    <td><t t-esc="record.financiero"/></td>
+                                    
+                                    <td><t t-esc="record.mayoreo"/></td>
+                                    <td><t t-esc="record.politica"/></td>
+                                    <td><t t-esc="record.promocion"/></td>
+                                    <td><t t-esc="record.mejor_precio"/></td>
+                                    <td><t t-esc="record.financiero"/></td>
+                                    
+                                    
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </t>
+            <style>
+                .table-striped thead th {
+                    position: sticky;
+                    top: 0;
+                    background-color: #fff; /* Puedes ajustar el color de fondo según tus necesidades */
+                    z-index: 999; /* Asegura que esté por encima del contenido al hacer scroll */
+                    text-align: center; /* Centra el contenido del th */
+                }
+            </style>
+        </t>
+    </template>
+</odoo>

@@ -1,0 +1,27 @@
+<?xml version='1.0' encoding='utf-8'?>
+<odoo>
+    <data>
+        <record model="ir.module.category" id="product_management">
+            <field name="name">Listas de Precios ZTYRES</field>
+            <field name="description">Propiedades de llantas.</field>
+            <field name="sequence">10</field>
+        </record>
+
+        <record id="products_export" model="res.groups">
+            <field name="name">Descarga de lista de precios</field>
+            <field name="category_id" ref="product_management" />
+        </record>
+
+        <record id="products_import" model="res.groups">
+            <field name="name">Carga de lista de precios</field>
+            <field name="category_id" ref="product_management" />
+        </record>
+
+        <record id="products_admin" model="res.groups">
+            <field name="name">Administrador de listas de precios</field>
+            <field name="category_id" ref="product_management" />
+            <field name="implied_ids" eval="[(4, ref('products_export')),(4, ref('products_import'))]" />
+        </record>
+
+    </data>
+</odoo>

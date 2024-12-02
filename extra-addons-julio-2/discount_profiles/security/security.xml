@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <data>
+
+        <record model="ir.module.category" id="ztyres_categories">
+            <field name="name">ZTYRES</field>
+            <field name="description">Grupos de ZTYRES</field>
+            <field name="sequence">10</field>
+        </record>
+        <!-- Group for Read-Only Users -->
+        <record id="group_discount_readonly_user" model="res.groups">
+            <field name="name">Perfiles de Descuento Usuario</field>
+            <field name="category_id" ref="ztyres_categories"/>
+        </record>
+        
+        <!-- Group for Administrators -->
+        <record id="group_discount_admin" model="res.groups">
+            <field name="name">Perfiles de Descuento Administrador</field>
+            <field name="category_id" ref="ztyres_categories"/>
+        </record>
+    </data>
+</odoo>

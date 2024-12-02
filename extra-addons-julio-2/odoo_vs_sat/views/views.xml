@@ -1,0 +1,173 @@
+<odoo>
+    <!-- Vista de Árbol (Lista) -->
+    <record id="view_odoo_vs_sat_reconcilie_tree" model="ir.ui.view">
+        <field name="name">odoo_vs_sat_reconcilie.tree</field>
+        <field name="model">odoo_vs_sat.reconcilie</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="start_date"/>
+                <field name="end_date"/>
+                <field name="attachment_id"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Vista de Formulario -->
+    <record id="view_odoo_vs_sat_reconcilie_form" model="ir.ui.view">
+        <field name="name">odoo_vs_sat_reconcilie.form</field>
+        <field name="model">odoo_vs_sat.reconcilie</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="reconcile" type="object" string="Conciliar" class="btn-primary" />
+                </header>
+                <sheet>
+                    <group>
+                        <field name="start_date"/>
+                        <field name="end_date"/>
+                    </group>
+                    <group>
+                        <field name="attachment_ids" widget="many2many_binary"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Acción para abrir el modelo -->
+    <record id="action_odoo_vs_sat_reconcilie" model="ir.actions.act_window">
+        <field name="name">Conciliación Odoo vs SAT</field>
+        <field name="res_model">odoo_vs_sat.reconcilie</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <!-- Vista de Árbol (Lista) para Conciliación Complementos de Pago -->
+    <record id="view_odoo_vs_sat_reconcilie_cdp_sat_bancos_tree" model="ir.ui.view">
+        <field name="name">odoo_vs_sat_reconcilie_cdp_sat_bancos.tree</field>
+        <field name="model">odoo_vs_sat.reconcilie.cdp.sat.bancos</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="start_date"/>
+                <field name="end_date"/>
+                <field name="attachment_id"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Vista de Formulario para Conciliación Complementos de Pago -->
+    <record id="view_odoo_vs_sat_reconcilie_cdp_sat_bancos_form" model="ir.ui.view">
+        <field name="name">odoo_vs_sat_reconcilie_cdp_sat_bancos.form</field>
+        <field name="model">odoo_vs_sat.reconcilie.cdp.sat.bancos</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="reconcile" type="object" string="Conciliar" class="btn-primary" />
+                </header>
+                <sheet>
+                    <group>
+                        <field name="start_date"/>
+                        <field name="end_date"/>
+                    </group>
+                    <group>
+                        <field name="attachment_ids" widget="many2many_binary"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Vista de Árbol (Lista) para Notas de Crédito y Facturas -->
+    <record id="view_odoo_vs_sat_reconcilie_tree" model="ir.ui.view">
+        <field name="name">odoo_vs_sat_reconcilie.tree</field>
+        <field name="model">odoo_vs_sat.reconcilie</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="start_date"/>
+                <field name="end_date"/>
+                <field name="attachment_id"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Vista de Formulario para Notas de Crédito y Facturas -->
+    <record id="view_odoo_vs_sat_reconcilie_form" model="ir.ui.view">
+        <field name="name">odoo_vs_sat_reconcilie.form</field>
+        <field name="model">odoo_vs_sat.reconcilie</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="reconcile" type="object" string="Conciliar" class="btn-primary" />
+                </header>
+                <sheet>
+                    <group>
+                        <field name="start_date"/>
+                        <field name="end_date"/>
+                    </group>
+                    <group>
+                        <field name="attachment_ids" widget="many2many_binary"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Acción para abrir el modelo de Conciliación Complementos de Pago -->
+    <record id="action_odoo_vs_sat_reconcilie_cdp_sat_bancos" model="ir.actions.act_window">
+        <field name="name">Conciliación Complementos de Pago</field>
+        <field name="res_model">odoo_vs_sat.reconcilie.cdp.sat.bancos</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+    <!-- Acción para abrir el modelo de Notas de Crédito y Facturas -->
+    <record id="action_odoo_vs_sat_reconcilie" model="ir.actions.act_window">
+        <field name="name">Conciliación Notas de Crédito y Facturas</field>
+        <field name="res_model">odoo_vs_sat.reconcilie</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+
+
+
+
+
+
+
+    <!-- Menú raíz -->
+    <menuitem id="menu_root_odoo_vs_sat" 
+              web_icon="odoo_vs_sat,static/description/web_icon.png" 
+              name="Odoo vs SAT" 
+              sequence="1"/>
+              
+    <!-- Menú para acceder a la conciliación de Complementos de Pago -->
+    <menuitem id="menu_odoo_vs_sat_reconcilie_cdp_sat_bancos" 
+              name="Conciliación Complementos de Pago" 
+              parent="menu_root_odoo_vs_sat" 
+              action="action_odoo_vs_sat_reconcilie_cdp_sat_bancos" 
+              sequence="10"/>
+
+    <!-- Menú para acceder a la conciliación de Notas de Crédito y Facturas -->
+    <menuitem id="menu_odoo_vs_sat_reconcilie" 
+              name="Notas de Crédito y Facturas" 
+              parent="menu_root_odoo_vs_sat" 
+              action="action_odoo_vs_sat_reconcilie" 
+              sequence="20"/>
+
+</odoo>

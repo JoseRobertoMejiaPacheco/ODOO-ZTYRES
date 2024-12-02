@@ -1,0 +1,28 @@
+version: '2'
+services:
+  odoo16_ee_ztyres:
+    container_name: odoo16_ee_ztyres_web
+    image: jrmpacheco/odoo16_ee_ztyres:2.0.6
+    user: odoo
+    ports:
+      - "8069:8069" # Normal Port
+      - "8090:8090" # Testing Port
+      - "8072:8072" # Longpolling Port
+      - "8001:8001" # Debug Port
+    tty: true
+    # command: --
+    volumes:
+      - ./etc:/etc/odoo
+      - ./extra-addons-julio-2:/mnt/extra-addons
+      - filrestore:/var/lib/odoo/.local/share/Odoo
+    restart: always
+volumes:
+  etc:
+  extra-addons:
+  filrestore:
+
+#Agregar a Docker File
+# mkdir -p /var/lib/odoo/.local/share/Odoo/sessions
+# chown -R odoo:odoo /var/lib/odoo/.local/share/Odoo
+# chmod 700 /var/lib/odoo/.local/share/Odoo/sessions
+ 

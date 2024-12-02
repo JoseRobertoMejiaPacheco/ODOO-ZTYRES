@@ -1,0 +1,21 @@
+<?xml version='1.0' encoding='utf-8'?>
+<odoo>
+
+
+<record id="product_product_normal_form_view" model="ir.ui.view">
+    <field name="name">product.template.normal.form.view.inherit</field>
+    <field name="model">product.product</field>
+    <field name="inherit_id" ref="product.product_normal_form_view"/>
+    <field name="arch" type="xml">
+        <!-- Agregar el status bar -->
+        <xpath expr="/form/header[last()]" position="after">
+        <header>
+        <button name="cambiar_estado_conteo" type="object" string="Cambiar Estado de Conteo DOT" class="btn-default" />
+            <field name="estado_conteo_dot" widget="statusbar" clickable="1" />                        
+        </header>
+        </xpath>
+    </field>
+</record>
+
+
+</odoo>

@@ -1,0 +1,15 @@
+<?xml version='1.0' encoding='utf-8'?>
+<odoo>
+    <data>
+        <record id="update_cui" model="ir.ui.view">
+            <field name="name">product.template.form</field>
+            <field name="model">product.template</field>
+            <field name="inherit_id" ref="product.product_template_only_form_view" />
+            <field name="arch" type="xml">
+                <xpath expr="/form/header[last()]" position="inside">
+                    <button string="Actualizar Nombre" type="object" groups="stock.group_stock_manager" name="update_name_ztyres" attrs="{'invisible': [('type', '!=', 'product')]}"/> 
+                </xpath>
+            </field>
+        </record>
+    </data>
+</odoo>

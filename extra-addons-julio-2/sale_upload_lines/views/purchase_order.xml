@@ -1,0 +1,16 @@
+<odoo>
+  <data>
+    <record id="purchase_order_form" model="ir.ui.view">
+      <field name="name">purchase.order.form</field>
+      <field name="model">purchase.order</field>
+      <field name="inherit_id" ref="purchase.purchase_order_form" />
+      <field name="arch" type="xml">
+        <xpath expr="/form/header[last()]" position="inside">
+          <button name="import_purchase_lines" type="object" string="Importar lineas de pedido" 
+          groups="sale_upload_lines.import_lines"
+          />
+      </xpath>
+      </field>
+    </record>
+  </data>
+</odoo>

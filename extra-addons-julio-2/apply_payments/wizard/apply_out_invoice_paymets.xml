@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+
+        <record id="view_account_payment_tree_with_selection" model="ir.ui.view">
+            <field name="name">account.payment.tree.with.selection</field>
+            <field name="model">account.payment</field>
+            <field name="arch" type="xml">
+                <tree edit="false" sample="1" decoration-info="state == 'draft'" decoration-muted="state == 'cancel'">
+                    <field name="company_currency_id" invisible="1"/>
+                    <field name="suitable_journal_ids" invisible="1"/>
+                    <field name="available_payment_method_line_ids" invisible="1"/>
+                    <field name="date"/>
+                    <field name="name"/>
+                    <field name="journal_id" />
+                    <field name="payment_method_line_id"/>
+                    <field name="partner_id" string="Customer"/>
+                    <field name="amount_signed" string="Amount in Currency" groups="base.group_multi_currency" optional="hide"/>
+                    <field name="currency_id" string="Payment Currency" groups="base.group_multi_currency" optional="hide"/>
+                    <field name="amount_company_currency_signed" widget="monetary" string="Amount" sum="Total"/>
+                    <field name="state" widget="badge" decoration-info="state == 'draft'" decoration-success="state == 'posted'"/>
+                </tree>
+            </field>
+        </record>
+
+        <record id="view_apply_out_invoice_payments_tree" model="ir.ui.view">
+            <field name="name">apply.out.invoice.payments.tree</field>
+            <field name="model">apply_out_invoice.payments</field>
+            <field name="arch" type="xml">
+                <tree string="Apply Out Invoice Payments">
+                    <field name="partner_id"/>
+                    <field name="payment_id"/>
+                    <field name="outstanding_amount" />
+                    <field name="amount_pending" />
+                    <field name="amount_applied"/>
+                    <field name="l10n_mx_edi_payment_method_id"/>
+                    <field name="state"/>
+                </tree>
+            </field>
+        </record>
+        
+        <!-- Form view for ApplyOutInvoicePayments -->
+        <record id="view_apply_out_invoice_payments_form" model="ir.ui.view">
+            <field name="name">apply.out.invoice.payments.form</field>
+            <field name="model">apply_out_invoice.payments</field>
+            <field name="arch" type="xml">
+                <form string="Aplicación de Pagos Múltiple">
+                    
+                <header>
+                    <field name="state" widget="statusbar" /> 
+                </header>
+                    
+                    <sheet>
+                          
+                        <div class="oe_title">
+                            <h1>
+                                <field name="name" attrs="{'invisible':[('name', '=', '/')]}" readonly="1" placeholder="Draft"/>                                
+                            </h1>
+                        </div>                
+                        <group>
+                            <group>
+                                <field name="partner_id" required="1" attrs="{'readonly': [('state', '=', 'done')]}" options="{'no_create': True,'no_create_edit': True}"/>
+                            </group>
+                            <group> 
+                                <field name="payment_id"  
+                                attrs="{'readonly': [('state', '=', 'done')]}"                               
+                                domain="[
+                                ('payment_type', '=', 'inbound'),
+                                ('state', '=', 'posted'),
+                                ('is_reconciled', '=', False),
+                                ('line_ids.amount_residual', '>', 0),
+                                ('line_ids.account_id.account_type', '=', 'asset_receivable'),
+                                ('line_ids.reconciled', '=', False),
+                                ('partner_id', '=', partner_id)
+                            ]"
+                            />
+                               
+                            </group>
+                            <group>
+                            
+                            <field name="outstanding_amount"/>  
+                            <field name="l10n_mx_edi_payment_method_id" required="1"  options="{'no_create': True, 'no_open': True, 'no_create_edit': True}" attrs="{'readonly': [('state', '=', 'done')]}"/> 
+                            <field name="amount_applied"/> 
+                            <field name="amount_pending"/> 
+                        </group>
+                            <button name="apply_payments" type="object" string="Aplicar Pago" class="btn-default" />                          
+                        </group>
+                        <field name="lines" attrs="{'readonly': [('state', '=', 'done')]}">
+                            <tree editable="bottom">
+                                <field name="invoice_id" 
+                                    domain="[('state','=','posted'),('move_type','=','out_invoice'),('amount_residual', '>', 0),('partner_id', '=', parent.partner_id)]"
+                                    options="{'no_create': True, 'no_open': True, 'no_create_edit': True}" 
+                                   
+                                />
+                                <field name="outstanding_amount" sum="Importe Factura"/>
+                                <field name="payment_amount" sum="Importe Pago"/>
+                                
+                            </tree>
+                        </field>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+        
+        <!-- Action for the form view -->
+        <record id="action_apply_out_invoice_payments" model="ir.actions.act_window">
+            <field name="name">Aplicación de Pagos Múltiple</field>
+            <field name="res_model">apply_out_invoice.payments</field>
+            <field name="view_mode">tree,form</field>
+        </record>
+
+        <record id="seq_apply_out_invoice" model="ir.sequence">
+            <field name="name">Apply Out Invoice Sequence</field>
+            <field name="code">apply_out_invoice.sequence</field>
+            <field name="prefix">APP</field>
+            <field name="padding">5</field>
+            <field name="number_increment">1</field>
+            <field name="company_id" eval="False"/>
+        </record>
+        <!-- Menu item -->
+
+        <menuitem id="menu_apply_out_invoice_payments_form" name="Aplición de Pagos Múltiple"
+        parent="account.menu_finance_receivables" action="action_apply_out_invoice_payments"/>
+    </data>
+</odoo>

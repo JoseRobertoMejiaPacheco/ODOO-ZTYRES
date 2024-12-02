@@ -1,0 +1,127 @@
+<?xml version='1.0' encoding='utf-8'?>
+<odoo>
+    <data>
+        <data>
+            <record id="view_order_form_inherit_dot_range" model="ir.ui.view">
+                <field name="name">sale.order.form</field>
+                <field name="model">sale.order</field>
+                <field name="inherit_id" ref="sale.view_order_form" />
+                <field name="arch" type="xml">
+                      <field name='payment_term_id' position='before'>
+                        <field name='payment_term_days' invisible='1' /> 
+                      </field>
+                      <field name='delivery_status' position='before'>
+                        <field name='keep'/> 
+                         <field name='is_expo'/> 
+                      </field>
+                      <field name='payment_term_id' position='attributes'>
+                        <attribute name="readonly">True</attribute>     
+                        
+                      </field>
+                    <xpath expr="//form[1]/sheet[1]/notebook[1]/page[@name='order_lines']/field[@name='order_line']/tree[1]/field[@name='product_id']" position="after">
+                        <field name="dot_range" />
+                    </xpath>
+                    <field name='partner_id' position='before'>
+                        <field name='sale_reason_cancel_id' readonly="1" widget="many2many_tags" attrs="{'invisible':[('state','not in', ['cancel'])]}"/>
+                    </field>                  
+                </field>
+            </record>
+        </data>
+
+        <record id="view_order_form_inherit" model="ir.ui.view">
+            <field name="name">sale.order.form.inherit</field>
+            <field name="model">sale.order</field>
+            <field name="inherit_id" ref="sale.view_order_form"/>
+            <field name="arch" type="xml">
+                <xpath expr="//field[@name='partner_shipping_id']" position="after">
+                    <field name="unlock_financial" groups="ztyres.sale_exceptions_group"/>
+                </xpath>
+            </field>
+        </record>
+
+
+        <record id="ztyres.view_order_tree_inherit_sale_approve" model="ir.ui.view">
+            <field name="name">Sale Tree</field>
+            <field name="model">sale.order</field>
+            <field name="inherit_id" ref="sale.view_quotation_tree" />
+            <field name="arch" type="xml">
+              <xpath expr="//tree/field[@name='partner_id']" position="after">
+                <field name="payment_term_days" />
+              </xpath>
+            </field>
+          </record>
+
+        <record id="view_order_form_inherit_ztyres" model="ir.ui.view">
+            <field name="name">sale.order.form</field>
+            <field name="model">sale.order</field>
+            <field name="inherit_id" ref="sale.view_order_form" />
+            <field name="arch" type="xml">
+
+
+
+                <xpath expr="/form/header[last()]" position="inside">
+                    <button name="quotation_action_confirm" type="object" class="fa-refresh" string="Actualizar entrega"/>
+                </xpath>
+
+
+                <xpath expr="//field[@name='order_line']/tree/field[@name='price_unit']" position="attributes">
+                <attribute name="attrs">{"readonly": [["product_id","!=",50959]]}</attribute>
+                <attribute name="force_save">True</attribute>
+                </xpath>
+                <xpath expr="//field[@name='order_line']/tree/field[@name='discount']" position="attributes">
+                  <attribute name="attrs">{}</attribute>
+                  <attribute name="force_save">True</attribute>
+                  <attribute name="readonly">1</attribute>
+                  </xpath>
+
+                <xpath expr="//field[@name='order_line']/tree/field[@name='product_id']" position="after">
+                    <field name="pricelist_id" string="Lista de Precios" optional="show" readonly="1"/> <!-- Campo invisible, solo para uso en el attrs -->
+                </xpath>
+            </field>
+        </record>
+
+  <!-- <xpath expr="//form[1]/sheet[1]/notebook[1]/page[@name='order_lines']/field[@name='order_line']/tree[1]/field[@name='price_unit']" position="attributes">
+    <attribute name="attrs">{"readonly": [["product_id","!=",50959]]}</attribute>
+    <attribute name="force_save">True</attribute>
+  </xpath> -->
+
+<!-- <attribute name="domain">['|',('qty_available', '>', 0), ("type", "=", "service"),('id', 'in', [11592])]</attribute> -->
+
+  <!-- <xpath expr="//form[1]/sheet[1]/notebook[1]/page[@name='order_lines']/field[@name='order_line']/tree[1]/field[@name='product_id']" position="attributes">
+    <attribute name="domain">["|",["qty_available","&gt;",0],["type","in",["service"]]]</attribute>
+  </xpath> -->
+        <record id="view_order_form" model="ir.ui.view">
+            <field name="name">sale.order.form</field>
+            <field name="model">sale.order</field>
+            <field name="inherit_id" ref="sale.view_order_form"/>
+            <field name="arch" type="xml">
+                <xpath expr="//sheet" position="before">
+                    <field name="show_partner_credit_alert" invisible="1"/>
+                    <div class="alert alert-info mb-0" role="alert" attrs="{'invisible': ['|', ('state', 'not in', ['draft', 'sent']), ('show_partner_credit_alert', '=', False)]}">
+                        <b>Información de crédito :</b>
+                        Crédito usado : <b><field name="partner_credit_limit_used"/></b>.
+                        Crédito disponible : <b><field name="partner_credit_limit_available"/></b>.
+                        Límite de Crédito : <b><field name="partner_credit_limit"/></b>.
+                        Saldo Vencido : <b><field name="partner_credit_amount_overdue"/></b>.
+                    </div>
+                </xpath>
+            </field>
+        </record>
+
+        <record id="ir_cron_cancel_old_quotation_picking" model="ir.cron">
+            <field name="name">Cancel Old Quotation Picking</field>
+            <field name="active" eval="True"/>
+            <field name="user_id" ref="base.user_root"/>
+            <field name="interval_number">1</field>
+            <field name="interval_type">days</field>
+            <field name="numbercall">-1</field>
+            <field name="doall" eval="False"/>
+            <field name="model_id" ref="model_sale_order"/>
+            <field name="state">code</field>
+            <field name="code">model.cancel_old_quotation_picking()</field>
+        </record>
+
+
+
+    </data>
+</odoo>

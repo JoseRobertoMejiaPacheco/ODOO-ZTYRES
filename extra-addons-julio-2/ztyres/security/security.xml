@@ -1,0 +1,47 @@
+<?xml version='1.0' encoding='utf-8'?>
+<odoo>
+    <data>
+        <record model="ir.module.category" id="aprobaciones_ztyres">
+            <field name="name">Permisos Facturas</field>
+            <field name="description">Permisos Facturas</field>
+            <field name="sequence">10</field>
+        </record>
+        <record id="cf" model="res.groups">
+            <field name="name">Cancelar Facturas</field>
+            <field name="category_id" ref="aprobaciones_ztyres" />
+        </record>
+        <record id="nc" model="res.groups">
+            <field name="name">Generar Notas de Crédito</field>
+            <field name="category_id" ref="aprobaciones_ztyres" />
+        </record>
+        <record id="lp" model="res.groups">
+            <field name="name">Liberacion de Pedidos</field>
+            <field name="category_id" ref="aprobaciones_ztyres" />
+        </record>
+
+        <record model="ir.module.category" id="aprobaciones_nc_f_ztyres">
+            <field name="name">Permisos Notas de Cŕedito Pagos</field>
+            <field name="description">Permisos Notas de Cŕedito Pagos</field>
+            <field name="sequence">10</field>
+        </record>
+        <record id="cf" model="res.groups">
+            <field name="name">Permisos Notas de Cŕedito Pagos</field>
+            <field name="category_id" ref="aprobaciones_nc_f_ztyres" />
+        </record>
+
+        <record model="ir.module.category" id="sale_exceptions_category">
+            <field name="name">Excepciones de Ventas</field>
+            <field name="description">Excepciones de Ventas</field>
+            <field name="sequence">10</field>
+        </record>
+        <record id="sale_exceptions_group" model="res.groups">
+            <field name="name">Permitir Sobregiro y Liberacion</field>
+            <field name="category_id" ref="sale_exceptions_category" />
+        </record>
+        
+        <record id="sale_cancel_group" model="res.groups">
+            <field name="name">Cancelar Pedidos de Venta</field>
+            <field name="category_id" ref="sale_exceptions_category" />
+        </record>
+    </data>
+</odoo>

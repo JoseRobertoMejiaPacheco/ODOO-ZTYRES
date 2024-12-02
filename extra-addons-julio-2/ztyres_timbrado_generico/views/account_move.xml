@@ -1,0 +1,31 @@
+<odoo>
+  <data>
+        <record id="view_account_invoice_form" model="ir.ui.view">
+            <field name="name">account.move.form</field>
+            <field name="model">account.move</field>
+            <field name="inherit_id" ref="account.view_move_form"/>
+            <field name="arch" type="xml">
+            <field name='l10n_mx_edi_usage' position='after'>
+                <field name="promo_timbrada"/>
+            </field>
+                <xpath expr="//sheet" position="before">
+                    <div class="alert alert-danger mb-0" role="alert" attrs="{'invisible': [('promo_timbrada', 'in', ['done',False])]}">
+                        <b>La nota de crédito de la promoción no se timbró correctamente, verifique con Finanzas</b>
+                    </div>
+                </xpath>            
+            </field>
+        </record>
+
+    <record id="view_move_form" model="ir.ui.view">
+      <field name="name">account.view_move_form</field>
+      <field name="model">account.move</field>
+      <field name="inherit_id" ref="account.view_move_form" />
+      <field name="arch" type="xml">
+        <field name='l10n_mx_edi_usage' position='after'>
+          <field name='generic_edi' widget="boolean_toggle" />
+          <field name='l10n_mx_edi_post_time' readonly="0" />
+        </field>        
+      </field>
+    </record>
+  </data>
+</odoo>

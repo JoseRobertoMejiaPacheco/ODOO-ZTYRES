@@ -1,0 +1,36 @@
+<?xml version='1.0' encoding='utf-8'?>
+<odoo>
+    <data>
+
+        <record id="ztyres_products.index_of_load_tree" model="ir.ui.view">
+            <field name="name">ztyres_products.index_of_load.tree</field>
+            <field name="model">ztyres_products.index_of_load</field>
+            <field name="arch" type="xml">
+                <tree>
+                    <field name="name"/>                    
+                </tree>
+            </field>
+        </record>
+
+        <record id="ztyres_products.index_of_load_view_form" model="ir.ui.view">
+            <field name="name">ztyres_products.index_of_load.view.form</field>
+            <field name="model">ztyres_products.index_of_load</field>
+            <field name="arch" type="xml">
+                <form>
+                    <sheet>
+                        <group>
+                            <field name="name"/>
+                        </group>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+
+        <record id="ztyres_products.index_of_load_action" model="ir.actions.act_window">
+            <field name="name">Indice de carga</field>
+            <field name="res_model">ztyres_products.index_of_load</field>            
+            <field name="view_mode">tree,form</field>
+        </record>
+
+    </data>
+</odoo>

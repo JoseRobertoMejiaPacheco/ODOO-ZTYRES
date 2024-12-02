@@ -1,0 +1,31 @@
+<odoo>
+  <data>
+        <!-- Heredar la vista de mas_mailing_contact_view_form -->
+        <record id="view_mailing_contact_inherit" model="ir.ui.view">
+            <field name="name">mass_mailing.mailing_contact_view_form_inherit</field>
+            <field name="model">mailing.contact</field>
+            <field name="inherit_id" ref="mass_mailing.mailing_contact_view_form"/>
+            <field name="arch" type="xml">
+                <!-- Insertar el campo partner_id después del campo name -->
+                <field name="name" position="after">
+                    <field name="partner_id" style="font-size: 12px;"/>
+                </field>
+            </field>
+        </record> 
+
+        <record id="view_mail_mass_mailing_inherit" model="ir.ui.view">
+            <field name="name">mass_mailing.mailing_mailing_view_form_full_width_inherit</field>
+            <field name="model">mailing.mailing</field>
+            <field name="inherit_id" ref="mass_mailing.view_mail_mass_mailing_form"/>
+            <field name="arch" type="xml">
+                <!-- Insertar el campo partner_id después del campo name -->
+                <field name="subject" position="after">
+                <label for="send_list_price" string="Incluir Lista de Precios"/>
+                    <field name="send_list_price" />
+                </field>
+            </field>
+        </record> 
+
+
+  </data>
+</odoo>

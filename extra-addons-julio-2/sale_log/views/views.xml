@@ -1,0 +1,44 @@
+<odoo>
+  <data>
+    <!-- explicit list view definition -->
+
+
+
+    <!-- actions opening views on models -->
+    <record id="sale_log_view_tree" model="ir.ui.view">
+      <field name="name">sale.log.view.tree</field>
+      <field name="model">sale.order.visit.log</field>
+      <field name="arch" type="xml">
+        <tree>
+          <field name="order_id"/>
+          <field name="user_id"/>
+          <field name="visit_date"/>
+          <field name="visit_count"/>
+        </tree>
+      </field>
+    </record>
+
+    <record model="ir.actions.act_window" id="sale_log.action_window">
+      <field name="name">sale_log window</field>
+      <field name="res_model">sale.order.visit.log</field>
+      <field name="view_mode">tree,form</field>
+    </record>
+
+
+
+
+
+    <!-- Top menu item -->
+
+    <menuitem name="Log" id="sale_log.menu_root" 
+    groups="group_access_visit_logs_menu"
+    />
+
+    <!-- menu categories -->
+
+    <menuitem name="Log" id="sale_log.menu_1" parent="sale_log.menu_root"/>
+    <!-- actions -->
+
+    <menuitem name="Lista de Logs" id="sale_log.menu_1_list" parent="sale_log.menu_1" action="sale_log.action_window"/>
+  </data>
+</odoo>

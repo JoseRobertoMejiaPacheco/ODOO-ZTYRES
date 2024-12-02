@@ -1,0 +1,49 @@
+<odoo>
+    <data>
+        <!-- Define la vista para el modelo ListaDePrecios -->
+        <record id="view_lista_precios_wizard_form" model="ir.ui.view">
+            <field name="name">lista.precios.wizard.form</field>
+            <field name="model">inv_promo.lista_precios_wizard</field>
+            <field name="arch" type="xml">
+                <form string="Lista de Precios">
+                <h3>Seleccione un cliente ó edite el perfil</h3>
+                    <group string="Cliente">
+                        <!-- <field name="partner_id" 
+                        />                         -->
+                        <field name="partner_id" attrs="{'invisible': [
+                        ('volume_profile', '!=', False),
+                        ('financial_profile', '!=', False),
+                        ('logistic_profile', '!=', False)]}" domain="[('type', '=', 'contact')]" 
+                        options="{'no_create': True,'no_open': True}"
+                        />
+                    </group>
+                    <!-- Campos visibles en la vista -->
+                    <group string="Perfiles" attrs="{'invisible': [('partner_id', '!=', False)]}">
+                        <field name="volume_profile" options="{'no_create': True,'no_open': True}"/>
+                        <field name="financial_profile" options="{'no_create': True,'no_open': True}"/>
+                        <field name="logistic_profile" options="{'no_create': True,'no_open': True}"/>
+                    </group>
+                    <!-- Botones para guardar o cancelar -->
+                    <footer>
+                        <button name="download_report" string="Descargar" type="object" class="btn-primary"/>
+                        <button string="Cancelar" class="btn-secondary" special="cancel"/>
+                    </footer>
+                </form>
+            </field>
+        </record>
+
+        <!-- Define la acción para abrir la vista -->
+        <record id="action_lista_precios_wizard" model="ir.actions.act_window">
+            <field name="name">Descarga de Lista de Precios</field>
+            <field name="res_model">inv_promo.lista_precios_wizard</field>
+            <field name="view_mode">form</field>
+            <field name="view_id" ref="view_lista_precios_wizard_form"/>
+            <field name="target">new</field>
+            <field name="context">{}</field>
+        </record>
+
+        <!-- Define el menú para acceder a la vista -->
+        <menuitem id="menu_lista_precios_wizard" name="Descarga de Lista de Precios" parent="sale.product_menu_catalog"
+            action="action_lista_precios_wizard"/>
+    </data>
+</odoo>

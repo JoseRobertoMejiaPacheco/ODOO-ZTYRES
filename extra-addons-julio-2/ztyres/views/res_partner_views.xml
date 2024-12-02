@@ -1,0 +1,90 @@
+<?xml version='1.0' encoding='utf-8'?>
+<odoo>
+    <data>
+
+
+        <record id="view_partner_form_inherit_vat_ro" model="ir.ui.view">
+            <field name="name">model.name.view.form.inherit</field>
+            <field name="model">res.partner</field>
+            <field name="inherit_id" ref="base.view_partner_form" />
+            <field name="arch" type="xml">
+                <field name='vat' position='attributes'>
+                    <attribute name="attrs">{}</attribute>
+                    <attribute name="readonly">True</attribute>   
+                    <attribute name="required">False</attribute>                 
+                </field>
+                <field name='parent_id' position='attributes'>
+                    <attribute name="attrs">{"readonly": True,"invisible":False}</attribute>
+                    <attribute name="domain">[]</attribute>
+                    <attribute name="readonly">True</attribute>
+                </field>
+                <field name='email' position='attributes'>
+                    <attribute name="required">True</attribute>
+                </field>
+                <field name='property_account_position_id' position='after'>
+                    <field name="credit_limit" readonly="1" />                    
+                </field>
+
+            </field>
+        </record>
+
+        <!-- <record id="view_partner_form_inherit_vat" model="ir.ui.view">
+            <field name="name">model.name.view.form.inherit</field>
+            <field name="model">res.partner</field>
+            <field name="inherit_id" ref="base.view_partner_form" />
+            <field name="groups_id" eval="[(6, 0, [ref('ztyres.partner_id_vat') ])]" />
+            <field name="arch" type="xml">
+                <field name='vat' position='attributes'>
+                    <attribute name="attrs">{}</attribute>
+                    <attribute name="readonly">False</attribute>
+                    <attribute name="required">False</attribute>
+                </field>
+                <field name='email' position='attributes'>
+                    <attribute name="required">True</attribute>
+                </field>
+
+                <field name='vat' position='after'>
+                    <field name="parent_id"/>
+                </field>
+            </field>
+        </record> -->
+
+        <!-- <record id="view_partner_form_inherit_credit_limit" model="ir.ui.view">
+            <field name="name">model.name.view.form.inherit</field>
+            <field name="model">res.partner</field>
+            <field name="inherit_id" ref="base.view_partner_form" />
+            <field name="groups_id" eval="[(6, 0, [ref('ztyres.group_update_credit_limit_partner') ])]" />
+            <field name="arch" type="xml">
+                <field name='credit_limit' position='attributes'  >                    
+                    <attribute name="readonly">False</attribute>                    
+                </field>
+            </field>
+        </record> -->
+
+        <!-- <record id="view_partner_address_structured_form" model="ir.ui.view">
+            <field name="name">model.name.view.form.inherit</field>
+            <field name="model">res.partner</field>
+            <field name="inherit_id" ref="l10n_mx_edi.mx_partner_address_form" />
+            <field name="arch" type="xml">
+                <xpath expr='//label[1]' position="attributes">
+                    <attribute name="string">Número</attribute>
+                </xpath>
+                <xpath expr='//label[2]' position="attributes">
+                    <attribute name="string">Número Secundario</attribute>
+                </xpath>
+                <field name='country_id' position='attributes'>
+                    <attribute name="required">True</attribute>
+                </field>
+                <field name='zip' position='attributes'>
+                    <attribute name="required">True</attribute>
+                </field>
+
+                <field name='state_id' position='attributes'>
+                    <attribute name="required">True</attribute>
+                    <attribute name="options">{'no_quick_create': True,'no_create': True, 'no_create_edit': True}</attribute>
+                </field>
+            </field>
+        </record> -->
+
+    </data>
+</odoo>

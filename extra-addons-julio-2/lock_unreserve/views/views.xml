@@ -1,0 +1,22 @@
+<odoo>
+  <data>
+
+    <!-- Define un nuevo grupo de seguridad -->
+    <record id="lock_unreserve.group_custom_unreserve" model="res.groups">
+        <field name="name">Anular Reserva</field>
+    </record>  
+
+    <record id="view_picking_form_inherit" model="ir.ui.view">
+        <field name="name">stock.picking.form.inherit</field>
+        <field name="model">stock.picking</field>
+        <field name="inherit_id" ref="stock.view_picking_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//button[@name='do_unreserve']" position="attributes">
+                <!-- Define el grupo que puede ver el botón -->
+                <attribute name="groups">lock_unreserve.group_custom_unreserve</attribute> 
+            </xpath>
+        </field>
+    </record>
+
+  </data>
+</odoo>

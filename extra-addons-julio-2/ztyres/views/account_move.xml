@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_move_form" model="ir.ui.view">
+        <field name="name">account.move.form</field>
+        <field name="model">account.move</field>
+        <field name="inherit_id" ref="account.view_move_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//sheet" position="before">
+                <field name="show_partner_credit_alert" invisible="1"/>
+                <div groups="account.group_account_invoice,account.group_account_readonly"
+                     class="alert alert-info mb-0" role="alert"
+                     attrs="{'invisible': ['|', '|', ('state', '!=', 'draft'), ('move_type', '!=', 'out_invoice'), ('show_partner_credit_alert', '=', False)]}">
+                    I<b>nformación de crédito :</b>                        
+                    Crédito usado : <b><field name="partner_credit_limit_used"/></b>.
+                    Crédito disponible : <b><field name="partner_credit_limit_available"/></b>.
+                    Límite de Crédito : <b><field name="partner_credit_limit"/></b>.
+                    Saldo Vencido : <b><field name="partner_credit_amount_overdue"/></b>.
+                </div>
+            </xpath>
+        </field>
+    </record>
+
+
+    <!-- <record id="l10n_mx_edi_form_ro" model="ir.ui.view">
+        <field name="name">l10n_mx_edi.form</field>
+        <field name="model">account.move</field>
+        <field name="inherit_id" ref="l10n_mx_edi.view_l10n_mx_edi_invoice_form_inherit" />
+        <field name="arch" type="xml">
+            <field name='l10n_mx_edi_payment_method_id' position='attributes'>                
+                <attribute name="attrs">{"readonly": True}</attribute>    
+            </field>
+            <field name='l10n_mx_edi_payment_policy' position='attributes'>
+                <attribute name="readonly">True</attribute>                                              
+            </field>
+        </field>
+    </record> -->
+
+    <!-- <record id="l10n_mx_edi_form" model="ir.ui.view">
+        <field name="name">l10n_mx_edi.form</field>
+        <field name="model">account.move</field>
+        <field name="inherit_id" ref="l10n_mx_edi.view_l10n_mx_edi_invoice_form_inherit" />
+        <field name="groups_id" eval="[(6, 0, [ref('ztyres.payment_term') ])]" /> 
+        <field name="arch" type="xml">
+            <field name='l10n_mx_edi_payment_method_id' position='attributes'>                
+                <attribute name="attrs">{"readonly": False}</attribute>    
+            </field>
+            <field name='l10n_mx_edi_payment_policy' position='attributes'>
+                <attribute name="readonly">False</attribute>                                              
+            </field>
+        </field>
+    </record>  -->
+    
+</odoo>

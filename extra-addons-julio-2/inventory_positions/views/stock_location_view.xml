@@ -1,0 +1,40 @@
+<odoo>
+    <data>
+        <record id="view_location_form_inherited" model="ir.ui.view">
+            <field name="name">stock.location.form.inherited</field>
+            <field name="model">stock.location</field>
+            <field name="inherit_id" ref="stock.view_location_form"/>
+            <field name="arch" type="xml">
+                <field name="location_id" position="after">
+                <group string="Posiciones" name="positions">
+                    <field name="pos_x" force_save = "1"/>
+                    <field name="pos_z" force_save = "1"/>
+                    <field name="pos_y" force_save = "1"/>
+                    <field name="distance" force_save = "1"/>
+                    <!-- <field name="vender"/> -->
+                </group>
+                </field>
+            </field>
+        </record>
+
+
+    <!-- AHHHHHH 
+        <record model="ir.actions.act_window" id="stock.action_product_stock_view">
+        <field name="context">{'default_detailed_type': 'product','qty_custom':True}</field>
+    </record> -->
+
+
+    <!-- <record id="stock.action_product_stock_view" model="ir.actions.act_window">
+      <field name="context">{'default_detailed_type': 'product','qty_custom':'True'}</field>
+    </record>
+
+    <record id="sale.action_quotations_with_onboarding" model="ir.actions.act_window">
+        <field name="context">{'search_default_my_quotation': 1,'qty_custom':1}</field>
+    </record>
+
+    <record id="sale.action_orders_upselling" model="ir.actions.act_window">
+        <field name="context">{'create': False,'qty_custom':1}</field>
+    </record> -->
+
+    </data>
+</odoo>

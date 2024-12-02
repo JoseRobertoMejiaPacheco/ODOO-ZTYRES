@@ -1,0 +1,6 @@
+<?xml version='1.0' encoding='utf-8'?>
+<odoo>
+    <data>            
+        <menuitem id="menu_report_action" name="Aplicacion de Pagos" parent="contacts.menu_contacts" action="payment_ap_report.report_action" />
+    </data>
+</odoo>

@@ -1,0 +1,181 @@
+<?xml version='1.0' encoding='utf-8'?>
+<odoo>
+    <data>
+<!-- 
+        <record id="view_sale_report_saleorder_document_inherited" model="ir.ui.view">
+            <field name="name">sale.report_saleorder_document.inherited</field>
+            <field name="inherit_id" ref="sale.report_saleorder_document"/>
+            <field name="arch" type="xml">
+                <xpath expr="/t/t/div/div[3]" position="after">
+                    <style>
+                                           .page-break1 {
+                                               page-break-before: always;
+                                           }
+                                       </style>
+                                       <t t-set="future_date_15" t-value="(doc.date_order + datetime.timedelta(days=15))"/>
+                                       <t t-set="amount_15" t-value="round((doc.amount_total * 0.95),2)"/>
+                                       <t t-set="future_date_30" t-value="(doc.date_order + datetime.timedelta(days=30))"/>
+                                       <t t-set="amount_30" t-value="round((doc.amount_total * 0.96),2)"/>
+                                       <t t-set="future_date_45" t-value="(doc.date_order + datetime.timedelta(days=45))"/>
+                                       <t t-set="amount_45" t-value="round((doc.amount_total * 0.98),2)"/>
+                                       <table class="page-break1 table table-sm o_main_table table-borderless">
+                                           <tbody>
+                                               <tr>
+                                                   <td>Descuento</td>
+                                                   <td>Días de Pago</td>
+                                                   <td>Fecha máxima</td>
+                                                   <td>Cantidad a pagar</td>
+                                               </tr>
+                                               <tr t-if="doc.payment_term_id.line_ids.filtered(lambda l: l.days == 0)">
+                                                <td>5%</td>
+                                                <td>Pago anticipado</td>
+                                                <td t-out="doc.date_order"></td>
+                                                <td t-esc="'$' + str(amount_15)" />
+                                                </tr>                                
+                                               <tr t-if="doc.payment_term_id.line_ids.filtered(lambda l: l.days &gt;= 0)">
+                                                   <td>5%</td>
+                                                   <td>15 días</td>
+                                                   <td t-out="future_date_15.strftime('%d/%m/%Y')"/>
+                                                   <td t-esc="'$' + str(amount_15)"/>
+                                               </tr>
+                                               <tr t-if="doc.payment_term_id.line_ids.filtered(lambda l: l.days &gt;= 30)">
+                                                   <td>4%</td>
+                                                   <td>30 días</td>
+                                                   <td t-out="future_date_30.strftime('%d/%m/%Y')"/>
+                                                   <td t-esc="'$' + str(amount_30)"/>
+                                               </tr>
+                                               <tr t-if="doc.payment_term_id.line_ids.filtered(lambda l: l.days &gt;= 45)">
+                                                   <td>2%</td>
+                                                   <td>45 días</td>
+                                                   <td t-out="future_date_45.strftime('%d/%m/%Y')"/>                            
+                                                   <td t-esc="'$' + str(amount_45)"/>
+                                               </tr>
+                                               <tr>
+                                                   <td>Este descuento será efectivo hasta que el pedido sea facturado.</td>
+                                               </tr>
+                                           </tbody>
+                                       </table>
+                     </xpath>
+            </field>
+        </record>         -->
+
+        <record id="view_move_form_inherit_dot_range" model="ir.ui.view">
+            <field name="name">stock.move.form</field>
+            <field name="model">account.move</field>
+            <field name="inherit_id" ref="account.view_move_form" />
+            <field name="arch" type="xml">
+                <xpath expr="//field[@name='invoice_line_ids']/tree/field[@name='product_id']" position="after">
+                    <field name="dot_range" />
+                </xpath>
+                <xpath expr="//field[@name='invoice_line_ids']/tree" position="inside">
+                    <field name="rangos_dots" />
+                </xpath>
+                <xpath expr="//field[@name='invoice_line_ids']/tree/field[@name='price_unit']" position="after">
+                    <field name="price_unit_discount" />
+                </xpath>
+            </field>
+        </record>
+
+        <template id="report_invoice_document_inherit_dot_range" inherit_id="account.report_invoice_document">
+            <!-- <xpath expr="//span[@t-field='line.name']" position="after">
+                <br />
+                <t t-if="line.product_id.dot_range">
+                    DOT:
+                    <span t-field="line.product_id.dot_range" />
+                </t>
+            </xpath> -->
+
+            <xpath expr="//span[@t-field='line.name']" position="after">
+                <br />
+                    DOT:
+                    <span t-field="line.rangos_dots" />
+            </xpath>
+    
+            <!-- <xpath expr="//div[@class='clearfix mb-4']" position="after">
+                <t t-set="future_date_15" t-value="(o.invoice_date + datetime.timedelta(days=15))"/>
+                <t t-set="amount_15" t-value="round((o.amount_total * 0.95),2)"/>
+                <t t-set="future_date_30" t-value="(o.invoice_date + datetime.timedelta(days=30))"/>
+                <t t-set="amount_30" t-value="round((o.amount_total * 0.96),2)"/>
+                <t t-set="future_date_45" t-value="(o.invoice_date + datetime.timedelta(days=45))"/>
+                <t t-set="amount_45" t-value="round((o.amount_total * 0.98),2)"/>
+                <table class="table table-sm o_main_table table-borderless">
+                    <tbody>
+                        <tr>
+                            <td>Descuento</td>
+                            <td>Días de Pago</td>
+                            <td>Fecha máxima</td>
+                            <td>Cantidad a pagar</td>
+                        </tr>
+                        <tr t-if="o.invoice_payment_term_id.line_ids.filtered(lambda l: l.days == 0)">
+                            <td>5%</td>
+                            <td>Pago anticipado</td>
+                            <td t-out="o.invoice_date"></td>
+                            <td t-esc="'$' + str(amount_15)" />
+                        </tr>
+                        <tr t-if="o.invoice_payment_term_id.line_ids.filtered(lambda l: l.days > 0)">
+                            <td>5%</td>
+                            <td>15 días</td>
+                            <td t-out="future_date_15.strftime('%d/%m/%Y')"></td>
+                            <td t-esc="'$' + str(amount_15)" />
+                        </tr>
+                        <tr t-if="o.invoice_payment_term_id.line_ids.filtered(lambda l: l.days >= 30)">
+                            <td>4%</td>
+                            <td>30 días</td>
+                            <td t-out="future_date_30.strftime('%d/%m/%Y')"></td>
+                            <td t-esc="'$' + str(amount_30)" />
+                        </tr>
+                        <tr t-if="o.invoice_payment_term_id.line_ids.filtered(lambda l: l.days >= 45)">
+                            <td>2%</td>
+                            <td>45 días</td>
+                            <td t-out="future_date_45.strftime('%d/%m/%Y')"></td>                            
+                            <td t-esc="'$' + str(amount_45)" />
+
+                        </tr>
+                        <tr>
+                            <td>Sin descuento pagando después de las fechas anteriores.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </xpath> -->
+            
+            <xpath expr="//div[@id='total']" position="before">
+                <tr class="border-black o_total">
+                    <td name="td_amount_total_piezas">
+                        <strong>Total de Piezas: </strong>
+                    </td>
+                    <td name="td_amount_sum_total_piezas" class="text-right">
+                        <th>
+                            <t t-esc="sum(m.quantity for m in lines)" />
+                        </th>
+                    </td>
+                </tr>
+            </xpath>
+
+            <xpath expr="//div[@name='shipping_address_block']" position="inside">
+                <div t-if="o.partner_id.phone">
+                    <span class="label">Teléfono de contacto:</span>
+                    <span class="value" t-field="o.partner_id.phone"/>
+                </div>
+            </xpath>
+            <xpath expr="//div[@name='address_same_as_shipping']" position="inside">
+                <div t-if="o.partner_id.phone">
+                    <span class="label">Teléfono de contacto:</span>
+                    <span class="value" t-field="o.partner_id.phone"/>
+                </div>
+            </xpath>    
+            <xpath expr="//div[@name='address_not_same_as_shipping']" position="inside">
+                <div t-if="o.partner_id.phone">
+                    <span class="label">Teléfono de contacto:</span>
+                    <span class="value" t-field="o.partner_id.phone"/>
+                </div>
+            </xpath>  
+
+            <xpath expr="//div[@name='no_shipping']" position="inside">
+                <div t-if="o.partner_id.phone">
+                    <span class="label">Teléfono de contacto:</span>
+                    <span class="value" t-field="o.partner_id.phone"/>
+                </div>
+            </xpath>
+        </template>
+    </data>
+</odoo>

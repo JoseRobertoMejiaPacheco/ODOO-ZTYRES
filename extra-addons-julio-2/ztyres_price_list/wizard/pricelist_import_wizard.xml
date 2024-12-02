@@ -1,0 +1,45 @@
+<?xml version='1.0' encoding='utf-8'?>
+<odoo>
+    <data>
+        <record id="ztyres_price_list.import_customer_wizard" model="ir.ui.view">
+            <field name="name">Importar Lista de Precios</field>
+            <field name="model">ztyres_price_list.pricelist_import_wizard</field>
+            <field name="arch" type="xml">
+                <form string="Importar Lista de Precios">
+                    <group>
+                        <field name="pricelist_ids" widget="many2many_tags" />
+                    </group>
+                    <group>
+                        <group>
+                            <field name="options" />
+                            <field name="upload_options" />
+                            <field name="file" />
+                        </group>
+                    </group>
+                    <footer>
+                        <button
+                            name="import_prices"
+                            string="Importar"
+                            type="object"
+                            class="btn-primary"
+                        />
+                    </footer>
+                </form>
+            </field>
+        </record>
+
+        <record id="ztyres_price_list.pricelist_import_wizard_action" model="ir.actions.act_window">
+            <field name="name">Importar Lista de Precios</field>
+            <field name="res_model">ztyres_price_list.pricelist_import_wizard</field>
+            <field name="view_mode">form</field>
+            <field name="view_id" ref="import_customer_wizard" />
+            <field name="target">new</field>
+        </record>
+
+        <menuitem id="ztyres_price_list.menu_product_pricelist_import_wizard"
+            name="Importar Lista de Precios"
+            action="ztyres_price_list.pricelist_import_wizard_action"
+            parent="sale.product_menu_catalog" sequence="9" active="True" />
+
+    </data>
+</odoo>

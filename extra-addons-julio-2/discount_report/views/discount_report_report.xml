@@ -1,0 +1,35 @@
+<?xml version='1.0' encoding='utf-8'?>
+<odoo>
+    <data>
+
+        <record id="discount_report.report_tree" model="ir.ui.view">
+            <field name="name">discount_report.report.tree</field>
+            <field name="model">discount_report.report</field>
+            <field name="arch" type="xml">
+                <tree editable="top">
+                        <field name="partner_id"/>
+                        <field name="user_id"/>
+                        <field name="property_payment_term_id"/>
+                        <field name="logistic_discount_id"/>
+                        <field name="partner_discount_id"/>
+                        <field name="expected_volume"/>
+                        <field name="volume_progress"/>
+                        <field name="last_count_sale"/>
+                        <field name="count_sale"/>
+                        <field name="group"/>       
+                        <button string="Reasignar Documentos" type="object" name="set_partner_docs" class="oe_highlight"/>            
+                </tree>
+            </field>
+        </record>
+
+        <record id="discount_report.report_action" model="ir.actions.server">
+            <field name="name">Porcentaje de Descuentos</field>
+            <field name="model_id" ref="model_discount_report_report" />
+            <field name="state">code</field>
+            <field name="code">
+                action = model.get_report()
+            </field>
+        </record>
+
+    </data>
+</odoo>

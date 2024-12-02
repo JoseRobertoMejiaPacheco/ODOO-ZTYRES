@@ -1,0 +1,22 @@
+<?xml version='1.0' encoding='utf-8'?>
+<odoo>
+    <data>
+        <record model="ir.module.category" id="product_management">
+            <field name="name">Productos Ztyres</field>
+            <field name="description">Propiedades de llantas.</field>
+            <field name="sequence">10</field>
+        </record>
+
+        <record id="user_read_only" model="res.groups">
+            <field name="name">Usuario</field>
+            <field name="category_id" ref="product_management" />
+        </record>
+
+        <record id="products_admin" model="res.groups">
+            <field name="name">Administrador</field>
+            <field name="category_id" ref="product_management"/>
+            <field name="implied_ids" eval="[(4, ref('user_read_only'))]"/>
+        </record>
+
+    </data>
+</odoo>

@@ -1,0 +1,31 @@
+<odoo>
+    <data>
+        <!-- Grupo para acceso total a los modelos -->
+        <record id="group_odoo_vs_sat_full_access" model="res.groups">
+            <field name="name">Odoo vs SAT: Acceso Total</field>
+            <field name="category_id" ref="base.module_category_accounting"/>
+        </record>
+        
+        <!-- Reglas de seguridad para odoo_vs_sat.reconcilie -->
+        <record id="rule_odoo_vs_sat_reconcilie_full_access" model="ir.rule">
+            <field name="name">Acceso Completo a Conciliación Notas de Crédito y Facturas</field>
+            <field name="model_id" ref="model_odoo_vs_sat_reconcilie"/>
+            <field name="groups" eval="[(4, ref('group_odoo_vs_sat_full_access'))]"/>
+            <field name="perm_read" eval="1"/>
+            <field name="perm_write" eval="1"/>
+            <field name="perm_create" eval="1"/>
+            <field name="perm_unlink" eval="1"/>
+        </record>
+
+        <!-- Reglas de seguridad para odoo_vs_sat.reconcilie.cdp.sat.bancos -->
+        <record id="rule_odoo_vs_sat_reconcilie_cdp_sat_bancos_full_access" model="ir.rule">
+            <field name="name">Acceso Completo a Conciliación Complementos de Pago</field>
+            <field name="model_id" ref="model_odoo_vs_sat_reconcilie_cdp_sat_bancos"/>
+            <field name="groups" eval="[(4, ref('group_odoo_vs_sat_full_access'))]"/>
+            <field name="perm_read" eval="1"/>
+            <field name="perm_write" eval="1"/>
+            <field name="perm_create" eval="1"/>
+            <field name="perm_unlink" eval="1"/>
+        </record>
+    </data>
+</odoo>

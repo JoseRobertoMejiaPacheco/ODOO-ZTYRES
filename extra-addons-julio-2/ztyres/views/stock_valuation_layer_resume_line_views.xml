@@ -1,0 +1,17 @@
+<?xml version='1.0' encoding='utf-8'?>
+<odoo>
+    <data>
+        <record id="svl_resume_history_line" model="ir.ui.view">
+            <field name="name">Valoración de Inventario Históricos</field>
+            <field name="model">stock.valuation.layer.resume.line</field>
+            <field name="arch" type="xml">
+                <tree string="Valoración de Inventario Históricos">
+                    <field name="product_id" />    
+                    <field name="x_studio_marca" />
+                    <field name="quantity" />
+                    <field name="value"/>
+                </tree>
+            </field>
+        </record>
+    </data>
+</odoo>

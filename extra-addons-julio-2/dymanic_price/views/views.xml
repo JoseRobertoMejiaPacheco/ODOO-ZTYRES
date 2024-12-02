@@ -1,0 +1,23 @@
+<odoo>
+  <data>
+
+    <!-- Inheriting the sale order form view -->
+    <record id="view_order_form_inherit" model="ir.ui.view">
+        <field name="name">sale.view_order_form.inherit</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form" />
+        <field name="arch" type="xml">
+            <!-- Adding dynamyc_price field after discount field in order_line tree view -->
+            <xpath expr="//field[@name='order_line']/tree/field[@name='discount']" position="after">
+                <field name="dynamyc_price" optional="show"/>                    
+            </xpath>    
+            <!-- Adding total_dymamic_price field after tax_totals field with visibility condition -->
+            <xpath expr="//field[@name='tax_totals']" position="after">
+                <field name="total_dymamic_price" attrs="{'invisible': [('total_dymamic_price', '&lt;=', 0)]}"/>                    
+            </xpath>                  
+        </field>
+    </record>
+
+
+  </data>
+</odoo>

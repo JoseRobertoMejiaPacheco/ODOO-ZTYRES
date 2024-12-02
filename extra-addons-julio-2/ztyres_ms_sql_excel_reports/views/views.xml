@@ -1,0 +1,60 @@
+<odoo>
+  <data>
+    <!-- explicit list view definition -->
+<!--
+    <record model="ir.ui.view" id="ztyres_ms_sql_excel_reports.list">
+      <field name="name">ztyres_ms_sql_excel_reports list</field>
+      <field name="model">ztyres_ms_sql_excel_reports.ztyres_ms_sql_excel_reports</field>
+      <field name="arch" type="xml">
+        <tree>
+          <field name="name"/>
+          <field name="value"/>
+          <field name="value2"/>
+        </tree>
+      </field>
+    </record>
+-->
+
+    <!-- actions opening views on models -->
+<!--
+    <record model="ir.actions.act_window" id="ztyres_ms_sql_excel_reports.action_window">
+      <field name="name">ztyres_ms_sql_excel_reports window</field>
+      <field name="res_model">ztyres_ms_sql_excel_reports.ztyres_ms_sql_excel_reports</field>
+      <field name="view_mode">tree,form</field>
+    </record>
+-->
+
+    <!-- server action to the one above -->
+<!--
+    <record model="ir.actions.server" id="ztyres_ms_sql_excel_reports.action_server">
+      <field name="name">ztyres_ms_sql_excel_reports server</field>
+      <field name="model_id" ref="model_ztyres_ms_sql_excel_reports_ztyres_ms_sql_excel_reports"/>
+      <field name="state">code</field>
+      <field name="code">
+        action = {
+          "type": "ir.actions.act_window",
+          "view_mode": "tree,form",
+          "res_model": model._name,
+        }
+      </field>
+    </record>
+-->
+
+    <!-- Top menu item -->
+<!--
+    <menuitem name="ztyres_ms_sql_excel_reports" id="ztyres_ms_sql_excel_reports.menu_root"/>
+-->
+    <!-- menu categories -->
+<!--
+    <menuitem name="Menu 1" id="ztyres_ms_sql_excel_reports.menu_1" parent="ztyres_ms_sql_excel_reports.menu_root"/>
+    <menuitem name="Menu 2" id="ztyres_ms_sql_excel_reports.menu_2" parent="ztyres_ms_sql_excel_reports.menu_root"/>
+-->
+    <!-- actions -->
+<!--
+    <menuitem name="List" id="ztyres_ms_sql_excel_reports.menu_1_list" parent="ztyres_ms_sql_excel_reports.menu_1"
+              action="ztyres_ms_sql_excel_reports.action_window"/>
+    <menuitem name="Server to list" id="ztyres_ms_sql_excel_reports" parent="ztyres_ms_sql_excel_reports.menu_2"
+              action="ztyres_ms_sql_excel_reports.action_server"/>
+-->
+  </data>
+</odoo>

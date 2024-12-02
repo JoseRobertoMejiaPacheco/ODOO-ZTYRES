@@ -1,0 +1,38 @@
+base_module = 'ztyres_products.'
+#New name,Old name
+colums_to_migrate = [
+('tire_measure','x_studio_medida_1'),
+('face','x_studio_cara'),
+('layer','x_studio_capas'),
+('manufacturer','x_studio_fabricante'),
+('brand','x_studio_marca'),
+('model','x_studio_modelo_1'),
+('speed','x_studio_ndice_de_velocidad'),
+('index_of_load','x_studio_indice_carga'),
+('wholesale_rebate','x_studio_rm'),
+('country_id','x_studio_origen'),
+('segment','x_studio_uso'),
+('tier','x_studio_posicionamiento'),
+('type','x_studio_segmento'),
+('supplier_segment','x_studio_segmento_proveedor'),
+('original_equipment','x_studio_eo'),
+('e_mark','x_studio_e_mark'),
+('s_mark','x_studio_s_mark'),
+('ccc','x_studio_ccc')
+##Falta res country que es origen
+]
+product_template = self.env['product.template'].search([])
+
+
+for product in product_template:
+    for column in colums_to_migrate:
+        # print(base_module+column[0])
+        # print(product[column[1]])
+        res = self.env[base_module+column[0]].search([('name','in',[product[column[1]]])])
+        #res.ensure_one()
+        print(res,base_module+column[0],product[column[1]])
+        if res:
+            product[column[0]+'_id']=res[0].id
+            
+
+    

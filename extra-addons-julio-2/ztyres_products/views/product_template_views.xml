@@ -1,0 +1,61 @@
+<?xml version='1.0' encoding='utf-8'?>
+<odoo>
+    <data>
+        <record id="product_template_only_form_view" model="ir.ui.view">
+            <field name="name">product.template.product.form.ztyres_products</field>
+            <field name="model">product.template</field>
+            <field name="inherit_id" ref="product.product_template_only_form_view" />
+            <field name="arch" type="xml">
+                <xpath
+                    expr="//form[@name='Product Template']/sheet[@name='product_form']/div[@name='options']"
+                    position="inside">
+                    <field name="tire" />
+                    <label for="tire" string='Es llanta?' />
+                </xpath>
+                <xpath
+                    expr="//form[@name='Product Template']/sheet[@name='product_form']/notebook[1]"
+                    position="inside">
+                    <page string="Características de llanta"
+                        attrs="{'invisible': [('tire', '=', False)]}">
+                        <group string="Propiedades de llanta" col="4">
+                            <group>
+                                <field name="cui" string='CIU'/>
+                                <field name="tire_measure_id" />
+                                <field name="face_id" />
+                                <field name="layer_id" />
+                                <field name="manufacturer_id" />
+                            </group>
+                            <group>
+                                <field name="brand_id" />
+                                <field name="model_id" />
+                                <field name="speed_id" />
+                                <field name="index_of_load_id" />
+                            </group>
+                            <group>
+                                <field name="floor_depth_id" />
+                                <field name="country_id" />
+                                <field name="segment_id" />
+                                <field name="tier_id" />
+                            </group>
+                            <group>
+                                <field name="type_id" />
+                                <field name="supplier_segment_id" />
+                                <field name="original_equipment_id" />
+                                <field name="usage_id" />
+                            </group>
+                            <group string="Al ingreso al CEDIS">
+                                <group>
+                                    <field name="e_mark_id" readonly="1" />
+                                    <field name="product_dot_range" />
+                                    <field name="s_mark_id" readonly="1" />
+                                    <field name="ccc_id" readonly="1" />
+                                </group>
+                            </group>
+                        </group>
+                    </page>
+                </xpath>
+
+            </field>
+        </record>
+    </data>
+</odoo>

@@ -1,0 +1,18 @@
+<?xml version='1.0' encoding='utf-8'?>
+<odoo>
+    <data>
+        <record model="ir.module.category" id="product_management">
+            <field name="name">Cargar líneas de pedidos de compra ZTYRES</field>
+            <field name="description">Cargar líneas de pedidos de compra.</field>
+            <field name="sequence">10</field>
+        </record>
+
+        <record id="import_lines" model="res.groups">
+            <field name="name">Cargar líneas de pedidos de compra.</field>
+            <field name="category_id" ref="product_management" />
+        </record>
+
+        
+
+    </data>
+</odoo>

@@ -1,0 +1,36 @@
+<?xml version='1.0' encoding='utf-8'?>
+<odoo>
+    <data>
+
+        <record id="ztyres_products.separator_tree" model="ir.ui.view">
+            <field name="name">ztyres_products.separator.tree</field>
+            <field name="model">ztyres_products.separator</field>
+            <field name="arch" type="xml">
+                <tree>
+                    <field name="character"/>                    
+                </tree>
+            </field>
+        </record>
+
+        <record id="ztyres_products.separator_view_form" model="ir.ui.view">
+            <field name="name">ztyres_products.separator.view.form</field>
+            <field name="model">ztyres_products.separator</field>
+            <field name="arch" type="xml">
+                <form>
+                    <sheet>
+                        <group>
+                            <field name="character"/>
+                        </group>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+
+        <record id="ztyres_products.separator_action" model="ir.actions.act_window">
+            <field name="name">Separador</field>
+            <field name="res_model">ztyres_products.separator</field>            
+            <field name="view_mode">tree,form</field>
+        </record>
+
+    </data>
+</odoo>

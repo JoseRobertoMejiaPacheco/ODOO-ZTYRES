@@ -1,0 +1,39 @@
+<?xml version='1.0' encoding='utf-8'?>
+<odoo>
+    <data>
+
+        <record id="ztyres_price_list.not_assigned_view_form" model="ir.ui.view">
+            <field name="name">product_pricelist.not_assigned.view.form</field>
+            <field name="model">product_pricelist.not_assigned</field>
+            <field name="arch" type="xml">
+                <form>
+                    <sheet>
+                        
+                            <h2>
+                                Descargar lista de excel con precios en cero.
+                            </h2>
+               
+                    </sheet>
+                    <footer>
+                        <button string="Descargar" class="btn-primary" type="object" name="generate_report"/>
+                       <button string="Cancel" special="cancel" class="oe_link"/>
+                    </footer>
+                </form>
+            </field>
+        </record>
+
+        <record id="ztyres_price_list.not_assigned_action" model="ir.actions.act_window">
+            <field name="name">Productos sin precio</field>
+            <field name="res_model">product_pricelist.not_assigned</field>
+            <field name="view_mode">form</field>
+            <field name="target">new</field>
+        </record>
+
+        <menuitem id="report_not_assigned"
+            parent='purchase.purchase_report_main'
+            name="Productos sin Precio"
+            sequence="40" action="ztyres_price_list.not_assigned_action"/>
+
+
+    </data>
+</odoo>

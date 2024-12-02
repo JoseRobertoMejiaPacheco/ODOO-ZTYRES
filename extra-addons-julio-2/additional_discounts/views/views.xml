@@ -1,0 +1,208 @@
+<odoo>
+
+
+    <!-- Vista de lista para el modelo discount_profiles.logistic.discount -->
+    <record id="view_discount_profiles_logistic_discount_tree" model="ir.ui.view">
+        <field name="name">discount_profiles.logistic.discount.tree</field>
+        <field name="model">discount_profiles.logistic.discount</field>
+        <field name="arch" type="xml">
+            <tree string="Descuento Logístico">
+                <field name="name"/>
+                <field name="percent"/>
+                <field name="letter"/>
+                <field name="active"/>
+            </tree>
+        </field>
+    </record>
+    
+    <!-- Vista de lista para el modelo discount_profiles.financial.discount -->
+    <record id="view_discount_profiles_financial_discount_tree" model="ir.ui.view">
+        <field name="name">discount_profiles.financial.discount.tree</field>
+        <field name="model">discount_profiles.financial.discount</field>
+        <field name="arch" type="xml">
+            <tree string="Descuento Financiero">
+                <field name="name"/>       
+                <field name="property_payment_term_id"/>             
+                <!-- <field name="percent"/> -->
+                <field name="letter"/>
+                <field name="line_ids" widget="many2many_tags"/>
+                <field name="active"/>
+            </tree>
+        </field>
+    </record>
+    
+    <!-- Vista de lista para el modelo discount_profiles.volume.discount -->
+    <record id="view_discount_profiles_volume_discount_tree" model="ir.ui.view">
+        <field name="name">discount_profiles.volume.discount.tree</field>
+        <field name="model">discount_profiles.volume.discount</field>
+        <field name="arch" type="xml">
+            <tree string="Descuento Volumen">
+                <field name="name"/>
+                <field name="percent"/>
+                <!-- <field name="letter"/> -->
+                <field name="active"/>
+            </tree>
+        </field>
+    </record>
+
+
+
+
+<record id="view_additional_discounts_tree" model="ir.ui.view">
+    <field name="name">additional.discounts.tree</field>
+    <field name="model">additional_discounts.additional_discounts</field>
+    <field name="arch" type="xml">
+        <tree string="Additional Discounts">
+            <field name="name"/>
+             <field name="line_ids" />
+        </tree>
+    </field>
+</record>
+
+<record id="view_additional_discounts_form" model="ir.ui.view">
+    <field name="name">additional.discounts.form</field>
+    <field name="model">additional_discounts.additional_discounts</field>
+    <field name="arch" type="xml">
+        <form string="Additional Discounts">
+        <sheet>
+            <group>
+                <field name="name"/>
+                <separator>Condiciones</separator>                    
+            </group>
+                <field name="line_ids" >
+                    <tree string="Discount Lines" create="true" delete="true" edit="true" editable="bottom">
+                        <field name="manufacturer_id" widget="many2many_tags"/>
+                        <field name="brand_id" widget="many2many_tags"/>
+                        <field name="tier_id" widget="many2many_tags"/>
+                        <field name="segment_id" widget="many2many_tags"/>
+                        <field name="lower_limit"/>
+                        <field name="upper_limit"/>
+                        <field name="discount_amount"/>
+                    </tree>
+                </field>  
+        </sheet>                                               
+        </form>
+    </field>
+</record>
+
+<record id="view_additional_discounts_line_tree" model="ir.ui.view">
+    <field name="name">additional.discounts.line.tree</field>
+    <field name="model">additional_discounts.additional_discounts_line</field>
+    <field name="arch" type="xml">
+        <tree string="Additional Discounts Line">
+            <field name="additional_discounts_id"/>
+            <field name="manufacturer_id"/>
+            <field name="brand_id"/>
+            <field name="tier_id"/>
+            <field name="segment_id"/>
+            <field name="lower_limit"/>
+            <field name="upper_limit"/>
+            <field name="discount_amount"/>
+        </tree>
+    </field>
+</record>
+
+<record id="view_additional_discounts_product_form" model="ir.ui.view">
+    <field name="name">additional.discounts.product.form</field>
+    <field name="model">additional_discounts.products</field>
+    <field name="arch" type="xml">
+        <form string="Additional Discounts Product">
+            <sheet>
+                <group>
+                    <field name="is_mix"/>
+                    <field name="min_qty"/>
+                    <field name="line">
+                        <tree editable="bottom">
+                            <field name="product_tmpl_id" widget="many2many_tags"/>
+                            <field name="qty"/>
+                            <field name="price"/>
+                            <field name="currency_id" invisible="1"/>
+                        </tree>
+                    </field>
+                </group>
+            </sheet>
+        </form>
+    </field>
+</record>
+
+<record id="view_additional_discounts_product_tree" model="ir.ui.view">
+    <field name="name">additional.discounts.product.tree</field>
+    <field name="model">additional_discounts.products</field>
+    <field name="arch" type="xml">
+        <tree string="Additional Discounts Products">
+            <field name="id"/>
+            <field name="line"/>
+        </tree>
+    </field>
+</record>
+
+<record id="view_additional_discounts_product_line_form" model="ir.ui.view">
+    <field name="name">additional.discounts.product.line.form</field>
+    <field name="model">additional_discounts.products_line</field>
+    <field name="arch" type="xml">
+        <form string="Product Line">
+            <sheet>
+                <group>
+                    <field name="additional_prod_id"  invisible="1"/>
+                    <field name="product_tmpl_id" 
+                    widget="many2many_tags"
+                    />
+                    <field name="qty"/>
+                    <field name="price"/>
+                    <field name="currency_id" invisible="1"/>
+                </group>
+            </sheet>
+        </form>
+    </field>
+</record>
+
+<record id="view_additional_discounts_product_line_tree" model="ir.ui.view">
+    <field name="name">additional.discounts.product.line.tree</field>
+    <field name="model">additional_discounts.products_line</field>
+    <field name="arch" type="xml">
+        <tree string="Product Lines">
+            <field name="additional_prod_id" />
+            <field name="product_tmpl_id" widget="many2many_tags"/>
+            <field name="qty"/>
+            <field name="price"/>
+            <field name="currency_id" invisible="1"/>
+        </tree>
+    </field>
+</record>
+
+        <record id="view_order_form_inherit" model="ir.ui.view">
+            <field name="name">sale.order.form.inherit</field>
+            <field name="model">sale.order</field>
+            <field name="inherit_id" ref="sale.view_order_form"/>
+            <field name="arch" type="xml">
+                <xpath expr="//field[@name='partner_shipping_id']" position="after">
+                <field name="mostrar_venta_mostrador_rel" invisible="1"/>
+                <field name="tipo_de_timbrado"  attrs="{'invisible': [('mostrar_venta_mostrador_rel', '!=', True)],'required': [('mostrar_venta_mostrador_rel', '=', True)]}"/>
+                </xpath>
+            </field>
+        </record>
+
+
+<record id="action_additional_discounts" model="ir.actions.act_window">
+    <field name="name">Additional Discounts</field>
+    <field name="res_model">additional_discounts.additional_discounts</field>
+    <field name="view_mode">tree,form</field>
+</record>
+
+<record id="action_additional_discounts_products" model="ir.actions.act_window">
+    <field name="name">Additional Discounts Products</field>
+    <field name="res_model">additional_discounts.products</field>
+    <field name="view_mode">tree,form</field>
+</record>
+
+
+<menuitem id="menu_additional_discounts_root" name="Additional Discounts" sequence="10"/>
+
+<menuitem id="menu_additional_discounts" name="Discounts" parent="menu_additional_discounts_root" sequence="10"
+      action="action_additional_discounts"/>    
+
+<menuitem id="menu_additional_products" name="Products" parent="menu_additional_discounts_root" sequence="20"/>  
+
+<menuitem id="menu_additional_discounts_products" name="Products" parent="menu_additional_products" action="action_additional_discounts_products" sequence="10"/>
+
+</odoo>

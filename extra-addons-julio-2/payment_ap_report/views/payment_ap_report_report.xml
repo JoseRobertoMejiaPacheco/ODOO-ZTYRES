@@ -1,0 +1,73 @@
+<?xml version='1.0' encoding='utf-8'?>
+<odoo>
+    <data>
+
+        <record id="payment_ap_report.report_view_form" model="ir.ui.view">
+            <field name="name">payment_ap_report.report.view.form</field>
+            <field name="model">payment_ap_report.report</field>
+            <field name="arch" type="xml">
+                <form>
+                    <sheet>
+                        <group>
+                        <field name="partner_id" readonly="1"/>
+                        <field name="invoice_id" readonly="1"/>
+                        <field name="total" readonly="1"/>
+                        <field name="amount_pending" readonly="1"/>
+                        <field name="ref" readonly="1"/>
+                        <field name="amount_paid" readonly="1"/>
+                        <field name="date" readonly="1"/>
+                        <field name="payment_id" readonly="1"/>  
+                        </group>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+
+        <record id="payment_ap_report.report_pivot" model="ir.ui.view">
+            <field name="name">payment_ap_report.report.pivot</field>
+            <field name="model">payment_ap_report.report</field>
+            <field name="arch" type="xml">
+                <pivot string="Aplicacion de Pagos">
+                        <field name="partner_id" type="row"/>
+                        <field name="invoice_id" type="row"/>
+                        <field name="total" type="measure"/>
+                        <field name="amount_pending" type="measure"/>
+                        <field name="ref" type="row" />
+                        <field name="amount_paid" type="measure"/>
+                        <field name="date" type="row"/>
+                        <field name="payment_id" type="row"/>    
+                </pivot>
+            </field>
+        </record>
+
+
+        <record id="payment_ap_report.report_tree" model="ir.ui.view">
+            <field name="name">payment_ap_report.report.tree</field>
+            <field name="model">payment_ap_report.report</field>
+            <field name="arch" type="xml">
+                <tree>
+                        <field name="partner_id"/>
+                        <field name="invoice_id"/>
+                        <field name="total"/>
+                        <field name="amount_pending"/>
+                        <field name="ref"/>
+                        <field name="amount_paid"/>
+                        <field name="date"/>
+                        <field name="payment_id"/>                   
+                </tree>
+            </field>
+        </record>
+
+
+
+        <record id="payment_ap_report.report_action" model="ir.actions.server">
+            <field name="name">payment_ap_report.report</field>
+            <field name="model_id" ref="model_payment_ap_report_report" />
+            <field name="state">code</field>
+            <field name="code">
+                action = model.payment_ap_report_wizard()
+            </field>
+        </record>
+
+    </data>
+</odoo>

@@ -1,0 +1,187 @@
+<odoo>
+  <data>
+
+    <!-- Invoice report customization -->
+    <template id="report_invoice_document_inherit_payment_discount_text" inherit_id="account.report_invoice_document">
+        <xpath expr="//div[@class='clearfix mb-4']" position="after">
+            <div class="page-break1">
+                <style>
+                    .page-break1 {
+                        page-break-before: always;
+                    }
+                </style>                               
+               <div t-if="o.payment_discount_text" t-raw="o.payment_discount_text"></div>               
+                <div>
+                    <p>No se aceptan pagos en efectivo y cheques que no sean nominativos a la empresa. Por lo tanto, ningún empleado de la empresa puede aceptar dinero en efectivo o cheques a su nombre.</p>
+                    <p>Devoluciones por errores de Ztyres serán aceptadas sin cargo, siempre y cuando se hagan dentro del mes de facturación con previa notificación. Las devoluciones por motivos atribuibles al cliente causarán una penalización del 5% sobre lo facturado, más gastos de envío.</p>
+                    <p>No se permiten devoluciones de ningún tipo en pedidos de códigos participantes de promociones y/o paquetes especiales, salvo en casos atribuibles a ZTyres.</p>
+                    <p>Por favor, revise que su pedido no presente ningún daño o alteración ocasionados por la paquetería. De ser así, no lo reciba, anótelo en la boleta y repórtelo de inmediato a su asesor.</p>
+                </div>
+            </div>
+        </xpath>
+    </template>
+
+    <!-- Sale order report customization -->
+    <record id="view_sale_report_saleorder_document_inherited" model="ir.ui.view">
+        <field name="name">sale.report_saleorder_document.inherited</field>
+        <field name="inherit_id" ref="sale.report_saleorder_document"/>
+        <field name="arch" type="xml">
+            <xpath expr="/t/t/div/div[3]" position="after">
+                <style>
+                    .page-break1 {
+                        page-break-before: always;
+                    }
+                </style>
+                <div>                                        
+                    <div t-if="doc.payment_promo_text" t-raw="doc.payment_promo_text"></div>                                    
+                    <div t-if="doc.payment_discount_text" t-raw="doc.payment_discount_text"></div>                
+                    <div>
+                        <p>No se aceptan pagos en efectivo y cheques que no sean nominativos a la empresa. Por lo tanto, ningún empleado de la empresa puede aceptar dinero en efectivo o cheques a su nombre.</p>
+                        <p>Devoluciones por errores de Ztyres serán aceptadas sin cargo, siempre y cuando se hagan dentro del mes de facturación con previa notificación. Las devoluciones por motivos atribuibles al cliente causarán una penalización del 5% sobre lo facturado, más gastos de envío.</p>
+                        <p>No se permiten devoluciones de ningún tipo en pedidos de códigos participantes de promociones y/o paquetes especiales, salvo en casos atribuibles a ZTyres.</p>
+                        <p>Por favor, revise que su pedido no presente ningún daño o alteración ocasionados por la paquetería. De ser así, no lo reciba, anótelo en la boleta y repórtelo de inmediato a su asesor.</p>
+                    </div>
+                </div>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Form view for financial discounts -->
+    <record id="view_financial_discount_form" model="ir.ui.view">
+        <field name="name">financial.discount.form</field>
+        <field name="model">discount_profiles.financial.discount</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name" readonly="1"/>
+                            <field name="property_payment_term_id"/>
+                        </group>                        
+                        <group>
+                            <field name="pricelist_ids" widget="many2many_tags"/>
+                            <field name="letter"/>                        
+                        </group> 
+                    </group>
+                    <field name="line_ids">
+                        <tree editable="bottom">
+                            <field name="lower_limit" string="De (Días)"/>
+                            <field name="upper_limit" string="A (Días)"/>
+                            <field name="discount" string="Porcentaje de Descuento"/>
+                        </tree>
+                    </field>   
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Form view for logistic discounts -->
+    <record id="view_logistic_discount_form" model="ir.ui.view">
+        <field name="name">logistic.discount.form</field>
+        <field name="model">discount_profiles.logistic.discount</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name" readonly="1"/>
+                        </group>                        
+                        <group>
+                            <field name="pricelist_ids" widget="many2many_tags"/>
+                            <field name="letter"/>                        
+                        </group>                        
+                    </group>                    
+                    <field name="line_ids">
+                        <tree editable="bottom">
+                            <field name="lower_limit" string="De (Llantas)"/>
+                            <field name="upper_limit" string="A (Llantas)"/>
+                            <field name="discount" string="Porcentaje de Descuento"/>
+                        </tree>
+                    </field>   
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Form view for volume discounts -->
+    <record id="view_volume_discount_form" model="ir.ui.view">
+        <field name="name">volume.discount.form</field>
+        <field name="model">discount_profiles.volume.discount</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name" readonly="1"/>
+                            <field name="percent"/>                        
+                        </group>                        
+                        <group>
+                            <field name="pricelist_ids" widget="many2many_tags"/>
+                            <field name="letter"/>                        
+                        </group> 
+                    </group>                 
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Inherited form view for res.partner -->
+    <record id="view_partner_form_inherit" model="ir.ui.view">
+        <field name="name">discount.profiles.view_partner_form_inherit</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//form/sheet/group" position="before">
+                <group string="Perfil de Cliente (Editor)" groups="discount_profiles.group_discount_admin">
+                    <group>
+                        <field name="mostrar_venta_mostrador"/>
+                        <field name="volume_profile"/>
+                        <field name="logistic_profile"/>                        
+                    </group> 
+                    <group>
+                        <field name="financial_profile"/>
+                        <field name="credit_limit"/> 
+                        <field name="property_payment_term_id" options='{"no_open": True}'/>
+                    </group>
+                </group>
+                <group string="Perfil de Cliente (Solo lectura)" groups="!discount_profiles.group_discount_admin">
+                    <group>
+                        <field name="mostrar_venta_mostrador"/>
+                        <field name="volume_profile" readonly="1"/>
+                        <field name="logistic_profile" readonly="1"/>
+                    </group> 
+                    <group>
+                        <field name="financial_profile" readonly="1"/>
+                        <field name="credit_limit" readonly="1"/> 
+                        <field name="property_payment_term_id" options='{"no_open": True}' readonly="1"/>
+                    </group>
+                </group>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Actions for discount profiles -->
+    <record id="action_discount_profiles_financial" model="ir.actions.act_window">
+        <field name="name">Financiero</field>
+        <field name="res_model">discount_profiles.financial.discount</field>
+        <field name="view_mode">tree,form</field>
+    </record>        
+    <record id="action_discount_profiles_logistic" model="ir.actions.act_window">
+        <field name="name">Logístico</field>    
+        <field name="res_model">discount_profiles.logistic.discount</field>
+        <field name="view_mode">tree,form</field>
+    </record>        
+    <record id="action_discount_profiles_volume" model="ir.actions.act_window">
+        <field name="name">Volumen</field>    
+        <field name="res_model">discount_profiles.volume.discount</field>
+        <field name="view_mode">tree,form</field>
+    </record>        
+
+    <!-- Menu structure for discount profiles -->
+    <menuitem id="menu_discount_profiles_root" name="Perfiles de Cliente" sequence="10" groups="discount_profiles.group_discount_admin"/>
+    <menuitem id="menu_discount_profiles_financial" name="Financiero" parent="menu_discount_profiles_root" action="action_discount_profiles_financial" sequence="1"/>
+    <menuitem id="menu_discount_profiles_logistic" name="Logístico" parent="menu_discount_profiles_root" action="action_discount_profiles_logistic" sequence="2"/>
+    <menuitem id="menu_discount_profiles_volume" name="Volumen" parent="menu_discount_profiles_root" action="action_discount_profiles_volume" sequence="3"/>
+
+  </data>
+</odoo>

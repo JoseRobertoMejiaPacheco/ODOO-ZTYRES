@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <template id="report_saleorder_document_inherit_dot_range" inherit_id="sale.report_saleorder_document">
+        <!-- <xpath expr="//span[@t-field='line.name']" position="after">
+            <br />
+            <t t-if="line.product_id.dot_range">
+                DOT:
+                <span t-field="line.dot_range" />
+            </t>
+        </xpath> -->
+
+        <xpath expr="//span[@t-field='line.name']" position="after">
+            <br />
+            <t t-if="line.rangos_dots">
+                DOT:
+                <span t-field="line.rangos_dots" />
+            </t>
+        </xpath>
+
+        <xpath expr="//div[@name='so_total_summary']" position="before">
+            <tr class="border-black o_total">
+                <td name="td_amount_total_piezas">
+                    <strong>Total de Piezas: </strong>
+                </td>
+                <td name="td_amount_sum_total_piezas" class="text-right">
+                    <th>
+                        <t t-esc="sum(m.product_uom_qty for m in doc.order_line)" />
+                    </th>
+                </td>
+            </tr>
+        </xpath>
+
+    </template>
+
+</odoo>

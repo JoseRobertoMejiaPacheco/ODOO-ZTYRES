@@ -1,0 +1,76 @@
+<?xml version='1.0' encoding='utf-8'?>
+<odoo>
+    <data>
+
+        <record id="svl_resume_history_tree" model="ir.ui.view">
+            <field name="name">Valoración de Inventario Históricos</field>
+            <field name="model">stock.valuation.layer.resume.history</field>
+            <field name="arch" type="xml">
+                <tree string="Valoración de Inventario Históricos">
+                    <field name="name" />
+                    <field name="value_total" string="Valor Total" />
+                    <field name="inventory_datetime" />
+                </tree>
+            </field>
+        </record>
+
+        <record id="svl_history_form" model="ir.ui.view">
+            <field name="name">Valoración de Inventario Históricos</field>
+            <field name="model">stock.valuation.layer.resume.history</field>
+            <field name="arch" type="xml">
+                <form string="Valoración de Inventario Históricos">
+                    <header>
+                        <button name="open_at_date" attrs="{'invisible':[('state', '=', 'done')]}" type="object" string="Obtener resumen" />
+                        <button name="action_done" attrs="{'invisible':['|',('state', '=', 'done'),('svl_resume_ids', '=', False)]}" type="object" string="Guardar Histórico" />
+                        <field name="state" widget="statusbar" />
+                    </header>
+                    <sheet>
+                        <div class="oe_button_box" name="button_box">
+                            <widget name="web_ribbon" text="Archived" bg_color="bg-danger" attrs="{'invisible': [('active', '=', True)]}"></widget>
+                            <field name="active" invisible="1"></field>
+                        </div>
+                        <div class="oe_button_box" name="button_box">
+                            <button class="oe_stat_button" name="get_svl_resume_ids" type="object" icon="fa-signal">
+                                <div class="o_field_widget o_stat_info">
+                                    <span class="o_stat_value">
+                                        <field name="total_count" widget="statinfo" nolabel="1" class="mr4" />
+                                    </span>
+                                    <span class="o_stat_text">Productos</span>
+                                </div>
+                            </button>
+                        </div>
+
+
+                        <group>
+                            <field name="name" />
+                            <field name="value_total" />
+                            <field name="inventory_datetime" attrs="{'readonly':[('state', '=', 'done')]}" />
+                            <field name="create_uid" string='Creado Por' />
+                            <field name="write_uid" string='Última modificación Por' />
+                        </group>
+
+
+                        <field name="svl_resume_ids" readonly="1">
+                            <tree create="true" delete="true" edit="true" editable="bottom">
+                                <field name="product_id" string="Producto" />
+                                <field name="quantity" string="Cantidad en Stock" />
+                                <field name="value" string="Valor" />
+                            </tree>
+                        </field>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+
+
+        <record id="svl_history_action" model="ir.actions.act_window">
+            <field name="name">Valoración de Inventario Histórico</field>
+            <field name="res_model">stock.valuation.layer.resume.history</field>
+            <field name="view_mode">tree,form</field>
+        </record>
+
+        <menuitem id="menu_svl_resume_history" name="Valoración de Inventario Históricos"
+            parent="stock.menu_warehouse_report" sequence="100"
+            action="svl_history_action" />
+    </data>
+</odoo>

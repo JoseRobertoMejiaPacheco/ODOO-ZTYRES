@@ -1,0 +1,39 @@
+<?xml version='1.0' encoding='utf-8'?>
+<odoo>
+    <data>
+        <record id="ztyres_price_list.pricelist_export_wizard_form" model="ir.ui.view">
+            <field name="name">Inventario Disponible</field>
+            <field name="model">ztyres_price_list.pricelist_export_wizard</field>
+            <field name="arch" type="xml">
+                <form string="Inventario Disponible">
+                    <header>
+                    </header>
+                    <sheet>
+                        <group>
+                            <field name="pricelist_ids" widget="many2many_tags" />
+                            <field name="tax_ids" widget="many2many_tags" />
+                            <field name="only_on_hand" />
+                        </group>
+                    </sheet>
+                    <footer>
+                        <button name="download_report" string="Descargar" type="object"
+                            class="btn-primary" />
+                        <button string="Cancel" class="btn-default" special="cancel" />
+                    </footer>
+                </form>
+            </field>
+        </record>
+
+
+        <record id="ztyres_price_list.pricelist_export_wizard_action" model="ir.actions.act_window">
+            <field name="name">Inventario Disponible</field>
+            <field name="res_model">ztyres_price_list.pricelist_export_wizard</field>
+            <field name="view_mode">form</field>
+            <field name="target">new</field>
+        </record>
+
+        <menuitem id="sale.menu_product_pricelist_export_wizard" name="Inventario Disponible"
+            parent="sale.product_menu_catalog" action="ztyres_price_list.pricelist_export_wizard_action"
+            groups="product.group_product_pricelist" sequence="8" active="True" />
+    </data>
+</odoo>

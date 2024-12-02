@@ -1,0 +1,25 @@
+<?xml version='1.0' encoding='utf-8'?>
+<odoo>
+    <data>
+        <record id="payment_ap_report.report_wizard" model="ir.ui.view">
+            <field name="name">payment_ap_report.wizard.form</field>
+            <field name="model">payment_ap_report.wizard</field>
+            <field name="arch" type="xml">
+                <form>
+                    <sheet>
+                        <group>
+                            <field name="partner_id" options="{'no_create': True, 'no_create_edit': True}"/>
+                        </group>
+                    </sheet>
+                <footer>
+                    <button string="Ver" class="btn-primary" name="get_payment_ap_report" type="object" icon="fa-bars"/>
+                    <button string="Cancel" special="cancel"/>
+                </footer>
+                </form>
+
+            </field>
+        </record>
+    </data>
+</odoo>
+
+

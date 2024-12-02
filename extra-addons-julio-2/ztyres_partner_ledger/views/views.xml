@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <data>
+    <!-- Definir el reporte -->
+    <record id="action_report_res_partner_ledger" model="ir.actions.report">
+      <field name="name">Imprimir estado de cuenta</field>
+      <field name="model">res.partner</field>
+      <field name="report_type">qweb-pdf</field>
+      <field name="report_name">ztyres_partner_ledger.report_res_partner_ledger</field>
+      <field name="report_file">ztyres_partner_ledger.report_res_partner_ledger_template</field>
+      <field name="binding_model_id" ref="base.model_res_partner" />
+      <field name="binding_type">report</field>
+    </record>
+
+    <!-- Vista del reporte -->
+    <template id="ztyres_partner_ledger.report_res_partner_ledger">
+      <t t-call="web.html_container">
+        <t t-foreach="docs" t-as="doc">
+          <t t-call="web.external_layout">
+            <!-- Cuerpo del reporte -->
+            <div class="body">
+
+              <div>
+                <h4>Estado de cuenta</h4>
+              </div>
+              <div class="row">
+                <div class="col">
+                  <strong>Cliente:</strong>
+                  <span t-field="doc.name" />
+                </div>
+              </div>
+
+              <div class="row">
+                <div class="col">
+                  <strong>Asesor:</strong>
+                  <span t-field="doc.user_id.name" />
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-3">
+                  <span>
+                    <strong>Adeudo Total:</strong>
+                    <br />
+                  </span>
+                  <span t-field="doc.total_due" />
+                </div>
+                <div class="col-3">
+                  <span>
+                    <strong>Total Vencido:</strong>
+                    <br />
+                  </span>
+                  <span t-field="doc.total_overdue" />
+                </div>
+                <div class="col-3">
+                  <span>
+                    <strong>Número de convenio exclusivo(CIE):</strong>
+                    <br />
+                  </span>
+                  <span t-field="doc.cie" />
+                </div>
+              </div>
+              <table>
+                <thead>
+                  <tr>
+                    <!-- <th>Tipo de movimiento</th> -->
+                    <th>Documento</th>
+                    <th>Fecha de emisión</th>
+                    <th>Fecha de vencimiento</th>
+                    <th>Saldo pendiente</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <!-- <tr
+                  t-foreach="doc.unpaid_invoice_ids.filtered(lambda obj: not obj.blocked).sorted(key=lambda obj: obj['invoice_date'])"
+                  t-as="table_line">                   -->
+                  <tr
+                    t-foreach="doc.unpaid_invoice_ids.sorted(key=lambda obj: obj['invoice_date'])"
+                    t-as="table_line">
+                    <!-- <td>
+                      <span t-field="table_line.x_studio_tipo" />
+                    </td> -->
+                    <td>
+                      <span t-field="table_line.name" />
+                    </td>
+                    <td>
+                      <span t-field="table_line.invoice_date" />
+                    </td>
+                    <td>
+                      <span t-field="table_line.invoice_date_due" />
+                    </td>
+                    <td>
+                      <span t-field="table_line.amount_residual" />
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+              <style>
+                table {
+
+                width: 100%;
+                border: none;
+                }
+
+                th, td {
+                padding: 5px;
+                text-align: center;
+                vertical-align: middle;
+                border: none;
+                }
+
+                th {
+                text-align: center;
+                vertical-align: middle;
+                }
+                div.centered {
+                text-align: center;
+                }
+
+                div.left {
+                text-align: left;
+                }
+                div.float_right {
+                float: right;
+                }
+              </style>
+              <div>
+
+              </div>
+            </div>
+          </t>
+        </t>
+      </t>
+    </template>
+
+    <record id="view_partner_form_form" model="ir.ui.view">
+      <field name="name">res.partner.form</field>
+      <field name="model">res.partner</field>
+      <field name="inherit_id" ref="base.view_partner_form" />
+      <field name="arch" type="xml">
+        <field name='vat' position='after'>
+          <field name='cie' />
+        </field>
+      </field>
+    </record>
+  </data>
+</odoo>
