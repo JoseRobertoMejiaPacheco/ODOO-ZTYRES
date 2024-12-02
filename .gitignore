@@ -1,0 +1,62 @@
+# Archivos y directorios específicos de Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Entornos virtuales
+venv/
+env/
+.venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Archivos y carpetas de compilación
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Archivos de configuración de IDEs (como VSCode, PyCharm, etc.)
+.vscode/
+.idea/
+*.iml
+
+# Archivos de log
+*.log
+
+# Archivos de base de datos SQLite (no es común en Odoo, pero si se usa)
+*.db
+*.sqlite3
+
+# Archivos generados por Jupyter Notebooks
+.ipynb_checkpoints
+
+# Archivos de Excel
+*.xls
+*.xlsx
+*.ods
+
+# Archivos de caché de Odoo
+*.dat
+*.pyc
+*.pyo
+*.log
+*.bak
+*.dump
+*.csv
+*.xlsx
+*.ods
+
+# Archivos de configuración de Odoo
+*.conf
+*.pid
+*.sock
+
+# Directorios de Odoo
+odoo/addons/*/
+odoo/.local/
+
+# Directorios temporales de Odoo
+/var/lib/odoo/
