@@ -14,7 +14,6 @@
 
                 <xpath expr="//field[@name='order_line']/tree/field[@name='discount']" position="after">
                     <field name="price_unit_discount" optional="show"/>
-                    <field name="discount_string" optional="show"/>
                     <field name="list_origin" string="Lista de Origen" optional="show"/>
                 </xpath>
       

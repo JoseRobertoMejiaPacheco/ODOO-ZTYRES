@@ -8,8 +8,7 @@ from odoo.addons.inv_promo.models.inv_promo_variables import PAQUETES as PROMO_M
 class SaleOrderLine(models.Model):
     _inherit = 'sale.order.line'
     
-    price_unit_discount = fields.Float(compute='_compute_price_unit_discount', string='Precio Unitario con descuento', digits=(6, 2))
-    discount_string = fields.Char(string='Descuento')    
+    price_unit_discount = fields.Float(compute='_compute_price_unit_discount', string='Precio Unitario con descuento', digits=(6, 2))    
     list_origin = fields.Char(string='Lista de Origen')
     pricelist_id = fields.Many2one('product.pricelist', string='Lista de Precios')
     def _compute_price_unit_discount(self):
