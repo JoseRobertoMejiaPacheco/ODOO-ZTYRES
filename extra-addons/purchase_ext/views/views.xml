@@ -10,5 +10,19 @@
                 action = records.update_costo_final()
         </field>
     </record>
+
+    <record id="view_move_form_inherit" model="ir.ui.view">
+        <field name="name">stock.move.form</field>
+        <field name="model">account.move</field>
+        <field name="inherit_id" ref="account.view_move_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='invoice_line_ids']/tree" position="inside">
+                <field name="move_type" invisible="1" />
+                <field name="costo_final" 
+                readonly="0"
+                 attrs="{'invisible': [('move_type', '!=', 'in_invoice')]}"/>
+            </xpath>           
+        </field>
+    </record>
   </data>
 </odoo>
