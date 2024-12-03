@@ -1,0 +1,14 @@
+<odoo>
+  <data>
+    <record id="action_update_costo_final" model="ir.actions.server">
+        <field name="name">Actualizar Costo Final</field>
+        <field name="model_id" ref="purchase.model_purchase_order"/>
+        <field name="binding_model_id" ref="purchase.model_purchase_order"/>
+        <field name="state">code</field>
+        <field name="code">
+            if records:
+                action = records.update_costo_final()
+        </field>
+    </record>
+  </data>
+</odoo>
