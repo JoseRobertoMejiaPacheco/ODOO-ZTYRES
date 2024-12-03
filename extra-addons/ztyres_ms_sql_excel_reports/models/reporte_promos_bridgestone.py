@@ -30,8 +30,8 @@ class MyModel(models.TransientModel):
       #ultimo_dia_mes = primer_dia_mes.replace(day=28)  # Establece inicialmente el día 28
       #ultimo_dia_mes = ultimo_dia_mes + pd.offsets.MonthEnd(0)  # Ajusta al último día del mes
       
-      primer_dia_mes = pd.to_datetime('2024-11-01')  # Primer día de abril de 2024
-      ultimo_dia_mes = pd.to_datetime('2024-11-30')  # Último día de abril de 2024
+      primer_dia_mes = pd.to_datetime('2024-12-01')  # Primer día de abril de 2024
+      ultimo_dia_mes = pd.to_datetime('2024-12-31')  # Último día de abril de 2024
       #---------------------------------------------------------------------------------------------------------------
       query = """
           SELECT aml.move_id, 
@@ -105,8 +105,8 @@ class MyModel(models.TransientModel):
 #################################################################### PROMOS VOLUMEN ####################################################################
                                                      #Promos Volumen Buen Mix
       volumen_df4 = volumen_df[(volumen_df['id'].isin(codes2))]
-      primer_dia_mes = pd.to_datetime('2024-11-01')  # Primer día de abril de 2024
-      ultimo_dia_mes = pd.to_datetime('2024-11-30')  # Último día de abril de 2024
+      primer_dia_mes = pd.to_datetime('2024-12-01')  # Primer día de abril de 2024
+      ultimo_dia_mes = pd.to_datetime('2024-12-31')  # Último día de abril de 2024
       volumen_df4['fecha_factura'] = pd.to_datetime(volumen_df4['fecha_factura'], errors='coerce')
       volumen_df4 = volumen_df4.loc[(volumen_df4['fecha_factura'] >= primer_dia_mes) & (volumen_df4['fecha_factura'] <= ultimo_dia_mes)]
       
@@ -122,8 +122,8 @@ class MyModel(models.TransientModel):
 #################################################################### PROMOS VOLUMEN ####################################################################
                                                      #Promos Volumen T4-Plus
       volumen_df5 = volumen_df[(volumen_df['id'].isin(codes3))]
-      primer_dia_mes = pd.to_datetime('2024-11-01')  # Primer día de abril de 2024
-      ultimo_dia_mes = pd.to_datetime('2024-11-30')  # Último día de abril de 2024
+      primer_dia_mes = pd.to_datetime('2024-12-01')  # Primer día de abril de 2024
+      ultimo_dia_mes = pd.to_datetime('2024-12-31')  # Último día de abril de 2024
       volumen_df5['fecha_factura'] = pd.to_datetime(volumen_df5['fecha_factura'], errors='coerce')
       volumen_df5 = volumen_df5.loc[(volumen_df5['fecha_factura'] >= primer_dia_mes) & (volumen_df5['fecha_factura'] <= ultimo_dia_mes)]
       
