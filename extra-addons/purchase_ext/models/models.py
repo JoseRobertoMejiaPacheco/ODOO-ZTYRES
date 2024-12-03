@@ -24,7 +24,5 @@ class AccountMoveLine(models.Model):
     @api.depends('product_id')
     def _compute_costo_final(self):
         for line in self:
-            line.costo_final = 0
-            print("Updating")
-            #costo_final_factura = line.move_id.purchase_id.order_line.filtered(lambda x: x.product_id.id == line.product_id.id).mapped('x_studio_costo_final')
-            #line.costo_final = costo_final_factura[0] if costo_final_factura else 0                    
+            costo_final_factura = line.move_id.purchase_id.order_line.filtered(lambda x: x.product_id.id == line.product_id.id).mapped('x_studio_costo_final')
+            line.costo_final = costo_final_factura[0] if costo_final_factura else 0                    
