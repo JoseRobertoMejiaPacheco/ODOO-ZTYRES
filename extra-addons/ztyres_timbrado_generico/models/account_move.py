@@ -73,6 +73,39 @@ from lxml import etree
 
 class AccountEdiFormat(models.Model):
     _inherit = 'account.edi.format'
+
+    def check_generic_rfc_in_edi(self,move_id):
+        """
+        Verifica si alguno de los XML en edi_document_ids contiene el nodo <cfdi:Receptor> 
+        con el atributo Rfc="XAXX010101000".
+
+        Args:
+            move_id (int): ID del registro account.move.
+
+        Returns:
+            bool: True si se encuentra, False en caso contrario.
+        """
+        # Obtener el registro de account.move
+        
+        # Iterar sobre los edi_document_ids
+        for edi_document in move_id.edi_document_ids:
+            if edi_document.attachment_id:  # Filtrar solo archivos XML
+                xml_content = edi_document.attachment_id.raw
+                try:
+                    # Parsear el contenido XML
+                    tree = etree.fromstring(xml_content)
+                    
+                    # Buscar el nodo cfdi:Receptor
+                    receptor_node = tree.find('.//cfdi:Receptor', namespaces={'cfdi': 'http://www.sat.gob.mx/cfd/4'})
+                    if receptor_node is not None:
+                        rfc = receptor_node.get('Rfc')  # Obtener el atributo Rfc
+                        if rfc == 'XAXX010101000':
+                            return True  # Retornar True si se encuentra
+                except Exception as e:
+                    # Puedes registrar el error si lo consideras necesario
+                    print(f"Error procesando el archivo XML {edi_document.name}: {e}")
+        
+        return move_id.generic_edi  # Retornar False si no se encontró
     
     def _l10n_mx_edi_export_payment_cfdi(self, move):
         ''' Create the CFDI attachment for the journal entry passed as parameter being a payment used to pay some
@@ -84,23 +117,16 @@ class AccountEdiFormat(models.Model):
         * error:        An error if the cfdi was not successfully generated.
         '''
         cfdi_values = self._l10n_mx_edi_get_payment_cfdi_values(move)
-        tipo_de_timbrado = move.payment_ids.reconciled_invoice_ids.invoice_line_ids.sale_line_ids.mapped('order_id').mapped('tipo_de_timbrado')
-
-        if tipo_de_timbrado:
-            # Verificar si todos los elementos son "generic" sin usar all()
-            es_todo_generic = lambda x: x and not [item for item in x if item != 'generic']
-            
-            if move.generic_edi or es_todo_generic(tipo_de_timbrado):            
-                cfdi_values.update(
-                    {
-                        'customer_rfc': 'XAXX010101000',
-                        'fiscal_regime': '616',
-                        'customer': move.partner_id.browse(8625),
-                        'expedition': '037690',
-                        'customer_name': 'PÚBLICO EN GENERAL'
-                    }
-                )
-                print(cfdi_values)
+        if self.check_generic_rfc_in_edi(move.payment_id.reconciled_invoice_ids):            
+            cfdi_values.update(
+                {
+                    'customer_rfc': 'XAXX010101000',
+                    'fiscal_regime': '616',
+                    'customer': move.partner_id.browse(8625),
+                    'customer_name': 'PÚBLICO EN GENERAL'
+                }
+            )
+        
         qweb_template = self._l10n_mx_edi_get_payment_template()
         cfdi = self.env['ir.qweb']._render(qweb_template, cfdi_values)
         decoded_cfdi_values = move._l10n_mx_edi_decode_cfdi(cfdi_data=cfdi)            
@@ -121,22 +147,15 @@ class AccountEdiFormat(models.Model):
         '''
         # == CFDI values ==
         cfdi_values = self._l10n_mx_edi_get_invoice_cfdi_values(invoice)
-        tipo_de_timbrado = invoice.invoice_line_ids.sale_line_ids.mapped('order_id').mapped('tipo_de_timbrado')
-
-        if tipo_de_timbrado:
-            # Verificar si todos los elementos son "generic" sin usar all()
-            es_todo_generic = lambda x: x and not [item for item in x if item != 'generic']
-            
-            if invoice.generic_edi or es_todo_generic(tipo_de_timbrado):
-                cfdi_values.update(
-                    {
-                        'customer_rfc': 'XAXX010101000',
-                        'fiscal_regime': '616',
-                        'customer': invoice.partner_id.browse(8625),
-                        # 'expedition': '037690',  # Comentado como en el original
-                        'customer_name': 'PÚBLICO EN GENERAL'
-                    }
-                )
+        if self.check_generic_rfc_in_edi(invoice.reversed_entry_id or invoice):
+            cfdi_values.update(
+                {
+                    'customer_rfc': 'XAXX010101000',
+                    'fiscal_regime': '616',
+                    'customer': invoice.partner_id.browse(8625),
+                    'customer_name': 'PÚBLICO EN GENERAL'
+                }
+            )
         qweb_template, xsd_attachment_name = self._l10n_mx_edi_get_invoice_templates()
         # == Generate the CFDI ==
         cfdi = self.env['ir.qweb']._render(qweb_template, cfdi_values)
