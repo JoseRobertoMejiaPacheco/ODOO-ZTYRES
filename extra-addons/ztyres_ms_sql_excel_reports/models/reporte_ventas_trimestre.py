@@ -38,11 +38,10 @@ class Logsusuarios(models.TransientModel):
         result = self.env.cr.dictfetchall()        #Crear dataframe dla consulta
         df = pd.DataFrame(result)
         
-      
         # Obtener la fecha de hoy
         hoy = datetime.today()
         # Calcular el primer día del trimestre hace tres meses
-        primer_dia_trimestre = hoy - pd.DateOffset(months=3)
+        primer_dia_trimestre = (hoy - pd.DateOffset(months=3)).date()
 
         # Filtrar por los últimos tres meses
         df_filtrado = df[df['fecha'] >= primer_dia_trimestre]
