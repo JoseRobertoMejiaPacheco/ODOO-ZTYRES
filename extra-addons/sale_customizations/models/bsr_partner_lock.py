@@ -19,6 +19,7 @@ locked_names = [
                 'GERARDO GARCIA BALVER',
                 'GL TIRES GRUP S.A DE C.V.',
                 'GONTES LEON JOSE JESUS',
+                'ESPERANZA ROSAS GUERRERO',
                 'GRUPO LOYGA',
                 'GRUPO PRODUCE COMUNICACION',
                 'GUILLERMO CARDENAS BARRERA',

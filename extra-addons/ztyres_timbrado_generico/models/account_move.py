@@ -73,39 +73,36 @@ from lxml import etree
 
 class AccountEdiFormat(models.Model):
     _inherit = 'account.edi.format'
-
-    def check_generic_rfc_in_edi(self,move_id):
+    
+    def check_generic_rfc_in_edi(self, move_id):
         """
-        Verifica si alguno de los XML en edi_document_ids contiene el nodo <cfdi:Receptor> 
-        con el atributo Rfc="XAXX010101000".
-
-        Args:
-            move_id (int): ID del registro account.move.
-
-        Returns:
-            bool: True si se encuentra, False en caso contrario.
+        Verifica si algún documento EDI está relacionado con un RFC genérico.
+        También valida la consistencia de los valores en el campo 'generic_edi'.
         """
-        # Obtener el registro de account.move
-        
-        # Iterar sobre los edi_document_ids
-        for edi_document in move_id.edi_document_ids:
-            if edi_document.attachment_id:  # Filtrar solo archivos XML
-                xml_content = edi_document.attachment_id.raw
+        # Iterar sobre los edi_document_ids y procesar solo aquellos con archivos XML adjuntos
+        for edi_document in move_id.mapped('edi_document_ids'):
+            attachment = edi_document.attachment_id
+            if attachment:
                 try:
                     # Parsear el contenido XML
+                    xml_content = attachment.raw
                     tree = etree.fromstring(xml_content)
-                    
-                    # Buscar el nodo cfdi:Receptor
+
+                    # Buscar el nodo cfdi:Receptor y obtener el atributo 'Rfc'
                     receptor_node = tree.find('.//cfdi:Receptor', namespaces={'cfdi': 'http://www.sat.gob.mx/cfd/4'})
-                    if receptor_node is not None:
-                        rfc = receptor_node.get('Rfc')  # Obtener el atributo Rfc
-                        if rfc == 'XAXX010101000':
-                            return True  # Retornar True si se encuentra
+                    if receptor_node is not None and receptor_node.get('Rfc') == 'XAXX010101000':
+                        return True  # Retornar True si se encuentra un RFC genérico
                 except Exception as e:
-                    # Puedes registrar el error si lo consideras necesario
+                    # Manejo de errores durante el procesamiento del XML
                     print(f"Error procesando el archivo XML {edi_document.name}: {e}")
-        
-        return move_id.generic_edi  # Retornar False si no se encontró
+
+        # Validar consistencia de valores en el campo 'generic_edi'
+        generic_edi_values = move_id.mapped('generic_edi')
+        if all(value == generic_edi_values[0] for value in generic_edi_values):
+            return generic_edi_values[0]  # Retornar el valor si todos son iguales
+        else:
+            # Lanzar un error si hay inconsistencias en los valores
+            raise UserError('No se puede combinar RFC GENÉRICO con RFC de contribuyente.')
     
     def _l10n_mx_edi_export_payment_cfdi(self, move):
         ''' Create the CFDI attachment for the journal entry passed as parameter being a payment used to pay some
