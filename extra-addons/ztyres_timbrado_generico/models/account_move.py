@@ -10,6 +10,15 @@ class account_move(models.Model):
         selection=[('draft', 'No Timbrado'), ('done', 'Timbrado')],default=False
     )
     
+    edi_vat_receptor = fields.Char(compute='_compute_edi_vat_receptor', string='RFC Receptor')
+    #@api.depends('')
+    def _compute_edi_vat_receptor(self):
+        for move in self:
+            move.edi_vat_receptor = ''
+            for document in  move.edi_document_ids:
+                self.edi_vat_receptor = document.edi_format_id._get_rfc_from_xml(document) or 'SIN XML ADJUNTO'
+                print(self.edi_vat_receptor)
+    
     def action_post(self):
         res = super().action_post()
         if self.move_type:
@@ -34,7 +43,6 @@ class account_move(models.Model):
                     invoice_send_wizard_nc.template_id.auto_delete = False
                     invoice_send_wizard_nc.send_and_print_action()                 
         return res
-    
     def action_process_edi_web_services(self, with_commit=True):
         if not self.l10n_mx_edi_cfdi_uuid:
             # Filtrar documentos que necesitan ser procesados
@@ -45,13 +53,12 @@ class account_move(models.Model):
             
             # Procesar notas de crédito promocionales si existen
             if self.l10n_mx_edi_cfdi_uuid and self.credit_note_promo:
-                if self.generic_edi:
-                    self.credit_note_promo#._l10n_mx_edi_export_invoice_cfdi()
-                
+                if self.edi_vat_receptor == 'XAXX010101000':
+                    self.credit_note_promo.update({"l10n_mx_edi_usage": "S01"})                                
                 self.credit_note_promo.l10n_mx_edi_origin = f'01|{self.l10n_mx_edi_cfdi_uuid or ""}'
                 docs_nc = self.credit_note_promo.edi_document_ids.filtered(lambda d: d.state in ('to_send', 'to_cancel') and d.blocking_level != 'error')
                 
-                if docs_nc:
+                if docs_nc:                    
                     docs_nc._process_documents_web_services(with_commit=with_commit)
                 
                 # Actualizar estado de la nota de crédito promocional
@@ -64,138 +71,4 @@ class account_move(models.Model):
         else:
             docs = self.edi_document_ids.filtered(lambda d: d.state in ('to_cancel') and d.blocking_level != 'error')
             if docs:
-                docs._process_documents_web_services(with_commit=with_commit)                        
-        
-# -- coding: utf-8 --
-from odoo import api, models, fields, tools, _
-from odoo.exceptions import UserError
-from lxml import etree
-
-class AccountEdiFormat(models.Model):
-    _inherit = 'account.edi.format'
-    
-    def check_generic_rfc_in_edi(self, move_id):
-        """
-        Verifica si algún documento EDI está relacionado con un RFC genérico.
-        También valida la consistencia de los valores en el campo 'generic_edi'.
-        """
-        # Iterar sobre los edi_document_ids y procesar solo aquellos con archivos XML adjuntos
-        for edi_document in move_id.mapped('edi_document_ids'):
-            attachment = edi_document.attachment_id
-            if attachment:
-                try:
-                    # Parsear el contenido XML
-                    xml_content = attachment.raw
-                    tree = etree.fromstring(xml_content)
-
-                    # Buscar el nodo cfdi:Receptor y obtener el atributo 'Rfc'
-                    receptor_node = tree.find('.//cfdi:Receptor', namespaces={'cfdi': 'http://www.sat.gob.mx/cfd/4'})
-                    if receptor_node is not None and receptor_node.get('Rfc') == 'XAXX010101000':
-                        return True  # Retornar True si se encuentra un RFC genérico
-                except Exception as e:
-                    # Manejo de errores durante el procesamiento del XML
-                    print(f"Error procesando el archivo XML {edi_document.name}: {e}")
-
-        # Validar consistencia de valores en el campo 'generic_edi'
-        generic_edi_values = move_id.mapped('generic_edi')
-        if all(value == generic_edi_values[0] for value in generic_edi_values):
-            return generic_edi_values[0]  # Retornar el valor si todos son iguales
-        else:
-            # Lanzar un error si hay inconsistencias en los valores
-            raise UserError('No se puede combinar RFC GENÉRICO con RFC de contribuyente.')
-    
-    def _l10n_mx_edi_export_payment_cfdi(self, move):
-        ''' Create the CFDI attachment for the journal entry passed as parameter being a payment used to pay some
-        invoices.
-        
-        :param move:    An account.move record.
-        :return:        A dictionary with one of the following key:
-        * cfdi_str:     A string of the unsigned cfdi of the invoice.
-        * error:        An error if the cfdi was not successfully generated.
-        '''
-        cfdi_values = self._l10n_mx_edi_get_payment_cfdi_values(move)
-        if self.check_generic_rfc_in_edi(move.payment_id.reconciled_invoice_ids):            
-            cfdi_values.update(
-                {
-                    'customer_rfc': 'XAXX010101000',
-                    'fiscal_regime': '616',
-                    'customer': move.partner_id.browse(8625),
-                    'customer_name': 'PÚBLICO EN GENERAL'
-                }
-            )
-        
-        qweb_template = self._l10n_mx_edi_get_payment_template()
-        cfdi = self.env['ir.qweb']._render(qweb_template, cfdi_values)
-        decoded_cfdi_values = move._l10n_mx_edi_decode_cfdi(cfdi_data=cfdi)            
-        cfdi_cadena_crypted = cfdi_values['certificate'].sudo()._get_encrypted_cadena(decoded_cfdi_values['cadena'])
-        decoded_cfdi_values['cfdi_node'].attrib['Sello'] = cfdi_cadena_crypted
-        
-        return {
-            'cfdi_str': etree.tostring(decoded_cfdi_values['cfdi_node'], pretty_print=True, xml_declaration=True, encoding='UTF-8'),
-        }
-
-    def _l10n_mx_edi_export_invoice_cfdi(self, invoice):
-        ''' Create the CFDI attachment for the invoice passed as parameter.
-
-        :param move:    An account.move record.
-        :return:        A dictionary with one of the following key:
-        * cfdi_str:     A string of the unsigned cfdi of the invoice.
-        * error:        An error if the cfdi was not successfuly generated.
-        '''
-        # == CFDI values ==
-        cfdi_values = self._l10n_mx_edi_get_invoice_cfdi_values(invoice)
-        if self.check_generic_rfc_in_edi(invoice.reversed_entry_id or invoice):
-            cfdi_values.update(
-                {
-                    'customer_rfc': 'XAXX010101000',
-                    'fiscal_regime': '616',
-                    'customer': invoice.partner_id.browse(8625),
-                    'customer_name': 'PÚBLICO EN GENERAL'
-                }
-            )
-        qweb_template, xsd_attachment_name = self._l10n_mx_edi_get_invoice_templates()
-        # == Generate the CFDI ==
-        cfdi = self.env['ir.qweb']._render(qweb_template, cfdi_values)
-        decoded_cfdi_values = invoice._l10n_mx_edi_decode_cfdi(cfdi_data=cfdi)
-        cfdi_cadena_crypted = cfdi_values['certificate'].sudo()._get_encrypted_cadena(decoded_cfdi_values['cadena'])
-        decoded_cfdi_values['cfdi_node'].attrib['Sello'] = cfdi_cadena_crypted
-        res = {
-            'cfdi_str': etree.tostring(decoded_cfdi_values['cfdi_node'], pretty_print=True, xml_declaration=True, encoding='UTF-8'),
-        }
-        try:
-            self.env['ir.attachment'].l10n_mx_edi_validate_xml_from_attachment(decoded_cfdi_values['cfdi_node'], xsd_attachment_name)
-        except UserError as error:
-            res['errors'] = str(error).split('\\n')
-
-        return res
-
-class AccountPayment(models.Model):
-    _inherit = 'account.payment'
-
-    def action_process_edi_web_services(self):
-        res = self.move_id.action_process_edi_web_services()
-        self.action_send_payment_receipt()
-        return res
-
-    def action_retry_edi_documents_error(self):
-        self.ensure_one()
-        res = self.move_id.action_retry_edi_documents_error()
-        self.action_send_payment_receipt()
-        return res
-    
-    def action_send_payment_receipt(self):
-        """
-        Envía el recibo de pago automáticamente por correo electrónico sin abrir el asistente.
-        """
-        self.ensure_one()  # Asegurarse de que solo se envíe un recibo a la vez
-
-        # Obtener la plantilla de correo
-        template = self.env.ref('account.mail_template_data_payment_receipt')
-
-        # Componer y enviar el mensaje de correo
-        if template:
-            template.with_context(
-                default_model='account.payment',
-                default_res_id=self.id,
-                default_partner_ids=[self.partner_id.id],
-            ).send_mail(self.id, force_send=False)
+                docs._process_documents_web_services(with_commit=with_commit)
