@@ -138,6 +138,8 @@ class AccountMove(models.Model):
                     "partner_shipping_id": self.partner_id.id,   
                         'invoice_line_ids': lines_nc,
                     }
+                
+                
                 res = self.sudo().create(credit_note_vals)
                 res.sudo().action_post()
                 nc_credit_id = res.mapped('line_ids').filtered(lambda line: line.account_type == 'asset_receivable')
