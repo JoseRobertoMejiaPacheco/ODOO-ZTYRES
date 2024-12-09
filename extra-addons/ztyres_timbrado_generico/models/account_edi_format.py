@@ -36,7 +36,7 @@ class AccountEdiFormat(models.Model):
         Retorna el valor del atributo 'Rfc' del nodo 'cfdi:Receptor' del archivo XML adjunto.
         Si no se encuentra, retorna None.
         """
-        attachment = edi_document.attachment_id
+        attachment = edi_document.sudo().attachment_id
         if attachment:
             try:
                 # Parsear el contenido XML

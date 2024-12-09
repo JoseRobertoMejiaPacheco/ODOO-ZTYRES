@@ -16,8 +16,7 @@ class account_move(models.Model):
         for move in self:
             move.edi_vat_receptor = ''
             for document in  move.edi_document_ids:
-                self.edi_vat_receptor = document.edi_format_id._get_rfc_from_xml(document) or 'SIN XML ADJUNTO'
-                print(self.edi_vat_receptor)
+                move.edi_vat_receptor = document.edi_format_id._get_rfc_from_xml(document) or 'SIN XML ADJUNTO'
     
     def action_post(self):
         res = super().action_post()

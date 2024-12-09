@@ -20,11 +20,12 @@
     'version': '0.1',
 
     # any module necessary for this one to work correctly
-    'depends': ['account_edi','l10n_mx_edi_stock_extended_31'],
+    'depends': ['base','account_edi','l10n_mx_edi_stock_extended_31'],
 
     # always loaded
     'data': [
-        # 'security/ir.model.access.csv',
+        'security/security.xml',
+        'security/ir.model.access.csv',
         'views/account_move.xml',
         'views/account_payment.xml'
     ],
