@@ -14,8 +14,11 @@ class ReservaVentas(models.TransientModel):
         # ultimo_dia_mes = primer_dia_mes.replace(day=28)  # Establece inicialmente el día 28
         # ultimo_dia_mes = ultimo_dia_mes + pd.offsets.MonthEnd(0)  # Ajusta al último día del mes
 
-        primer_dia_mes = '2024-01-01'  # Primer día de abril de 2024
-        ultimo_dia_mes = '2024-12-31'  # Último día de abril de 2024
+        primer_dia_mes = date(2024, 1, 1)  # Primer día de enero de 2000
+        ultimo_dia_mes = date(2024, 12, 31)  # Último día de diciembre de 2024
+        
+        primer_dia_mes_ts = pd.Timestamp(primer_dia_mes)
+        ultimo_dia_mes_ts = pd.Timestamp(ultimo_dia_mes)
 
         # Dominio de búsqueda, con coma entre las condiciones
         search_domain20 = [
@@ -23,8 +26,8 @@ class ReservaVentas(models.TransientModel):
             ('product_type', 'in', ['product']),
             ('move_type', 'in', ['out_invoice', 'out_refund']),
             ('parent_state', 'in', ['posted']),
-            ('move_id.date', '>=', primer_dia_mes),
-            ('move_id.date', '<=', ultimo_dia_mes),
+            ('move_id.date', '>=', primer_dia_mes_ts),
+            ('move_id.date', '<=', ultimo_dia_mes_ts),
         ]
         datos = []
         records20 = self.env['account.move.line'].search(search_domain20)

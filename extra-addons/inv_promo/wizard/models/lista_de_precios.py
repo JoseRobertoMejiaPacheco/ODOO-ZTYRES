@@ -979,6 +979,9 @@ class ListaDePrecios(models.TransientModel):
             ws.row_dimensions[row_num].height = desired_height
             self.auto_adjust_column_widths(ws, row_num)
             
+        if 'Tier 4' in wb.sheetnames:
+            del wb['Tier 4']
+            
         propiedades = wb.properties
         # Crear un buffer en memoria
         excel_bytes_io = io.BytesIO()
