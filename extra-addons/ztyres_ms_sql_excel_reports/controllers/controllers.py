@@ -209,3 +209,21 @@ class ZtyresMsSqlExcelReports(http.Controller):
                 'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
             }
         )
+        
+    @http.route('/antiguedad_de_saldos/<string:fecha>', auth='public', methods=['GET'], website=True)
+    def antiguedad_de_saldos(self, fecha):
+        # Llamar a la función get_report para obtener los datos del reporte
+        report_data = request.env['antiguedad_de_saldos'].sudo()
+        lista = report_data.get_report(fecha)
+        # Generar el archivo Excel
+        report_generator  = request.env['excel_ventas_por_vendedor'].sudo()
+        excel_file = report_generator.generate_excel_report(lista)
+        
+        # Preparar la respuesta para descargar el archivo
+        return Response(
+            excel_file,
+            headers={
+                'Content-Disposition': 'attachment; filename="antiguedad_de_saldos.xlsx"',
+                'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            }
+        )

@@ -1,12 +1,3 @@
 <odoo>
-    <record id="group_additional_discounts_manager" model="res.groups">
-        <field name="name">Administrador de Descuentos Adicionales</field>
-        <field name="category_id" ref="discount_profiles.ztyres_categories"/>
-    </record>
-
-    <record id="group_additional_discounts_user" model="res.groups">
-        <field name="name">Usuario de Descuentos Adicionales</field>
-        <field name="category_id" ref="discount_profiles.ztyres_categories"/>
-    </record>
 
 </odoo>
