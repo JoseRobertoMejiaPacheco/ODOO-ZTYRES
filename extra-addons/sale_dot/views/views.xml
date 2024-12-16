@@ -1,0 +1,66 @@
+<odoo>
+    <!-- Extiende la vista de orden de venta (sale.order) -->
+    <record id="view_order_line_form_inherit_add_product" model="ir.ui.view">
+        <field name="name">sale.order.line.form.add.product</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form"/>
+        <field name="arch" type="xml">
+            <!-- Añadir un botón para abrir el asistente de agregar producto -->
+            <xpath expr="//field[@name='order_line']" position="after">
+                <button name="action_open_add_product_wizard"
+                        attrs="{'invisible': [('state', 'in', ['sale','done'])]}"
+                        type="object"
+                        class="btn-secondary oe_highlight">
+                    <div style="display: flex; align-items: center;">
+                        <i class="fa fa-plus" style="margin-right: 8px;"/> <!-- Ícono -->
+                        <span>Agregar Producto</span>
+                    </div>
+                </button>
+            </xpath>
+
+            <!-- Eliminar nodos vacíos innecesarios para los controles -->
+            <xpath expr="//control/create[@name='add_product_control']" position="replace">
+                <!-- Nodo vacío para eliminar el control -->
+            </xpath>                      
+            <xpath expr="//control/create[@name='add_section_control']" position="replace">
+                <!-- Nodo vacío para eliminar el control -->
+            </xpath>
+
+            <!-- Agregar los campos 'single_dot' y 'lots_ids' en la vista de línea de orden después de 'product_id' -->
+            <xpath expr="//form/sheet/notebook/page[@name='order_lines']/field[@name='order_line']/tree/field[@name='product_id']" position="after">
+                <field name="single_dot" readonly="1"/>
+                <field name="lots_ids"/>
+            </xpath>  
+        </field>
+    </record>
+
+    <!-- Extiende la vista de 'product.product_pricelist_view' -->
+    <record id="view_product_pricelist_inherit" model="ir.ui.view">
+        <field name="name">product.product_pricelist_view.inherit</field>
+        <field name="model">product.pricelist</field>
+        <field name="inherit_id" ref="product.product_pricelist_view"/>
+        <field name="arch" type="xml">
+            <!-- Agregar el campo 'lots_ids' en la vista de árbol de item_ids -->
+            <xpath expr="//form[1]/sheet[1]/notebook[1]/page[@name='pricelist_rules']/field[@name='item_ids']/tree[2]/field[@name='name']" position="after">
+                <field name="lots_ids" optional="show"/>
+                <field name="lot_name" optional="show"/>                
+            </xpath>
+        </field>
+    </record>
+
+        <!-- Heredar la vista product.product_pricelist_item_form_view -->
+        <record id="inherit_pricelist_item_form_view" model="ir.ui.view">
+            <field name="name">product.pricelist.item.form.inherit</field>
+            <field name="model">product.pricelist.item</field>
+            <field name="inherit_id" ref="product.product_pricelist_item_form_view"/>
+            <field name="arch" type="xml">
+                <!-- Añadir solo los campos lots_ids y lot_name en la vista heredada -->
+                <xpath expr="//sheet" position="inside">
+                    <group string="DOT">
+                        <field name="lots_ids" optional="show"/>
+                        <field name="lot_name" optional="show" force_save = "1"/>
+                    </group>
+                </xpath>
+            </field>
+        </record>    
+</odoo>

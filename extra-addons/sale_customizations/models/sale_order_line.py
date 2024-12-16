@@ -4,6 +4,7 @@ from odoo.exceptions import  ValidationError
 from odoo import models,api,fields, _
 from datetime import date, timedelta, datetime
 from odoo.addons.inv_promo.models.inv_promo_variables import PAQUETES as PROMO_MARZO
+from odoo.exceptions import AccessError, UserError, ValidationError
 
 class SaleOrderLine(models.Model):
     _inherit = 'sale.order.line'
@@ -17,7 +18,20 @@ class SaleOrderLine(models.Model):
 
     @api.onchange('product_uom_qty', 'product_id')
     def _onchange_check_product_availability(self):
-        for product in self:
+        for record in self:
+            if record.lots_ids:
+                stock_quants = self.env['stock.quant'].search([
+                    ('product_id', '=', record.product_id.id),
+                    ('quantity', '>', 0),  # Solo los que tienen cantidad disponible
+                    ('location_id.usage', '=', 'internal'),
+                    ('location_id.id','in',record.lots_ids.ids)
+                ])
+                total_available = sum(stock_quants.mapped('quantity'))
+                if total_available < record.product_uom_qty:
+                    raise UserError(
+                        f"No hay suficiente stock disponible del producto '{record.product_id.name} {record.single_dot}' en las ubicaciones internas."
+                    )          
+        for product in self:            
             if product.product_id.detailed_type == 'product' and product.product_uom_qty:            
                 if product.product_uom_qty > product.product_id.free_qty:
                     warning_msg = {
@@ -75,6 +89,18 @@ class SaleOrderLine(models.Model):
         return min_price_item
         
     def _get_pricelist_price(self):
+        
+                # Buscar los items de la lista de precios (pricelist_item)
+        search_domain = [
+            ('product_tmpl_id', 'in', self.product_id.product_tmpl_id.ids),  # Usar .ids para obtener una lista de ids
+            ('pricelist_id', '=', 122),
+            ('lot_name','=',self.single_dot)# Asegúrate de que el ID de la lista de precios esté correctamente asignado
+        ]
+        
+        pricelist_item = self.env['product.pricelist.item'].search(search_domain,limit=1)
+        if pricelist_item:
+            self.list_origin = 'PROMOCIÓN DOT'
+            return pricelist_item.fixed_price
         """Compute the price given by the pricelist for the given line information.
 
         :return: the product sales price in the order currency (without taxes)
@@ -93,14 +119,14 @@ class SaleOrderLine(models.Model):
         search_domain = [
             ('product_tmpl_id', 'in', self.product_template_id.ids),('additional_prod_id.active','=',True),('additional_prod_id.is_mix','=',False)
         ]
-        x = self.env['additional_discounts.products_line'].search(search_domain)
+        normal_product = self.env['additional_discounts.products_line'].search(search_domain)
         
-        if x:
+        if normal_product:
             self.discount = 0
-            x.ensure_one()
-            if qty >= x.qty:
+            normal_product.ensure_one()
+            if qty >= normal_product.qty:
                 self.list_origin = 'PAQUETE'
-                return x.price
+                return normal_product.price
         
         self.pricelist_item_id = self.get_item_with_min_price_after_discount()
         self.list_origin = self.pricelist_item_id.pricelist_id.name

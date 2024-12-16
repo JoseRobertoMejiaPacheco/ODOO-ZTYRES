@@ -1,0 +1,68 @@
+<odoo>
+    <record id="view_sale_order_line_add_product_wizard" model="ir.ui.view">
+        <field name="name">sale.order.line.add.product.wizard.form</field>
+        <field name="model">sale.order.line.add.product.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Agregar Producto">            
+                <separator string="Seleccionar Producto" colspan="4"/>
+                
+                <div class="oe_structure"/>
+                
+                <div class="row">
+                    <div class="col-12">
+                        <field name="product_id" 
+                               string="Productos Disponibles" 
+                               class="o_field_widget o_input o_field_many2one" 
+                               style="width: 100%; font-size: 18px;"
+                               domain="[('qty_available', '>', 0), '|', ('default_code', '=', 'MAN'), ('qty_available', '>', 0)]"
+                               options="{'no_create': True}" />
+                    </div>
+
+                    <div class="col-12">
+                    <h2>Cantidad capturada</h2>
+                        <field name="total_qty" 
+                               string="Cantidad por agregar" 
+                               class="o_field_widget o_input o_field_many2one" 
+                               style="width: 100%; font-size: 18px;" />
+                    </div>
+                </div>   
+
+                <div class="oe_structure"/>
+                
+                <div class="row">
+                    <div class="col-12">
+                        <field name="lines">
+                            <tree create="false" delete="false" edit="true" editable="bottom">
+                                <field name="single_dot" force_save="true"/>
+                                <field name="product_id" readonly="1" invisible="1" force_save="true"/>
+                                <field name="qty_available" readonly="1" force_save="true"/>
+                                <field name="qty" force_save="true"/>
+                                <field name="lots_ids" widget="many2many_tags" readonly="1" string="DOT" force_save="true"/>
+                                <!-- <field name="origin_list"/>
+                                <field name="price" readonly="1"/>
+                                <field name="discount_price" readonly="1"/>
+                                <field name="subtotal" readonly="1"/> -->
+                            </tree>
+                        </field>
+                    </div>
+                </div>
+
+                <!-- Footer personalizado con los botones -->
+                <footer>
+                    <button name="add_products_to_order_line" 
+                            string="Agregar Producto" 
+                            type="object" 
+                            class="btn-success o_button_icon"
+                            icon="fa-plus"/>
+                    
+                    <!-- Botón de cancelar -->
+                    <button name="action_cancel" 
+                            string="Cancelar" 
+                            type="object" 
+                            class="btn-secondary o_button_icon"
+                            icon="fa-times"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

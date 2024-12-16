@@ -173,6 +173,7 @@ class SaleOrder(models.Model):
         self.x_studio_val_credito =True
         self.x_studio_val_ventas = True
         self.x_studio_solicitud_de_embarques = 'Si'
+        self.quotation_action_confirm()
         return super(SaleOrder, self).action_confirm()
 
     def action_draft(self):
@@ -190,7 +191,8 @@ class SaleOrder(models.Model):
                     picking.do_unreserve()
                     picking.action_cancel()
                     picking.sudo().unlink()
-        self.order_line._ztyres_action_launch_stock_rule()
+        for line in self.order_line:
+            line.with_context({'lots_ids':line.lots_ids.ids})._ztyres_action_launch_stock_rule()
 
     def action_cancel(self):
         self.x_studio_val_credito =False

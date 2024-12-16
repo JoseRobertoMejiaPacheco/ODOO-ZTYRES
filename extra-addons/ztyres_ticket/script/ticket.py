@@ -62,9 +62,19 @@ class Ticket(FPDF):
                 self.multi_cell(70, 3, 'Total de llantas: %s'%(product['total de llantas']), border=0, align='R')
             else:
                 self.cell(80, 0.1, '', border='B', ln=.2)
-                self.multi_cell(80, 3, 'SKU:  %s\nMarca:  %s\nModelo:  %s\nMedida:  %s\nCapas:  %s\nCantidad:  %s\nUbicación:  %s'%(product['sku'],product['marca'],product['modelo'],product['medida'],product['capas'],product['cantidad'],product['ubicacion']), border=0)                
+                self.multi_cell(80, 3, 'SKU:  %s\nMarca:  %s\nModelo:  %s\nMedida:  %s\nCapas:  %s\nCantidad:  %s\nUbicación:  %s\nDOT:  %s' % (
+                    product['sku'], 
+                    product['marca'], 
+                    product['modelo'], 
+                    product['medida'], 
+                    product['capas'], 
+                    product['cantidad'], 
+                    product['ubicacion'], 
+                    product['dot']  # Aquí agregamos el DOT
+                ), border=0)                
                 self.ln(1)
         self.cell(80, 0.1, '', border='B', ln=.2)
+    
     def get_dict_data(self):
         data = []        
         for line in sorted(self.data.move_line_ids_without_package, key=lambda x: x.product_id.brand_id.name):
@@ -73,9 +83,10 @@ class Ticket(FPDF):
                 'capas':line.product_id.layer_id.name,
                 'marca':line.product_id.brand_id.name,
                 'modelo':line.product_id.model_id.name,
-                'medida':line.product_id.tire_measure_id.name,
+                'medida':line.product_id.tire_measure_id.name,                
+                'ubicacion':line.location_id.complete_name,
                 'cantidad':line.reserved_uom_qty,
-                'ubicacion':line.location_id.complete_name                
+                'dot':line.lot_id.name,
             }
             data.append(vals)
         data.append({'total de llantas':sum(self.data.move_line_ids_without_package.mapped('reserved_uom_qty'))})

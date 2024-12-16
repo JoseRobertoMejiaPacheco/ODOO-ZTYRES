@@ -162,7 +162,7 @@ class AccountMove(models.Model):
         # Filtrar las líneas de factura que no cumplan las condiciones
         filtered_lines = self.invoice_line_ids.filtered(
             lambda line: (
-                line.sale_line_ids.list_origin in ['MAYOREO','PROMOCIÓN']
+                line.sale_line_ids.list_origin in ['MAYOREO','PROMOCIÓN','PROMOCIÓN DOT']
                 and line.product_id.id not in [50959]
                 and not any(line.product_id.id == prod_id and line.quantity <= qty for qty, prod_id in array_condiciones)
             )

@@ -109,7 +109,21 @@ class StockQuant(models.Model):
     def _gather(self, product_id, location_id, lot_id=None, package_id=None, owner_id=None, strict=False):
         removal_strategy = self._get_removal_strategy(product_id, location_id)
         removal_strategy_order = self._get_removal_strategy_order(removal_strategy)
-        domain = self._get_gather_domain(product_id, location_id, lot_id, package_id, owner_id, strict)
+        ########################################################################################################
+
+        # Obtener 'lots_ids' del contexto de manera segura
+        lots_ids = self._context.get('lots_ids', [])
+
+        # Si 'lots_ids' no está vacío, procesamos los lotes
+        if lots_ids:
+            # Buscamos los lotes con los ids proporcionados
+            lots = self.env['stock.lot'].browse(lots_ids)
+        else:
+            # Si 'lots_ids' está vacío o no está presente, manejar el caso
+            lots = lot_id
+        
+        ########################################################################################################
+        domain = self._get_gather_domain(product_id, location_id, lots, package_id, owner_id, strict)
         quants_cache = self.env.context.get('quants_cache')
         if quants_cache is not None and strict:
             res = self.env['stock.quant']

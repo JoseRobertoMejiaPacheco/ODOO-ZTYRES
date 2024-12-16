@@ -65,19 +65,19 @@ class SaleOrderLine(models.Model):
                 line.name, line.order_id.name, line.order_id.company_id, values))
         if procurements:
             self.env['procurement.group'].run(procurements)
-        return True
+        return True    
 
-    @api.onchange('product_uom_qty', 'product_id')
-    def _onchange_check_product_availability(self):
+    # @api.onchange('product_uom_qty', 'product_id')
+    # def _onchange_check_product_availability(self):
         
-        for product in self:
-            if product.product_id.detailed_type == 'product' and product.product_uom_qty:            
-                if product.product_uom_qty > product.product_id.free_qty:
-                    warning_msg = {
-                        'title': _('¡Inventario insuficiente!'),
-                        'message': _('Estás intentando vender %s de %s pero solo tienes %s disponibles (después de considerar otras reservaciones).') % (product.product_uom_qty, product.product_id.name, product.product_id.free_qty)
-                    }
-                    return {'warning': warning_msg}
+    #     for product in self:
+    #         if product.product_id.detailed_type == 'product' and product.product_uom_qty:            
+    #             if product.product_uom_qty > product.product_id.free_qty:
+    #                 warning_msg = {
+    #                     'title': _('¡Inventario insuficiente!'),
+    #                     'message': _('Estás intentando vender %s de %s pero solo tienes %s disponibles (después de considerar otras reservaciones).') % (product.product_uom_qty, product.product_id.name, product.product_id.free_qty)
+    #                 }
+    #                 return {'warning': warning_msg}
 
     # @api.constrains('price_unit')
     # def _constrains_check_price(self):

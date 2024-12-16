@@ -57,21 +57,31 @@ class ImportCustomerWizard(models.TransientModel):
                             raise UserError(_('El producto que desea subir no existe %s'%(record[0])))
                         if len(product_tmpl_id)>1:
                             raise UserError(_('El producto se encuentra duplicado %s'%(record[0])))
-                        domain.append(('product_tmpl_id','in',product_tmpl_id.ids))               
+                        domain.append(('product_tmpl_id','in',product_tmpl_id.ids))
+                        
+                        if len(record)==3:
+                            if record[2]:
+                                domain.append(('lot_name','in',[record[2]]))
                         product = self.pricelist_ids.item_ids.with_context(active_test=True).search(domain)
                         if product and self.options == 'delete':
                                 product.unlink()
                                 continue                                       
                         if product:
                             product.fixed_price = float(record[1])                                    
-                        else:    
-                            res = self.pricelist_ids.item_ids.create({
+                        else:
+                            vals = {
                             "applied_on": "1_product",
                             "product_tmpl_id": product_tmpl_id.id,
                             "pricelist_id": self.pricelist_ids.id,
                             "compute_price": "fixed",
-                            "fixed_price":float(record[1]) ,
+                            "fixed_price":float(record[1])                                
+                            }
+                            if len(record)==3:
+                                vals.update({
+
+                            "lot_name":record[2],
                             })
+                            res = self.pricelist_ids.item_ids.create(vals)
                             if not res:
                                 raise UserError(_('No se encontro el prodcuto con referencia %s'%(record[0])))
                             
