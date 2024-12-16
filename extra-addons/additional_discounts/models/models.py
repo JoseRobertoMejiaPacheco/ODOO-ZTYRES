@@ -132,7 +132,7 @@ class AccountMove(models.Model):
                     "invoice_date": fields.date.today().strftime(DEFAULT_SERVER_DATE_FORMAT),
                     "journal_id": 24,
                     "l10n_mx_edi_payment_method_id": 11, #Condonacion
-                    "l10n_mx_edi_usage": "G01",# Devoluciones y Bonificaciones
+                    "l10n_mx_edi_usage": "G02",# Devoluciones y Bonificaciones
                     "currency_id": self.env.company.currency_id.id,
                     "partner_id": self.partner_id.id,
                     "partner_shipping_id": self.partner_id.id,   
