@@ -26,6 +26,7 @@ class InvPromo(models.TransientModel):
     promocion = fields.Float(compute='_compute_promocion', digits=(16, 2), string='Precio promocion')
     promocion_paquetes = fields.Float(compute='_compute_outlet', digits=(16, 2), string='Precio Paquetes')
     outlet = fields.Float(compute='_compute_outlet', digits=(16, 2), string='Precio outlet')
+    promo_dot = fields.Float(compute='_compute_promo_dot', digits=(16, 2), string='Precio Promo Dot')
     condicion = fields.Integer(compute='_compute_outlet', digits=(16, 2), string='Condición outlet')
     cantidad_gratis = fields.Float(compute='_compute_outlet', digits=(16, 2), string='Cantidad Gratis')
     transito_str = fields.Integer(compute='_compute_transito_str', string='Transito')
@@ -84,6 +85,11 @@ class InvPromo(models.TransientModel):
     def _compute_promocion(self):
         for record in self:
             record.promocion = record._get_price(record.product_id.id, 113)
+            
+    @api.depends('product_id')
+    def _compute_promo_dot(self):
+        for record in self:
+            record.promo_dot = record._get_price(record.product_id.id, 122)
 
     @api.depends('available')
     def _compute_inventario_str(self):
