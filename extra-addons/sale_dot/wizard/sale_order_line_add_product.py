@@ -89,20 +89,20 @@ class SaleOrderLineAddProductWizard(models.TransientModel):
                         'discount_price': 0,  # Lo mismo con los descuentos
                         'subtotal': 0  # Lo mismo con el subtotal
                     }
+        if product.id == 50959:
             lot_info[False] = {
                 'lots_ids': [],  # Inicializamos la relación m2m
-                'single_dot': 'Maniobras',
+                'single_dot': 'False',
                 'product_id': 50959,
                 'qty_available': 9999,
                 'qty': 0,  # Se podría ajustar según la lógica de negocio
                 'origin_list': '',
-                'price': 120,  # Se puede agregar el precio si es necesario
+                'price': 0,  # Se puede agregar el precio si es necesario
                 'discount_price': 0,  # Lo mismo con los descuentos
                 'subtotal': 0  # Lo mismo con el subtotal
             }
             # Convertir el diccionario a una lista de tuplas para ser usado en la vista o en otro proceso
-            grouped_lot_info = [(0, 0, lot_data) for lot_data in lot_info.values()]
-        
+        grouped_lot_info = [(0, 0, lot_data) for lot_data in lot_info.values()]
         return grouped_lot_info
         #10770003
     
@@ -133,15 +133,22 @@ class SaleOrderLineAddProductWizard(models.TransientModel):
             product = self.product_id
             if product and line.qty>0 or product.id == 50959:
                 # Creación de la línea de pedido
-                created_line = self.env['sale.order.line'].create({
+                vals = {
                     'product_id': product.id,
                     'order_id': order_line_id,
                     'product_uom_qty': line.qty,
                     'lots_ids': [(6, 0, line.lots_ids.ids)],
                     'single_dot': line.single_dot,
-                    'dot_range':''
-                })
+                    'dot_range':'',
+                }
+                created_line = self.env['sale.order.line'].create(vals)
                 created_line._compute_price_unit()
+                if product.id == 50959:
+                    
+                    created_line.product_uom_qty =line.qty
+                    created_line.price_unit=120
+                    
+                
         self.env['sale.order'].browse(order_line_id).quotation_action_confirm()
 
 class SaleOrderLineAddProductWizardLine(models.TransientModel):

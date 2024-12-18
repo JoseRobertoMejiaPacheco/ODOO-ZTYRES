@@ -14,7 +14,7 @@
                                string="Productos Disponibles" 
                                class="o_field_widget o_input o_field_many2one" 
                                style="width: 100%; font-size: 18px;"
-                               domain="[('qty_available', '>', 0), '|', ('default_code', '=', 'MAN'), ('qty_available', '>', 0)]"
+                               domain="[ '|', ('qty_available', '>', 0), ('default_code', '=', 'MAN') ]"
                                options="{'no_create': True}" />
                     </div>
 
