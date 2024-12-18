@@ -99,18 +99,13 @@ class MyModel(models.TransientModel):
             pivot_df2 = volumen_df3.pivot_table(index=['cliente', 'vendedor'], values='price_total', aggfunc='sum', fill_value=0)
             pivot_df2.reset_index(inplace=True)
             
-            pivot_df2.loc[(pivot_df2['price_total'] >= 928000), 'BRIDGESTONE'] = 'Bono 12%'
-            pivot_df2.loc[(pivot_df2['price_total'] >= 928000), 'MONEDERO'] = 'Bono 25K'
-            pivot_df2.loc[(pivot_df2['price_total'] >= 348000) & (pivot_df2['price_total'] < 927999), 'BRIDGESTONE'] = 'Bono 10%'
-            pivot_df2.loc[(pivot_df2['price_total'] >= 348000) & (pivot_df2['price_total'] < 927999), 'MONEDERO'] = 'Bono 14K'
-            pivot_df2.loc[(pivot_df2['price_total'] >= 116000) & (pivot_df2['price_total'] < 347999), 'BRIDGESTONE'] = 'Bono 8%'
-            pivot_df2.loc[(pivot_df2['price_total'] >= 116000) & (pivot_df2['price_total'] < 347999), 'MONEDERO'] = 'Bono 8K'
-            pivot_df2.loc[(pivot_df2['price_total'] >= 46400) & (pivot_df2['price_total'] < 115999), 'BRIDGESTONE'] = 'Bono 6%'
-            pivot_df2.loc[(pivot_df2['price_total'] >= 46400) & (pivot_df2['price_total'] < 115999), 'MONEDERO'] = 'Bono 3.5K'
+            pivot_df2.loc[(pivot_df2['price_total'] >= 928000), ['BRIDGESTONE', 'MONEDERO']] = ['Bono 12%', 'Bono 25K']
+            pivot_df2.loc[(pivot_df2['price_total'] >= 348000) & (pivot_df2['price_total'] < 927999), ['BRIDGESTONE', 'MONEDERO']] = ['Bono 10%', 'Bono 14K']
+            pivot_df2.loc[(pivot_df2['price_total'] >= 116000) & (pivot_df2['price_total'] < 347999), ['BRIDGESTONE', 'MONEDERO']] = ['Bono 8%', 'Bono 8K']
+            pivot_df2.loc[(pivot_df2['price_total'] >= 46400) & (pivot_df2['price_total'] < 115999), ['BRIDGESTONE', 'MONEDERO']] = ['Bono 6%', 'Bono 3.5K']
             
             pivot_df2 = pivot_df2.rename(columns={'price_total': 'Total Brid'})
             colum_selec = pivot_df2[['cliente', 'vendedor', 'Total Brid', 'BRIDGESTONE', 'MONEDERO']]
-
 #################################################################### PROMOS VOLUMEN ####################################################################
                                                      #Promos Volumen Buen Mix
       volumen_df4 = volumen_df[(volumen_df['id'].isin(codes2))]
@@ -128,7 +123,6 @@ class MyModel(models.TransientModel):
       
             pivot_df3 = pivot_df3.rename(columns={'price_total': 'Total Onyx'})
             colum_selec2 = pivot_df3[['cliente', 'vendedor', 'Total Onyx', 'Onyx']]
-      
 #################################################################### PROMOS VOLUMEN ####################################################################
                                                      #Promos Volumen MERRY TTER 4
       volumen_df5 = volumen_df[(volumen_df['id'].isin(codes3))]
@@ -147,7 +141,6 @@ class MyModel(models.TransientModel):
             pivot_df4 = pivot_df4.rename(columns={'cantidad': 'Total Merry_T4'})
             colum_selec3 = pivot_df4[['cliente', 'vendedor', 'Total Merry_T4', 'Merry_T4']]
 ###################################################################################################################################################################
-      
       df_combined = colum_selec.merge(colum_selec2, on=['cliente', 'vendedor'], how='outer')
       df_combined2 = df_combined.merge(colum_selec3, on=['cliente', 'vendedor'], how='outer')
 
