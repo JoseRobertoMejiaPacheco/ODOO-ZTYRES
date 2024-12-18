@@ -89,7 +89,17 @@ class SaleOrderLineAddProductWizard(models.TransientModel):
                         'discount_price': 0,  # Lo mismo con los descuentos
                         'subtotal': 0  # Lo mismo con el subtotal
                     }
-
+            lot_info[False] = {
+                'lots_ids': [],  # Inicializamos la relación m2m
+                'single_dot': 'Maniobras',
+                'product_id': 50959,
+                'qty_available': 9999,
+                'qty': 0,  # Se podría ajustar según la lógica de negocio
+                'origin_list': '',
+                'price': 120,  # Se puede agregar el precio si es necesario
+                'discount_price': 0,  # Lo mismo con los descuentos
+                'subtotal': 0  # Lo mismo con el subtotal
+            }
             # Convertir el diccionario a una lista de tuplas para ser usado en la vista o en otro proceso
             grouped_lot_info = [(0, 0, lot_data) for lot_data in lot_info.values()]
         
@@ -116,10 +126,12 @@ class SaleOrderLineAddProductWizard(models.TransientModel):
         if not order_line_id:
             return
         
+        user_id = self.env.user.id
+        
         # Crear las líneas de pedido de venta para los productos seleccionados
         for line in self.lines:
             product = self.product_id
-            if product and line.qty>0:
+            if product and line.qty>0 or product.id == 50959:
                 # Creación de la línea de pedido
                 created_line = self.env['sale.order.line'].create({
                     'product_id': product.id,
@@ -154,6 +166,7 @@ class SaleOrderLineAddProductWizardLine(models.TransientModel):
     def _check_qty(self):
         if not (self.qty>0 and self.qty <= self.qty_available):
             self.qty = 0
+            user_id = self.env.user.id
             raise ValidationError('No se pueden agregar más llantas de las disponibles')
                 
             

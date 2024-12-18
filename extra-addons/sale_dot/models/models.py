@@ -24,18 +24,19 @@ class SaleOrderLine(models.Model):
 
     @api.constrains('product_uom_qty')
     def _constrains_check_product_availability_dot(self):
+        
         for record in self:
             if record.lots_ids:
                 stock_quants = self.env['stock.quant'].search([
                     ('product_id', '=', record.product_id.id),
                     ('quantity', '>', 0),  # Solo los que tienen cantidad disponible
                     ('location_id.usage', '=', 'internal'),
-                    ('location_id.id','in',record.lots_ids.ids)
+                    ('location_id.id','in',record.lots_ids.quant_ids.location_id.ids)
                 ])
                 total_available = sum(stock_quants.mapped('quantity'))
                 if total_available < record.product_uom_qty:
                     raise UserError(
-                        f"No hay suficiente stock disponible del producto '{record.product_id.name} {record.single_dot}' en las ubicaciones internas."
+                        f"No hay suficiente stock disponible del producto '{total_available} < {record.product_uom_qty} {record.product_id.name} {record.single_dot}' en las ubicaciones internas. 200"
                     )    
     
 class SaleOrderLine(models.Model):
