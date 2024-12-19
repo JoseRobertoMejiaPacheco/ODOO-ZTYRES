@@ -42,11 +42,12 @@ class SaleOrderLine(models.Model):
 
     @api.constrains('product_uom_qty')
     def _constrains_check_product_availability(self):
-        user_id = self.env.user.id
-        for record in self:
-            if record.product_id.detailed_type == 'product' and record.product_uom_qty:
-                if record.product_uom_qty > record.product_id.free_qty:
-                    raise ValidationError(_('Estás intentando vender %s de %s pero solo tienes %s disponibles (después de considerar otras reservaciones).') % (record.product_uom_qty, record.product_id.name, record.product_id.free_qty))
+        # Verificamos si el contexto tiene la clave 'check_availability' y si es False
+        if self.env.context.get('check_availability', True):  # El valor predeterminado es True
+            for record in self:
+                if record.product_id.detailed_type == 'product' and record.product_uom_qty:
+                    if record.product_uom_qty > record.product_id.free_qty:
+                        raise ValidationError(_('Estás intentando vender %s de %s pero solo tienes %s disponibles (después de considerar otras reservaciones).') % (record.product_uom_qty, record.product_id.name, record.product_id.free_qty))
     
     def _get_valid_pricelists(self):
         return [1,108,113,116]

@@ -88,9 +88,10 @@ class SaleOrderLine(models.Model):
     @api.constrains('product_uom_qty')
     def _constrains_check_product_availability(self):
         for record in self:
-            if record.product_id.detailed_type == 'product' and record.product_uom_qty:
-                if record.product_uom_qty > record.product_id.free_qty:
-                    raise ValidationError(_('Estás intentando vender %s de %s pero solo tienes %s disponibles (después de considerar otras reservaciones).') % (record.product_uom_qty, record.product_id.name, record.product_id.free_qty))
+            if self.env.context.get('check_availability', True):  # El valor predeterminado es True
+                if record.product_id.detailed_type == 'product' and record.product_uom_qty:
+                    if record.product_uom_qty > record.product_id.free_qty:
+                        raise ValidationError(_('Estás intentando vender %s de %s pero solo tienes %s disponibles (después de considerar otras reservaciones).') % (record.product_uom_qty, record.product_id.name, record.product_id.free_qty))
                 
     def rango_fechas(self, anos):
         # Filtrar solo los años que tengan el formato correcto (4 dígitos)
