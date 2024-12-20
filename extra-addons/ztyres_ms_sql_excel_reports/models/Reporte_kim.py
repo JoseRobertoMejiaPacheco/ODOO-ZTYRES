@@ -113,7 +113,7 @@ query3 = """
             WHERE aa.account_type = 'asset_receivable' 
         )
     AND am2.amount_residual != 0
-    AND apr.max_date >= '2024-12-02'
+    AND apr.max_date >= '2024-12-18'
     GROUP BY am2."name", rpu."name", apr.max_date, am.currency_id, am.date, am.move_type
 """
 # Ejecutar la consulta y crear el DataFrame
@@ -125,7 +125,7 @@ merged_df2 = pd.merge(df3, df4, on='factura', how='left')
 merged_df2['monto'] = merged_df2['monto'].fillna(0)
 
 #REEMPLAZAR FECHA DE ACUERDO A LO SOLICITADO "pd.to_datetime('2023-11-27')" Y apr.max_date EN LA CONULTA SQL (TIENEN QUE SER IGUALES)
-merged_df2['dias de atraso'] = (pd.to_datetime('2024-12-02') - pd.to_datetime(merged_df2['fecha_limite'])).dt.days
+merged_df2['dias de atraso'] = (pd.to_datetime('2024-12-18') - pd.to_datetime(merged_df2['fecha_limite'])).dt.days
 merged_df2['restante'] = merged_df2['total'] - merged_df2['monto']
 merged_df2.loc[(merged_df2['dias de atraso'] > 120), 'no c q poner :V'] = 'Antiguos'
 merged_df2.loc[(merged_df2['dias de atraso'] >= 91) & (merged_df2['dias de atraso'] <= 120), 'no c q poner :V'] = '91 - 120'
@@ -144,4 +144,4 @@ df_pivoted2 = merged_df2.pivot_table(index=['factura', 'total'],
 
 merged_df3 = pd.merge(merged_df, df_pivoted2, on='factura', how='left')
 
-merged_df3.to_excel('/mnt/extra-addons/Reporte Kim 02.xlsx') 
+merged_df3.to_excel('/mnt/extra-addons/Reporte Kim 03.xlsx') 

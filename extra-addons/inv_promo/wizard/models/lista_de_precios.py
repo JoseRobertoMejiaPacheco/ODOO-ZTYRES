@@ -166,7 +166,6 @@ class ListaDePrecios(models.TransientModel):
             table.tableStyleInfo = style
             sheet.add_table(table)
             return num_rows + 14, len(headers)  # Retorna el número de filas y columnas
-
 ####################################################################################################
     def insert_table_sheet6(self, sheet, table_data, table_name):
             headers = list(table_data[0].keys()) if table_data else []
@@ -216,7 +215,7 @@ class ListaDePrecios(models.TransientModel):
         sheet[cell_ref].font = Font(bold=False)
         return cell_ref
 
-    def apply_styles(self,sheet, cell_range, font_style, align_style, fill_style, border_style, num_format):
+    def apply_styles(self, sheet, cell_range, font_style, align_style, fill_style, border_style, num_format):
         for row in cell_range:
             for cell in row:
                 cell.font = font_style
@@ -423,7 +422,8 @@ class ListaDePrecios(models.TransientModel):
 
     def get_dict_data(self, objects, sheet_name,partner_id=False):
         if sheet_name == 'Precios Con Iva':
-            c = self.env['additional_discounts.products_line'].search([('additional_prod_id.active','=',True)]).mapped('product_tmpl_id').ids + objects.ids
+            checo_ids = objects.filtered(lambda obj: obj.volumen > 0 or obj.promocion > 0 or obj.promo_dot > 0 or obj.outlet).ids
+            c = self.env['additional_discounts.products_line'].search([('additional_prod_id.active','=',True)]).mapped('product_tmpl_id').ids + checo_ids
             ids_tuple = tuple(c)
             
             # Construir la consulta SQL con los IDs en la cláusula IN
@@ -622,11 +622,11 @@ class ListaDePrecios(models.TransientModel):
         sheet.add_image(img, 'A1')
 
     def get_xlsx_report(self, partner_id, return_base_64=False):
-        
+        # 1
         include_promo = True
         
         objects = self.env['inv_promo.report'].sudo().insert_data()
-        con_iva = self.get_dict_data(objects,'Precios Con Iva',partner_id)        
+        con_iva = self.get_dict_data(objects,'Precios Con Iva',partner_id)
         #precio_especial = self.get_dict_data(objects,'P. GOODYEAR')
         promo_bridgestone = self.get_dict_data(objects, 'P. BRIDGESTONE', partner_id)
         promocion23 = self.get_dict_data(objects, 'Onyx', partner_id)
@@ -977,7 +977,8 @@ class ListaDePrecios(models.TransientModel):
                             sheet.freeze_panes = 'A15'
                     for columna_sheet3 in columna_a_ocultar_sheet3:
                         sheet.column_dimensions[columna_sheet3].hidden = True
-                        
+
+
         # Ajustar el ancho de las columnas en todas las hojas basándose en la fila 1 (por ejemplo)
         row_num = 14
         desired_height = 40  # Altura deseada en puntos
