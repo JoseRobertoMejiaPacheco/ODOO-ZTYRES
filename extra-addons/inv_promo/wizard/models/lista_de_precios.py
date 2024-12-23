@@ -368,11 +368,13 @@ class ListaDePrecios(models.TransientModel):
                     cell.fill = PatternFill(start_color='DDE5F2', end_color='DDE5F2', fill_type='solid')
                     
         for row in sheet.iter_rows(min_row=15):
-            id_cell = row[ids_in_codes_brig - 1]
+            id_cell_promo = row[19]
             for col in range(ord(start_column), ord(end_column) + 1):
-                if id_cell.value in promo_dots:
+                if id_cell_promo.value:
                     cell = row[col - ord(start_column)]
                     cell.fill = PatternFill(start_color='D9D9D9', end_color='D9D9D9', fill_type='solid')
+                else:
+                    pass
    
     def color_cells_based_on_condition_sheet3(self, sheet):
         outlet_col_idx = column_index_from_string('S')  # Replace 'A' with actual column letter for 'Outlet'
@@ -475,7 +477,7 @@ class ListaDePrecios(models.TransientModel):
                     'Cantidad Disponible': obj.available,
                     'Trans.': (obj.transito_str + obj.backorder_str) or None,
                     'Arribo': obj.fecha_aprox or None,
-                    'DOT': obj.product_id.product_dot_range or 'N/A' or None,  
+                    'DOT': obj.lot_name or 'N/A' or None,  
                     }
                 if self.partner_id:
                     data_dict.update({'Volumen': self.calcular_porcentaje(self.calcular_porcentaje(obj.volumen, 16, 'suma'), self.partner_id.volume_profile.percent, 'resta'),})
@@ -541,7 +543,7 @@ class ListaDePrecios(models.TransientModel):
                         'Cantidad Disponible': avaiable_qty,
                         'Trans.': (obj.transito_str + obj.backorder_str) or None,
                         'Arribo': obj.fecha_aprox or None,
-                        'DOT': dot or 'N/A' or None,  
+                        'DOT': obj.lot_name or 'N/A' or None,  
                         }
                     data_list.append(data_dict)    
                     dots_price = self.env['product.pricelist.item'].search([('pricelist_id', '=', 122), ('lot_name', '=', dot), ('product_tmpl_id', '=', obj.product_id.id)]).mapped('fixed_price')        
@@ -593,7 +595,7 @@ class ListaDePrecios(models.TransientModel):
                 'Cantidad Disponible': obj.available,
                 'Trans.': (obj.transito_str + obj.backorder_str) or None,
                 'Arribo': obj.fecha_aprox or None,
-                'DOT': obj.product_id.product_dot_range or 'N/A' or None,  
+                'DOT': obj.lot_name or 'N/A' or None,  
                 }
             if self.partner_id:
                 data_dict.update({'Volumen': self.calcular_porcentaje(self.calcular_porcentaje(obj.volumen, 16, 'suma'), self.partner_id.volume_profile.percent, 'resta'),})
@@ -725,7 +727,7 @@ class ListaDePrecios(models.TransientModel):
         self.format_column(sheet1,'X','number')
         self.format_column(sheet1,'Y','currency')
         
-        columna_a_ocultar_sheet1 = ['A', 'M', 'Q', 'R', 'S', 'T', 'V', 'Y']
+        columna_a_ocultar_sheet1 = ['A', 'M', 'Q', 'R', 'S', 'T', 'V', 'Y','N','O']
         
         for columna_sheet1 in columna_a_ocultar_sheet1:
             sheet1.column_dimensions[columna_sheet1].hidden = True
