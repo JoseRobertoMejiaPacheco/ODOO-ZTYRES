@@ -23,16 +23,16 @@ class PaymentDiscountMixin(models.AbstractModel):
         return descuentos
 
     def _calculate_discount(self, record, shipping_with_taxes, profile_line):
-        print(hasattr(record, 'date_order'))
-        print(record.invoice_date_due)
-       
+        
         discount = (1 - (profile_line.discount / 100.0))
         if hasattr(record, 'invoice_line_ids'):
             pagos = record.amount_total - record.amount_residual
+            fecha_vencimiento =  record.invoice_date_due + timedelta(days=profile_line.upper_limit)
         else:
+            fecha_vencimiento = record.date_order + timedelta(days=profile_line.upper_limit)
             pagos = 0
         monto_descuento = (((record.amount_total-record.bs_nc_amount*1.16-record.logistic_nc_amount*1.16 - (shipping_with_taxes + pagos)) * discount)) + shipping_with_taxes
-        fecha_vencimiento = record.date_order + timedelta(days=profile_line.upper_limit) if hasattr(record, 'date_order') else record.invoice_date_due + timedelta(days=profile_line.upper_limit)
+        
         return monto_descuento, fecha_vencimiento
 
     def compute_payment_discount_text(self, record):
@@ -172,7 +172,7 @@ class PaymentDiscountMixin(models.AbstractModel):
         return sum(subtotal_lines) + iva_amount
     
     def _generate_html_table(self, bs_nc_amount, logistic_nc_amount):
-        """Genera una tabla HTML para mostrar los montos calculados con formato de moneda."""
+        """Genera una tabla HTML para mostrar los montos calculados con formato de moneda solo si son mayores a 0."""
         
         # Formatear los montos con formato de moneda si son floats
         if isinstance(bs_nc_amount, float):
@@ -180,7 +180,7 @@ class PaymentDiscountMixin(models.AbstractModel):
         if isinstance(logistic_nc_amount, float):
             logistic_nc_amount = f'${logistic_nc_amount:,.2f}'  # Formateamos como moneda, 2 decimales
         
-        # Generamos la tabla HTML con los montos formateados
+        # Iniciar la tabla HTML
         html_content = """
         <table class="table">
             <thead>
@@ -189,20 +189,30 @@ class PaymentDiscountMixin(models.AbstractModel):
                     <th>Monto</th>
                 </tr>
             </thead>
-            <tbody>
-                <tr>
-                    <td>Bridgestone</td>
-                    <td>{}</td>
-                </tr>
-                <tr>
-                    <td>Logístico</td>
-                    <td>{}</td>
-                </tr>
+            <tbody>"""
+        
+        # Solo agregar el renglón para Bridgestone si el monto es mayor a 0
+        if isinstance(bs_nc_amount, str) and float(bs_nc_amount.strip('$').replace(',', '')) > 0:
+            html_content += f"""
+            <tr>
+                <td>Bridgestone</td>
+                <td>{bs_nc_amount}</td>
+            </tr>"""
+        
+        # Solo agregar el renglón para Logístico si el monto es mayor a 0
+        if isinstance(logistic_nc_amount, str) and float(logistic_nc_amount.strip('$').replace(',', '')) > 0:
+            html_content += f"""
+            <tr>
+                <td>Logístico</td>
+                <td>{logistic_nc_amount}</td>
+            </tr>"""
+        
+        # Cerrar la tabla HTML
+        html_content += """
             </tbody>
-        </table>""".format(bs_nc_amount, logistic_nc_amount)
+        </table>"""
         
         return html_content
-
 
     
 

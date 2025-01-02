@@ -233,7 +233,7 @@ class SaleOrder2(models.Model):
     def _compute_nc_text(self):
         for record in self:
             # Generamos el HTML con la tabla que contiene ambos montos
-            if record.bs_nc_amount and record.logistic_nc_amount:
+            if record.bs_nc_amount or record.logistic_nc_amount and record.date_order.year == 2025:
                 record.bs_nc_text = False
                 record.logistic_nc_text = self.env['payment.discount.mixin']._generate_html_table(record.bs_nc_amount*1.16, record.logistic_nc_amount*1.16)
             else:
