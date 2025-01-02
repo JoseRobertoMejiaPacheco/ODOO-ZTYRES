@@ -425,6 +425,7 @@ class ListaDePrecios(models.TransientModel):
     def get_dict_data(self, objects, sheet_name,partner_id=False):
         if sheet_name == 'Precios Con Iva':
             checo_ids = objects.filtered(lambda obj: obj.volumen > 0 or obj.promocion > 0 or obj.promo_dot > 0 or obj.outlet).ids
+            #Eliminar todo lo de additional_discounts
             c = self.env['additional_discounts.products_line'].search([('additional_prod_id.active','=',True)]).mapped('product_tmpl_id').ids + checo_ids
             ids_tuple = tuple(c)
             

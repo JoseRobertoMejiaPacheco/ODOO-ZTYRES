@@ -10,7 +10,8 @@
                         page-break-before: always;
                     }
                 </style>                               
-               <div t-if="o.payment_discount_text" t-raw="o.payment_discount_text"></div>               
+                    <div t-if="o.logistic_nc_text" t-raw="o.logistic_nc_text"></div>                                                                                   
+                    <div t-if="o.payment_discount_text" t-raw="o.payment_discount_text"></div>              
                 <div>
                     <p>No se aceptan pagos en efectivo y cheques que no sean nominativos a la empresa. Por lo tanto, ningún empleado de la empresa puede aceptar dinero en efectivo o cheques a su nombre.</p>
                     <p>Devoluciones por errores de Ztyres serán aceptadas sin cargo, siempre y cuando se hagan dentro del mes de facturación con previa notificación. Las devoluciones por motivos atribuibles al cliente causarán una penalización del 5% sobre lo facturado, más gastos de envío.</p>
@@ -32,9 +33,9 @@
                         page-break-before: always;
                     }
                 </style>
-                <div>                                        
-                    <div t-if="doc.payment_promo_text" t-raw="doc.payment_promo_text"></div>                                    
-                    <div t-if="doc.payment_discount_text" t-raw="doc.payment_discount_text"></div>                
+                <div>
+                    <div t-if="doc.logistic_nc_text" t-raw="doc.logistic_nc_text"></div>                                                                                   
+                    <div t-if="doc.payment_discount_text" t-raw="doc.payment_discount_text"></div>
                     <div>
                         <p>No se aceptan pagos en efectivo y cheques que no sean nominativos a la empresa. Por lo tanto, ningún empleado de la empresa puede aceptar dinero en efectivo o cheques a su nombre.</p>
                         <p>Devoluciones por errores de Ztyres serán aceptadas sin cargo, siempre y cuando se hagan dentro del mes de facturación con previa notificación. Las devoluciones por motivos atribuibles al cliente causarán una penalización del 5% sobre lo facturado, más gastos de envío.</p>
@@ -119,6 +120,9 @@
                             <field name="pricelist_ids" widget="many2many_tags"/>
                             <field name="letter"/>                        
                         </group> 
+                        <group>
+                            <field name="active" invisible="1"/>
+                        </group>                        
                     </group>                 
                 </sheet>
             </form>

@@ -20,7 +20,7 @@ class SaleOrder(models.Model):
     is_expo = fields.Boolean(string='Es exportación?', default=False)
     unlock_financial = fields.Boolean(string='Excepcion de pedido', default=False,tracking=True)
     pricelist_locked = fields.Boolean(string="Lista de precios bloqueada", default=False)
-
+    
     @api.onchange('pricelist_id')
     def _check_pricelist_locked(self):
         # Si pricelist_locked es True, entonces se ha establecido una lista de precios anteriormente
@@ -116,40 +116,6 @@ class SaleOrder(models.Model):
                     picking.sudo().unlink()     
         return res
 
-    @api.model
-    def create(self, values):        
-        result = super().create(values)
-        result.quotation_action_confirm()
-        return result
-    
-    def write(self, values):       
-        res = super().write(values)
-        if values.get("order_line") is not None:
-            # self.order_line.check_price_not_in_zero()
-            if self.state == 'done':
-                self.action_unlock()
-            if self.state == 'draft':
-                self.quotation_action_confirm()
-        search_domain = [
-            ('product_tmpl_id', 'in', self.order_line.product_template_id.ids),
-            ('additional_prod_id.is_mix','=',True),
-            ('additional_prod_id.active','=',True)
-        ]
-        x = self.env['additional_discounts.products_line'].search(search_domain)
-        #x.additional_prod_id.ensure_one()
-        prod_ids = x.product_tmpl_id.product_variant_id.ids
-        promo_qty = sum(self.order_line.filtered(lambda line: line.product_id.id in prod_ids).mapped('product_qty'))
-        if promo_qty>= x.additional_prod_id.min_qty:
-            for promo_line in x:
-                sol = self.order_line.filtered(lambda line: line.product_template_id.id == promo_line.product_tmpl_id.id)
-                if sol:
-                    sol.price_unit = promo_line.price
-                    sol.discount = 0
-                    sol.list_origin = 'PAQUETE'
-        else:
-            for line2 in self.order_line:
-                line2._compute_price_unit()
-        return res
 
     @api.onchange('pricelist_id')
     def onchange_pricelist_id(self):
@@ -193,7 +159,7 @@ class SaleOrder(models.Model):
                     picking.sudo().unlink()
         for line in self.order_line:
             line.with_context({'lots_ids':line.lots_ids.ids})._ztyres_action_launch_stock_rule()
-
+    
     def action_cancel(self):
         self.x_studio_val_credito =False
         self.x_studio_val_pago =False

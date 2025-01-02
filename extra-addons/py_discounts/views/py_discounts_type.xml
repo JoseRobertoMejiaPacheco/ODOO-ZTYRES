@@ -1,0 +1,28 @@
+<?xml version='1.0' encoding='utf-8'?>
+<odoo>
+    <data>
+        <record id="view_py_discount_type_tree" model="ir.ui.view">
+            <field name="name">py.discount.type.tree</field>
+            <field name="model">py_discounts.type</field>
+            <field name="arch" type="xml">
+                <tree>
+                    <field name="name"/>
+                </tree>
+            </field>
+        </record>
+
+        <record id="view_py_discount_type_form" model="ir.ui.view">
+            <field name="name">py.discount.type.form</field>
+            <field name="model">py_discounts.type</field>
+            <field name="arch" type="xml">
+                <form>
+                    <sheet>
+                        <group>
+                            <field name="name"/>
+                        </group>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+    </data>
+</odoo>

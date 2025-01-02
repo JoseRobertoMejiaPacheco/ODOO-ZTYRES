@@ -1,0 +1,71 @@
+<?xml version='1.0' encoding='utf-8'?>
+<odoo>
+    <data>
+        <!-- Vista de Lista para py_discounts.py_discounts -->
+        <record id="view_py_discounts_tree" model="ir.ui.view">
+            <field name="name">py.discounts.tree</field>
+            <field name="model">py_discounts.py_discounts</field>
+            <field name="arch" type="xml">
+                <tree>
+                    <field name="name"/>
+                    <field name="discount_type"/>
+                    <field name="date_start"/>
+                    <field name="date_end"/>
+                    <field name="product_ids"/>
+                    <field name="pricelist_ids"/>
+                </tree>
+            </field>
+        </record>
+
+        <!-- Vista de Formulario para py_discounts.py_discounts -->
+        <record id="view_py_discounts_form" model="ir.ui.view">
+            <field name="name">py.discounts.form</field>
+            <field name="model">py_discounts.py_discounts</field>
+            <field name="arch" type="xml">
+                <form>
+                    <sheet>
+                        <separator string="Datos de la promoción" colspan="4" />
+                        <!-- Información básica del descuento -->
+                        <group>
+                            <field name="name" string="Nombre del Descuento"/>
+                            <field name="descripcion" string="Descripción"/>
+                            <field name="codigo" string="Código"/>                            
+                        </group>
+
+                        <separator string="Vigencia" colspan="4" />
+                        <!-- Tipo de descuento y fechas -->
+                        <group>                            
+                            <field name="date_start" string="Fecha de Inicio"/>
+                            <field name="date_end" string="Fecha de Fin"/>
+                        </group>
+
+                        <!-- Listas de precios y tipos internos -->
+                        <separator string="Listas de precios y tipos aplicables" colspan="4" />
+                        <group>
+                            <field name="pricelist_ids" widget="many2many_tags" string="Listas de Precios"/>
+                            <field name="internal_type" widget="many2many_tags" string="Tipos Internos"/>
+                            <field name="discount_type" string="Tipo de Descuento"/>
+                        </group>
+                        <!-- Productos asociados al descuento -->                        
+                        
+                        <separator string="Productos Participantes" colspan="4" />
+                            <field name="product_ids" nolabel="1">
+                                <tree create="false" delete="false" edit="false" editable="bottom">
+                                    <field name="default_code" string="Código del Producto"/>
+                                    <field name="name" string="Nombre del Producto"/>
+                                    <field name="manufacturer_id" string="Fabricante"/>
+                                    <field name="brand_id" string="Marca"/>
+                                    <field name="tier_id" string="Nivel"/>
+                                </tree>
+                            </field>
+
+                        <separator string="Aqui se hace la magia" colspan="4" />
+                        <group>
+                            <field name="code" string="Código Python"/>
+                        </group>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+    </data>
+</odoo>

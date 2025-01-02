@@ -1,0 +1,17 @@
+<?xml version='1.0' encoding='utf-8'?>
+<odoo>
+    <data>
+
+        <record id="action_py_discounts" model="ir.actions.act_window">
+            <field name="name">Descuentos</field>
+            <field name="res_model">py_discounts.py_discounts</field>
+            <field name="view_mode">tree,form</field>
+            <field name="target">current</field>
+        </record>
+
+        <menuitem id="menu_py_discounts_root" name="Descuentos Python" sequence="10" />
+            
+        <menuitem id="menu_py_discounts" name="Descuentos" parent="menu_py_discounts_root" sequence="1" action="action_py_discounts" />
+
+    </data>
+</odoo>

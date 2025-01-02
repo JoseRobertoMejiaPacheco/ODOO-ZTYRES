@@ -1,0 +1,40 @@
+<?xml version='1.0' encoding='utf-8'?>
+<odoo>
+    <data>
+        <record id="view_py_discount_limits_tree" model="ir.ui.view">
+            <field name="name">py.discount.limits.tree</field>
+            <field name="model">py_discounts.limits</field>
+            <field name="arch" type="xml">
+                <tree>
+                    <field name="name"/>
+                    <field name="limit_type"/>
+                    <field name="lower_limit"/>
+                    <field name="upper_limit"/>
+                    <field name="nc_amount"/>
+                    <field name="percent"/>
+                    <field name="reward_name"/>
+                </tree>
+            </field>
+        </record>        
+
+        <record id="view_py_discount_limits_form" model="ir.ui.view">
+            <field name="name">py.discount.limits.form</field>
+            <field name="model">py_discounts.limits</field>
+            <field name="arch" type="xml">
+                <form>
+                    <sheet>
+                        <group>
+                            <field name="name"/>
+                            <field name="limit_type"/>
+                            <field name="lower_limit"/>
+                            <field name="upper_limit"/>
+                            <field name="nc_amount"/>
+                            <field name="percent"/>
+                            <field name="reward_name"/>
+                        </group>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+    </data>
+</odoo>

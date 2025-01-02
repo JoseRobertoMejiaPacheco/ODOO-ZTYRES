@@ -34,7 +34,7 @@ class AccountInvoiceReport(models.Model):
 
 
     def _select(self):
-        return super()._select() + """,template.tire_measure_id,
+        x = super()._select() + """,template.tire_measure_id,
 template.face_id,
 template.layer_id,
 template.manufacturer_id,
@@ -54,3 +54,5 @@ template.e_mark_id,
 template.s_mark_id,
 template.ccc_id,
 template.tire"""
+        print(x)
+        return x

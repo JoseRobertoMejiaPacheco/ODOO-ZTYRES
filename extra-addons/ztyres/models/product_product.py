@@ -3,7 +3,7 @@ from odoo import models, fields,api
 import datetime
 class Product(models.Model):
     _inherit = 'product.product'
-
+    
     dot_range = fields.Char(compute='_compute_dot_range', string='DOT')
     
     def obtener_anos(self,numero):

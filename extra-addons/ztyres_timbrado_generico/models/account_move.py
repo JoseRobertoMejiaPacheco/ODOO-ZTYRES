@@ -22,7 +22,7 @@ class account_move(models.Model):
         res = super().action_post()
         if self.move_type:
             if self.move_type in ('out_invoice') and not any(self.line_ids.sale_line_ids.mapped('order_id').mapped('is_expo')):
-                self.sudo().discount_increase()
+                self.sudo().generate_and_apply_nc()
                 action = self.with_context(discard_logo_check=True).action_invoice_sent()
                 action_context = action['context']
                 invoice_send_wizard = self.env['account.invoice.send'].with_context(

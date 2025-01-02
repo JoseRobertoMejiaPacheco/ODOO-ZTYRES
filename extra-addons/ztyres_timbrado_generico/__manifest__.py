@@ -27,7 +27,9 @@
         'security/security.xml',
         'security/ir.model.access.csv',
         'views/account_move.xml',
-        'views/account_payment.xml'
+        'views/account_payment.xml',
+        'views/sale_order.xml'
+        
     ],
     # only loaded in demonstration mode
     'demo': [

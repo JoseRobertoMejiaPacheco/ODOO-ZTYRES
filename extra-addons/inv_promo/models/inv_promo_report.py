@@ -1,8 +1,6 @@
 # -- coding: utf-8 --
 
 from odoo import models, fields, api
-from .inv_promo_variables import OUTLET, PAQUETES
-
 
 class InvPromo(models.TransientModel):
     _name = 'inv_promo.report'
@@ -24,11 +22,7 @@ class InvPromo(models.TransientModel):
     backorder = fields.Integer(string='Backorder')
     volumen = fields.Float(compute='_compute_volumen', digits=(16, 2), string='Precio Volumen')
     promocion = fields.Float(compute='_compute_promocion', digits=(16, 2), string='Precio promocion')
-    promocion_paquetes = fields.Float(compute='_compute_outlet', digits=(16, 2), string='Precio Paquetes')
-    outlet = fields.Float(compute='_compute_outlet', digits=(16, 2), string='Precio outlet')
     promo_dot = fields.Float(digits=(16, 2), string='Precio Promo Dot')
-    condicion = fields.Integer(compute='_compute_outlet', digits=(16, 2), string='Condición outlet')
-    cantidad_gratis = fields.Float(compute='_compute_outlet', digits=(16, 2), string='Cantidad Gratis')
     transito_str = fields.Integer(compute='_compute_transito_str', string='Transito')
     fecha_aprox = fields.Date(compute='_compute_transito_str', string='Fecha_aprox')
     inventario_str = fields.Char(compute='_compute_inventario_str', string='Inventario')
@@ -52,37 +46,7 @@ class InvPromo(models.TransientModel):
             record.volumen = 0
             if not record.promo_dot:
                 record.volumen = record._get_price(record.product_id.id, 1)
-
-    @api.depends('product_id')
-    def _compute_outlet(self):
-        diccionario_outlet = {id_producto: {'precio': precio, 'cantidad': cantidad, 'cantidad_gratis': cantidad_gratis} for id_producto, precio, cantidad, cantidad_gratis in OUTLET}
-        diccionario_paquetes = {id_producto: {'precio': precio, 'cantidad': cantidad, 'cantidad_gratis': cantidad_gratis} for id_producto, precio, cantidad, cantidad_gratis in PAQUETES}
-        
-        for record in self:
-            record.outlet = 0.0
-            record.condicion = 0.0
-            record.promocion_paquetes = 0.0
-            record.cantidad_gratis = 0.0
-            if not record.promo_dot:
-                outlet_price = record._get_price(record.product_id.id, 108)
-                datos_producto_outlet = diccionario_outlet.get(record.product_id.id, {})
-                datos_producto_paquete = diccionario_paquetes.get(record.product_id.id, {})
-                if datos_producto_outlet:
-                    record.outlet = datos_producto_outlet.get('precio', 0)
-                    record.condicion = datos_producto_outlet.get('cantidad', 0)
-                    record.cantidad_gratis = datos_producto_outlet.get('cantidad_gratis', 0)
-                    record.promocion_paquetes = 0.0  # Establecer a 0 para evitar errores si no hay datos en el diccionario de outlet
-                elif datos_producto_paquete:
-                    record.promocion_paquetes = datos_producto_paquete.get('precio', 0)
-                    record.condicion = datos_producto_paquete.get('cantidad', 0)
-                    record.cantidad_gratis = datos_producto_paquete.get('cantidad_gratis', 0)
-                    record.outlet = 0.0  # Establecer a 0 para evitar errores si no hay datos en el diccionario de paquetes
-                elif outlet_price:
-                    record.outlet = outlet_price
-                    record.condicion = 0.0
-                    record.promocion_paquetes = 0.0
-                    record.cantidad_gratis = 0.0      
-
+    
     @api.depends('product_id')
     def _compute_promocion(self):
         for record in self:

@@ -325,7 +325,6 @@ class MyModel(models.TransientModel):
             am.move_type IN ('out_invoice', 'out_refund') AND
             am.invoice_date >= %s AND
             am.invoice_date <= %s
-        GROUP BY pp.id;
         """
         params = (month_name, date_from, date_to)
         return self.execute_query(query, params)

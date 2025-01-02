@@ -3,6 +3,11 @@ from odoo import _, api, fields, models
 from odoo.exceptions import ValidationError
 from datetime import timedelta, date,datetime
 import calendar
+from odoo import models, fields, api
+from collections import defaultdict
+import math
+from odoo.tools import DEFAULT_SERVER_DATE_FORMAT
+from odoo.fields import Command
 class DiscountProfilesLine(models.Model):
     _name = 'discount_profiles.discount.line'
     _description = 'Limites de descuentos / Condiciones'
@@ -13,7 +18,6 @@ class DiscountProfilesLine(models.Model):
     profile_financial_discount_id = fields.Many2one('discount_profiles.financial.discount')
     profile_logistic_discount_id = fields.Many2one('discount_profiles.logistic.discount')
     profile_volume_discount_id = fields.Many2one('discount_profiles.volume.discount')
-    
     name = fields.Char(string='Name', compute='_compute_name', store=True)
     @api.depends('lower_limit', 'upper_limit', 'min_qty', 'discount')
     def _compute_name(self):
@@ -21,28 +25,17 @@ class DiscountProfilesLine(models.Model):
             if record.profile_financial_discount_id:
                 record.name = f"De {record.lower_limit} a {record.upper_limit} días {record.discount}%"    
             if record.profile_logistic_discount_id:
-                record.name = f"De {record.lower_limit} a {record.upper_limit} llantas {record.discount}%"                                    
-        
-    
-    
+                record.name = f"De {record.lower_limit} a {record.upper_limit} llantas {record.discount}%"
+
 class DiscountProfiles(models.Model):
     _name = 'discount_profiles.discount'
     _description = 'Descuentos Base'
     _order = 'letter'
-    # _sql_constraints = [
-    #     ('unique_percent', 'UNIQUE (percent)', 'No puede haber dos descuentos con el mismo porcentaje.'),
-    # ] 
     name = fields.Char(string='Nombre', compute='_compute_rec_name', store=True)
     active = fields.Boolean(string='Activo', default=True)
     percent = fields.Integer(string='Porcentaje de Descuento')
     pricelist_ids = fields.Many2many('product.pricelist', string='Aplica en:')    
     letter = fields.Char(string='Letra')
-    
-    # @api.constrains('percent')
-    # def _check_percent_value(self):
-    #     for record in self:
-    #         if record.percent < 0 or record.percent > 12:
-    #             raise ValidationError(_('El porcentaje debe estar entre 0 y 12.'))
 
 
 class PartnerFinancialDiscount(models.Model):
@@ -50,6 +43,7 @@ class PartnerFinancialDiscount(models.Model):
     _inherit = 'discount_profiles.discount'
     _description = 'Descuento Financiero'
     _order = 'letter'
+    active = fields.Boolean(string='Activo', default=True)
     line_ids = fields.One2many('discount_profiles.discount.line', inverse_name='profile_financial_discount_id')
     property_payment_term_id = fields.Many2one('account.payment.term', string='Términos de pago del cliente')
     @api.depends('percent','letter')
@@ -63,6 +57,7 @@ class PartnerLogisticDiscount(models.Model):
     _inherit = 'discount_profiles.discount'
     _description = 'Descuento Logístico'
     _order = 'letter'
+    active = fields.Boolean(string='Activo', default=True)
     line_ids = fields.One2many('discount_profiles.discount.line', inverse_name='profile_logistic_discount_id')        
     
     
@@ -76,6 +71,7 @@ class PartnerVolumeDiscount(models.Model):
     _inherit = 'discount_profiles.discount'
     _description = 'Descuento Volumen'
     _order = 'letter'
+    active = fields.Boolean(string='Activo', default=True)
     line_ids = fields.One2many('discount_profiles.discount.line', inverse_name='profile_volume_discount_id')        
     
     
@@ -103,28 +99,7 @@ class SaleOrder(models.Model):
     volume_profile = fields.Many2one('discount_profiles.volume.discount', string='Perfil:  de Volumen')
     financial_profile = fields.Many2one('discount_profiles.financial.discount', string='Perfil:  Financiero')
     logistic_profile = fields.Many2one('discount_profiles.logistic.discount', string='Perfil:  Logístico')
-        
-    # @api.model
-    # def create(self, vals):
-    #     if vals.get('partner_id',False):
-    #         partner = self.env['res.partner'].browse(vals['partner_id'])
-    #         vals.update({
-    #             'volume_profile': partner.volume_profile.id,
-    #             'financial_profile': partner.financial_profile.id,
-    #             'logistic_profile': partner.logistic_profile.id,
-    #         })
-    #     return super(SaleOrder, self).create(vals)
-
-    # def write(self, vals):
-    #     if vals.get('partner_id',False):
-    #         partner = self.env['res.partner'].browse(vals['partner_id'])
-    #         vals.update({
-    #             'volume_profile': partner.volume_profile.id,
-    #             'financial_profile': partner.financial_profile.id,
-    #             'logistic_profile': partner.logistic_profile.id,
-    #         })
-    #     return super(SaleOrder, self).write(vals)
-
+    
     @api.onchange('partner_id')
     def _onchange_partner_id(self):
         if self.partner_id:
@@ -135,173 +110,143 @@ class SaleOrder(models.Model):
 
 class AccountMove(models.Model):
     _inherit = 'account.move'
-    
-    payment_discount_text = fields.Html(compute='_compute_payment_discount_text', string='Descuento o Monto a Pagar')
-
-    
-    def get_row_values_descuento(self):
-            descuentos = []
-            for move in self:
-                if move.partner_id.financial_profile:
-                    total_con_iva = 0
-                    subtotal_lines = move.invoice_line_ids.filtered(lambda line: line.product_id.id == 50959).mapped('price_subtotal')
-                    if subtotal_lines:
-                        iva_amount = (sum(subtotal_lines) * 1.16) - sum(subtotal_lines)
-                        total_con_iva = sum(subtotal_lines) + iva_amount
-                    descuentos_cliente = move.partner_id.financial_profile.line_ids
-                    for profile_line in descuentos_cliente:
-                        y = (1 - (profile_line.discount / 100.0))
-                        pagos = move.amount_total - move.amount_residual
-                        monto_descuento = ((((move.amount_total-(total_con_iva+pagos))*y))+ total_con_iva)
-                        fecha_vencimiento = move.date+ timedelta(days=profile_line.upper_limit)
-                        descuentos.append((profile_line.discount, profile_line.upper_limit, fecha_vencimiento, monto_descuento))
-            return descuentos
-
-    @api.depends('invoice_date_due')
+    payment_discount_text = fields.Html(compute='_compute_payment_discount_text', string='Descuento o Monto a Pagar', store=True)
+    bs_nc_amount = fields.Float(compute='_compute_nc_amount', string='Monto NC BS', store=True)
+    logistic_nc_amount = fields.Float(compute='_compute_nc_amount', string='Monto NC Logístico', store=True)
+    bs_nc_text = fields.Html(compute='_compute_nc_text', string='Bridgestone')
+    logistic_nc_text = fields.Html(compute='_compute_nc_text', string='Logístico')
+    payment_discount_text = fields.Html(compute='_compute_payment_discount_text', string='Descuento o Monto a Pagar',store=True)
+    credit_note_promo = fields.Many2one('account.move',string='Notas de Crédito Promo')
+    @api.depends('amount_total', 'partner_id','invoice_date')
     def _compute_payment_discount_text(self):
         for record in self:
-            headers = ('Descuento', 'Dias de Pago', 'Fecha máxima', 'Cantidad a pagar')
-            meses_espanol = {
-                'January': 'enero',
-                'February': 'febrero',
-                'March': 'marzo',
-                'April': 'abril',
-                'May': 'mayo',
-                'June': 'junio',
-                'July': 'julio',
-                'August': 'agosto',
-                'September': 'septiembre',
-                'October': 'octubre',
-                'November': 'noviembre',
-                'December': 'diciembre'
-            }
-            rows = record.get_row_values_descuento()
-            html = ''
-            html = '<table class="page-break1 table table-sm o_main_table table-borderless">'
-            html += '<thead>'
-            html += '<tr>'
-            for header in headers:
-                html += f'<th>{header}</th>'
-            html += '</tr>'
-            html += '</thead>'
+            if record.invoice_date and record.invoice_date.year == 2025:
+                # Llamamos al método del mixin pasando 'record' como parámetro
+                record.payment_discount_text = self.env['payment.discount.mixin'].compute_payment_discount_text(record)
 
-            for row in rows:
-                html += '<tr>'
-                for cell_idx, cell in enumerate(row):
-                    if isinstance(cell, datetime):
-                        # Obtener el nombre del mes en español
-                        mes = meses_espanol[calendar.month_name[cell.month]]
-                        # Formatear la fecha como "12 de abril de 2024"
-                        cell = f'{cell.day} de {mes} de {cell.year}'  # Formato: día de mes de año (por ejemplo, 12 de abril de 2024)
-                    elif isinstance(cell, float):
-                        # Formatear el monto con formato de moneda
-                        cell = f'${cell:,.2f}'
-                    elif isinstance(cell, int) and headers[cell_idx] == 'Dias de Pago':
-                        # Formatear el valor de días agregando "Días" al final
-                        cell = f'{cell} Días'
-                    elif isinstance(cell, int):
-                        # Formatear el descuento con el símbolo de porcentaje
-                        cell = f'{cell}%'  # Para otros valores de la fila
-                    else:
-                        # Mantener otros tipos de datos sin formato especial
-                        pass
-                    html += f'<td>{cell}</td>'
-                html += '</tr>'
+    @api.depends('amount_total', 'partner_id','invoice_date')
+    def _compute_nc_amount(self):
+        for record in self:
+            # Aseguramos que la fecha sea 2025
+            if record.invoice_date and record.invoice_date.year == 2025:
+                # Calculamos el monto de NC BS y Logístico en cascada
+                bs_nc_amount = self.env['payment.discount.mixin'].compute_nc_amount_bs(record)
+                logistic_nc_amount = self.env['payment.discount.mixin']._get_logistic_amount(record)
+                
+                # Asignamos los valores calculados
+                record.bs_nc_amount = bs_nc_amount
+                record.logistic_nc_amount = logistic_nc_amount
+            else:
+                # Si no es 2025, asignamos 0 a ambos montos
+                record.bs_nc_amount = 0
+                record.logistic_nc_amount = 0
 
-            html += '</table>'
 
-            record.payment_discount_text = html
 
-class SaleOrder(models.Model):
+    @api.depends('bs_nc_amount', 'logistic_nc_amount','invoice_date')
+    def _compute_nc_text(self):
+        for record in self:
+            # Generamos el HTML con la tabla que contiene ambos montos
+            if record.bs_nc_amount and record.logistic_nc_amount:
+                record.bs_nc_text = False
+                record.logistic_nc_text = self.env['payment.discount.mixin']._generate_html_table(record.bs_nc_amount*1.16, record.logistic_nc_amount*1.16)
+            else:
+                record.bs_nc_text = False
+                record.logistic_nc_text = False
+
+    def generate_and_apply_nc(self):
+        for record in self:
+            lines_nc = []
+            if record.bs_nc_amount>0:
+                lines_nc.append((0, 0, {
+                        "product_id": 50785,
+                        "quantity": 1,
+                        'name': 'Descuento B Premium 10%',
+                        "price_unit": round((record.bs_nc_amount),2),
+                    }))
+            if record.logistic_nc_amount>0:
+                lines_nc.append((0, 0, {
+                        "product_id": 50785,
+                        "quantity": 1,
+                        'name': 'Descuento Logistico',
+                        "price_unit": round((record.logistic_nc_amount),2),
+                    }))
+            if lines_nc:
+                credit_note_vals = {
+                    'l10n_mx_edi_origin':f'01|{self.l10n_mx_edi_cfdi_uuid or ""}',
+                    'move_type': 'out_refund',  
+                    "x_studio_tipo": "Bonificación",
+                    "generic_edi":self.generic_edi,
+                    "invoice_date": fields.date.today().strftime(DEFAULT_SERVER_DATE_FORMAT),
+                    "journal_id": 24,
+                    "l10n_mx_edi_payment_method_id": 11, #Condonacion
+                    "l10n_mx_edi_usage": "G02",# Devoluciones y Bonificaciones
+                    "currency_id": self.env.company.currency_id.id,
+                    "partner_id": self.partner_id.id,
+                    "partner_shipping_id": self.partner_id.id,   
+                        'invoice_line_ids': lines_nc,
+                    }
+                
+                
+                res = self.sudo().create(credit_note_vals)
+                res.sudo().action_post()
+                nc_credit_id = res.mapped('line_ids').filtered(lambda line: line.account_type == 'asset_receivable')
+                invoice_debit_id = self.get_debit_move_id()
+                apply_out_invoice = self.env['apply_out_invoice.payments']
+                apply_out_invoice.sudo().create_partial_reconcile(
+                    credit_move_id=nc_credit_id.id,
+                    debit_move_id=invoice_debit_id.id,
+                    amount=nc_credit_id.credit
+                )
+                self.credit_note_promo = res.id
+    
+class SaleOrder2(models.Model):
     _inherit = 'sale.order'
     
-    payment_discount_text = fields.Html(compute='_compute_payment_discount_text', string='Descuento o Monto a Pagar')
+    # Campos de cálculo
+    payment_discount_text = fields.Html(compute='_compute_payment_discount_text', string='Descuento o Monto a Pagar', store=True)
+    bs_nc_amount = fields.Float(compute='_compute_nc_amount', string='Monto NC BS', store=True)
+    logistic_nc_amount = fields.Float(compute='_compute_nc_amount', string='Monto NC Logístico', store=True)
+    bs_nc_text = fields.Html(compute='_compute_nc_text', string='Bridgestone')
+    logistic_nc_text = fields.Html(compute='_compute_nc_text', string='Logístico')
     
-    def get_row_values_descuento(self):
-        """
-        Encuentra el descuento correspondiente a un código y cantidad de días dados en un diccionario de descuentos.
-
-        Returns:
-        list of tuples: Lista de tuplas conteniendo el descuento, los días, la fecha de vencimiento y el monto después del descuento.
-        """
-
-        descuentos = []
-        for order in self:
-            total_con_iva = 0
-            subtotal_lines = order.order_line.filtered(lambda line: line.product_id.id == 50959).mapped('price_subtotal')
-            if subtotal_lines:
-                iva_amount = sum(subtotal_lines) * 0.16
-                total_con_iva = sum(subtotal_lines) + iva_amount
-            if order.partner_id.financial_profile:
-                descuentos_cliente = order.partner_id.financial_profile.line_ids
-                for profile_line in descuentos_cliente:
-                    print(order.amount_total-total_con_iva)
-                    y = (1 - (profile_line.discount / 100.0))
-                    monto_descuento = ((order.amount_total-total_con_iva)*(y))+ total_con_iva
-                    fecha_vencimiento = order.date_order + timedelta(days=profile_line.upper_limit)
-                    descuentos.append((profile_line.discount, profile_line.upper_limit, fecha_vencimiento, monto_descuento))
-        return descuentos
-    
-    # Diccionario de meses en inglés y su equivalente en español
-
-
-    @api.depends('date_order')
-    def _compute_payment_discount_text(self):
-        if self.is_expo:
-            self.payment_discount_text = ""
-            return
+    @api.depends('amount_total', 'partner_id')
+    def _compute_nc_amount(self):
         for record in self:
-            headers = ('Descuento', 'Dias de Pago', 'Fecha máxima', 'Cantidad a pagar')
-            meses_espanol = {
-                'January': 'enero',
-                'February': 'febrero',
-                'March': 'marzo',
-                'April': 'abril',
-                'May': 'mayo',
-                'June': 'junio',
-                'July': 'julio',
-                'August': 'agosto',
-                'September': 'septiembre',
-                'October': 'octubre',
-                'November': 'noviembre',
-                'December': 'diciembre'
-            }
-            rows = record.get_row_values_descuento()
-            html = ''
-            html = '<table class="page-break1 table table-sm o_main_table table-borderless">'
-            html += '<thead>'
-            html += '<tr>'
-            for header in headers:
-                html += f'<th>{header}</th>'
-            html += '</tr>'
-            html += '</thead>'
+            # Aseguramos que la fecha sea 2025
+            if record.date_order and record.date_order.year == 2025:
+                # Calculamos el monto de NC BS y Logístico en cascada
+                bs_nc_amount = self.env['payment.discount.mixin'].compute_nc_amount_bs(record)
+                logistic_nc_amount = self.env['payment.discount.mixin']._get_logistic_amount(record)
 
-            for row in rows:
-                html += '<tr>'
-                for cell_idx, cell in enumerate(row):
-                    if isinstance(cell, datetime):
-                        # Obtener el nombre del mes en español
-                        mes = meses_espanol[calendar.month_name[cell.month]]
-                        # Formatear la fecha como "12 de abril de 2024"
-                        cell = f'{cell.day} de {mes} de {cell.year}'  # Formato: día de mes de año (por ejemplo, 12 de abril de 2024)
-                    elif isinstance(cell, float):
-                        # Formatear el monto con formato de moneda
-                        cell = f'${cell:,.2f}'
-                    elif isinstance(cell, int) and headers[cell_idx] == 'Dias de Pago':
-                        # Formatear el valor de días agregando "Días" al final
-                        cell = f'{cell} Días'
-                    elif isinstance(cell, int):
-                        # Formatear el descuento con el símbolo de porcentaje
-                        cell = f'{cell}%'  # Para otros valores de la fila
-                    else:
-                        # Mantener otros tipos de datos sin formato especial
-                        pass
-                    html += f'<td>{cell}</td>'
-                html += '</tr>'
+                # Asignamos los valores calculados
+                record.bs_nc_amount = bs_nc_amount
+                record.logistic_nc_amount = logistic_nc_amount
+            else:
+                # Si no es 2025, asignamos 0 a ambos montos
+                record.bs_nc_amount = 0
+                record.logistic_nc_amount = 0
 
-            html += '</table>'
 
-            record.payment_discount_text = html            
+
+    @api.depends('bs_nc_amount', 'logistic_nc_amount')
+    def _compute_nc_text(self):
+        for record in self:
+            # Generamos el HTML con la tabla que contiene ambos montos
+            if record.bs_nc_amount and record.logistic_nc_amount:
+                record.bs_nc_text = False
+                record.logistic_nc_text = self.env['payment.discount.mixin']._generate_html_table(record.bs_nc_amount*1.16, record.logistic_nc_amount*1.16)
+            else:
+                record.bs_nc_text = False
+                record.logistic_nc_text = False
+
+    @api.depends('amount_total', 'partner_id')
+    def _compute_payment_discount_text(self):
+        for record in self:
+            if record.date_order and record.date_order.year == 2025:
+                # Llamamos al método del mixin para obtener el texto de pago y descuento
+                record.payment_discount_text = self.env['payment.discount.mixin'].compute_payment_discount_text(record)
+            else:
+                record.payment_discount_text = False
 
 # odoo shell -d edu-ZTYRES_TEST -u discount_profiles additional_discounts --config /etc/odoo/odoo.conf --xmlrpc-port=8009 --workers=20
-            
