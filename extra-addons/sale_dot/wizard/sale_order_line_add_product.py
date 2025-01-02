@@ -121,6 +121,7 @@ class SaleOrderLineAddProductWizard(models.TransientModel):
     #Validar la cantidad cuando se escribe una línea para evitar que pongan llantas demás.
     
     def add_products_to_order_line(self):
+        raise UserError('No es posible capturar pedidos en este monento por que se está realizando la migracion a la nueva política comercial\si ha capturado un pedido es probable que lo tenga que verificar después')
         # Obtener el contexto con la línea de pedido de venta
         order_line_id = self.env.context.get('active_id')
         if not order_line_id:
