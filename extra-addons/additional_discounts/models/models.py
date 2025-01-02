@@ -164,7 +164,6 @@ class AccountMove(models.Model):
             lambda line: (
                 line.sale_line_ids.list_origin in ['MAYOREO','PROMOCIÓN','PROMOCIÓN DOT']
                 and line.product_id.id not in [50959]
-                and not any(line.product_id.id == prod_id and line.quantity <= qty for qty, prod_id in array_condiciones)
             )
         )
         print(len(self.invoice_line_ids))

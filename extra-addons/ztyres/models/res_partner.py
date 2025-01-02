@@ -88,7 +88,7 @@ class ResPartner(models.Model):
         user_id = self.env.user.id
 
         # Verifica si el usuario tiene permiso para crear un registro
-        if user_id not in [43,2,85]:
+        if user_id not in [43,2,85,111]:
             raise UserError("Solo el usuario con ID 2 puede crear registros en res.partner.")
 
         # Llama al método original de create para realizar la creación del registro

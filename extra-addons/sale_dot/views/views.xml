@@ -19,9 +19,9 @@
             </xpath>
 
             <!-- Eliminar nodos vacíos innecesarios para los controles -->
-            <xpath expr="//control/create[@name='add_product_control']" position="replace">
-                <!-- Nodo vacío para eliminar el control -->
-            </xpath>                      
+        <xpath expr="//control/create[@name='add_product_control']" position="replace">
+        
+        </xpath>
             <xpath expr="//control/create[@name='add_section_control']" position="replace">
                 <!-- Nodo vacío para eliminar el control -->
             </xpath>

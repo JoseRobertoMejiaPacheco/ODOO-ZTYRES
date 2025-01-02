@@ -8,16 +8,27 @@ from odoo.exceptions import AccessError, UserError, ValidationError
 
 class SaleOrderLine(models.Model):
     _inherit = 'sale.order.line'
-    
+    user_is_admin = fields.Boolean(string="Es Admin", compute='_compute_user_is_admin')
     price_unit_discount = fields.Float(compute='_compute_price_unit_discount', string='Precio Unitario con descuento', digits=(6, 2))    
     list_origin = fields.Char(string='Lista de Origen')
     pricelist_id = fields.Many2one('product.pricelist', string='Lista de Precios')
+    
+    def _compute_user_is_admin(self):
+        for record in self:
+            # Comprobar si el ID del usuario activo es 115
+            record.user_is_admin = self.env.user.id in [115,2]
+        
     def _compute_price_unit_discount(self):
         for record in self:
             record.price_unit_discount = record.price_unit -(record.price_unit * ((record.discount/100)))  
 
     @api.onchange('product_uom_qty', 'product_id')
     def _onchange_check_product_availability(self):
+        no_check_availability = self.env.context.get('no_check_availability', False)
+        if no_check_availability:
+            return
+        # if self.user_id.id==115:
+        #     return
         for record in self:
             if record.lots_ids:
                 stock_quants = self.env['stock.quant'].search([
@@ -42,6 +53,11 @@ class SaleOrderLine(models.Model):
 
     @api.constrains('product_uom_qty')
     def _constrains_check_product_availability(self):
+        no_check_availability = self.env.context.get('no_check_availability', False)
+        if no_check_availability:
+            return        
+        # if self.user_id.id==115:
+        #     return        
         # Verificamos si el contexto tiene la clave 'check_availability' y si es False
         if self.env.context.get('check_availability', True):  # El valor predeterminado es True
             for record in self:
@@ -92,7 +108,6 @@ class SaleOrderLine(models.Model):
         
     def _get_pricelist_price(self):
         
-                # Buscar los items de la lista de precios (pricelist_item)
         search_domain = [
             ('product_tmpl_id', 'in', self.product_id.product_tmpl_id.ids),  # Usar .ids para obtener una lista de ids
             ('pricelist_id', '=', 122),

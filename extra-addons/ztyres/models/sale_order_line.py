@@ -21,7 +21,7 @@ class SaleOrderLine(models.Model):
     _inherit = 'sale.order.line'
     dot_range = fields.Char(related='product_id.dot_range')
     rangos_dots = fields.Char(string='Rango Dot', compute='_compute_rangos_dots')
-
+    
     def _ztyres_action_launch_stock_rule(self, previous_product_uom_qty=False):
         """
         Launch procurement group run method with required/custom fields genrated by a
@@ -87,6 +87,9 @@ class SaleOrderLine(models.Model):
 
     @api.constrains('product_uom_qty')
     def _constrains_check_product_availability(self):
+        no_check_availability = self.env.context.get('no_check_availability', False)
+        if no_check_availability:
+            return        
         for record in self:
             if self.env.context.get('check_availability', True):  # El valor predeterminado es True
                 if record.product_id.detailed_type == 'product' and record.product_uom_qty:
