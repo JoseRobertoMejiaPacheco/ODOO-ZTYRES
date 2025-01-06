@@ -151,9 +151,9 @@ class ListaDePrecios(models.TransientModel):
 
             for row_idx, row_data in enumerate(table_data, start=15):
                 for col_idx, header in enumerate(headers, start=1):
-                    if header == "150":
+                    if header == "50":
                         sheet.cell(row=row_idx, column=col_idx).value = f'=U{row_idx} * (1 - $V$12)'
-                    elif header == "300":
+                    elif header == "100":
                         sheet.cell(row=row_idx, column=col_idx).value = f'=U{row_idx} * (1 - $W$12)'
                     elif header == "Total":
                         sheet.cell(row=row_idx, column=col_idx).value = f'=IF(Y{row_idx} = "", "", (Y{row_idx} * T{row_idx}))'
@@ -493,8 +493,8 @@ class ListaDePrecios(models.TransientModel):
                     'Outlet': obj.outlet * 1.16,
                     'Mejor Condición': "",
                     'Descuento Volumen': "",
-                    '150': "",
-                    '300': "",
+                    '50': "",
+                    '100': "",
                     '1000': "",
                     'Pedido': "",
                     'Total': "",
@@ -844,8 +844,8 @@ class ListaDePrecios(models.TransientModel):
                 {'cell_ref': 'Y11', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': '01B0F1', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': "ACUMULADO", 'data_type': 'string'}, 
                 {'cell_ref': 'U12', 'font_name': 'Calibri', 'font_size': 11, 'font_color': '538DD5', 'bold': True, 'fill_color': 'C5D9F1', 'border': 'thick', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '0%', 'value':  f"""=IF(U13 = 0%, "Sin descuento", IF(U13 = 2%, "Min 400pz", IF(U13 = 3%, "Min 600pz", "Sin descuento")))""", 'data_type': 'string'},
                 {'cell_ref': 'U13', 'font_name': 'Calibri', 'font_size': 11, 'font_color': '538DD5', 'bold': True, 'fill_color': 'C5D9F1', 'border': 'thick', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '0%', 'value': "0%", 'data_type': 'string'},
-                {'cell_ref': 'V12', 'font_name': 'Calibri', 'font_size': 11, 'font_color': '538DD5', 'bold': True, 'fill_color': 'C5D9F1', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '0%', 'value': "6%"},
-                {'cell_ref': 'W12', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': '8DB4E2', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '0%', 'value': "8%"},
+                {'cell_ref': 'V12', 'font_name': 'Calibri', 'font_size': 11, 'font_color': '538DD5', 'bold': True, 'fill_color': 'C5D9F1', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '0%', 'value': "4%"},
+                {'cell_ref': 'W12', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': '8DB4E2', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '0%', 'value': "6%"},
                 {'cell_ref': 'X12', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': 'C5D9F1', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '0%', 'value': "10%"},
                 {'cell_ref': 'Y12:Y13', 'font_name': 'Calibri', 'font_size': 11, 'font_color': '0070C0', 'bold': True, 'fill_color': 'DCE6F1', 'border': 'thick', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': f"=SUM(Y15:Y{num_rows_3})", 'data_type': 'string'}, 
                 {'cell_ref': 'V13:X13', 'font_name': 'Calibri', 'font_size': 11, 'font_color': '538DD5', 'bold': True, 'fill_color': 'C5D9F1', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '0%', 'value': "En la compra de más de"},

@@ -113,7 +113,7 @@ query3 = """
             WHERE aa.account_type = 'asset_receivable' 
         )
     AND am2.amount_residual != 0
-    AND apr.max_date >= '2025-01-06'
+    AND apr.max_date <= '2025-01-06'
     GROUP BY am2."name", rpu."name", apr.max_date, am.currency_id, am.date, am.move_type
 """
 # Ejecutar la consulta y crear el DataFrame

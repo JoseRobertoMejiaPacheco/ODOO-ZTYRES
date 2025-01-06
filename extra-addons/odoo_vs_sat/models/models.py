@@ -63,7 +63,7 @@ class OdooVsSatReconcilie(models.Model):
         
         def generar_folio(row):
             prefijo = row['Serie']
-            numero = str(row['Folio']).zfill(5)
+            numero = str(int(row['Folio'])).zfill(5)  # Convertimos a entero antes de a string
             folio = f"{prefijo}{numero}"
             return folio
         df_ingresos.loc[:, 'Folio Odoo'] = df_ingresos.apply(generar_folio, axis=1)
@@ -301,7 +301,7 @@ class OdooVsSatReconcilieCDP(models.Model):
         
         def generar_folio(row):
             prefijo = row['Serie']
-            numero = str(row['Folio']).zfill(5)
+            numero = str(int(row['Folio'])).zfill(5)  # Convertimos a entero antes de a string
             folio = f"{prefijo}{numero}"
             return folio
         filtered_df_dict_sat.loc[:, 'Folio Odoo'] = filtered_df_dict_sat.apply(generar_folio, axis=1)
