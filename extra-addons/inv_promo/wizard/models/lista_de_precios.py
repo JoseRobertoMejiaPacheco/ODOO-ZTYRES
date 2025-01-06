@@ -55,15 +55,21 @@ class ListaDePrecios(models.TransientModel):
     file_data = fields.Binary('File')
 
     def get_profile_data(self,partner_id=False):
-        if partner_id:    
-            financial = partner_id.get_row_values_financiero()
+        if partner_id:
+            #FIXME update variable name financial = partner_id.get_row_values_volumen() to financial = partner_id.get_row_values_volumen()
+            financial = partner_id.get_row_values_volumen()
             logistic = partner_id.get_row_values_logistico()
         else:
-            financial = self.partner_id.get_row_values_financiero(self.financial_profile)
+            financial = self.partner_id.get_row_values_volumen(self.volume_profile)
             logistic = self.partner_id.get_row_values_logistico(self.logistic_profile)    
         
         # Convertir valores numéricos a cadenas de porcentaje y agregar '0%'
-        financial_percentages = ['0%'] + [f"{tupla[1]}%" for tupla in financial]
+        
+        # Verificar si los elementos de financial son tuplas
+        financial_percentages = ['0%'] + [
+            f"{tupla[1]}%" if isinstance(tupla, (list, tuple)) and len(tupla) > 1 else f"{tupla}%" 
+            for tupla in financial
+        ]        
         logistic_percentages = ['0%'] + [f"{tupla[1]}%" for tupla in logistic]
         
         # Ordenar las listas de porcentajes
@@ -116,8 +122,8 @@ class ListaDePrecios(models.TransientModel):
                     sheet.cell(row=row_idx, column=col_idx).value = f'=IF(IF(MIN(Q{row_idx}:T{row_idx}) > 0, MIN(Q{row_idx}:T{row_idx}), "") = S{row_idx}, S{row_idx}, IF(MIN(Q{row_idx}:T{row_idx}) > 0, MIN(Q{row_idx}:T{row_idx}), "") * (1-IF(ISNUMBER($U$13), $U$13, 0)))'                                     
                 elif header == "Descuento Potencial":
                     sheet.cell(row=row_idx, column=col_idx).value = f'=IF($X$11 = "", "", (U{row_idx} * (1 - $V$13)))'
-                elif header == "Financiero":
-                    sheet.cell(row=row_idx, column=col_idx).value = f'=IF($X$11 <> "", "",IF(V{row_idx} = "", (U{row_idx} * (1 - $W$13)), (V{row_idx} * (1 - $W$13))))'                               
+                elif header == "Descuento Volumen":
+                    sheet.cell(row=row_idx, column=col_idx).value = f'=IF($Y$11 = "", (U{row_idx} * (1 - $W$13)), (V{row_idx} * (1 - $W$13)))'
                 elif header == "Total":
                     sheet.cell(row=row_idx, column=col_idx).value = f'=IF(X{row_idx} = "", "", (U{row_idx} * X{row_idx}))'
                 else:
@@ -146,15 +152,15 @@ class ListaDePrecios(models.TransientModel):
             for row_idx, row_data in enumerate(table_data, start=15):
                 for col_idx, header in enumerate(headers, start=1):
                     if header == "150":
-                        sheet.cell(row=row_idx, column=col_idx).value = f'=T{row_idx} * (1 - $V$12)'
+                        sheet.cell(row=row_idx, column=col_idx).value = f'=U{row_idx} * (1 - $V$12)'
                     elif header == "300":
-                        sheet.cell(row=row_idx, column=col_idx).value = f'=T{row_idx} * (1 - $W$12)'
+                        sheet.cell(row=row_idx, column=col_idx).value = f'=U{row_idx} * (1 - $W$12)'
                     elif header == "Total":
                         sheet.cell(row=row_idx, column=col_idx).value = f'=IF(Y{row_idx} = "", "", (Y{row_idx} * T{row_idx}))'
                     elif header == "Mejor Condición":
                         sheet.cell(row=row_idx, column=col_idx).value = f'=IF(IF(MIN(Q{row_idx}:S{row_idx}) > 0, MIN(Q{row_idx}:S{row_idx}), "") = S{row_idx}, S{row_idx}, IF(MIN(Q{row_idx}:S{row_idx}) > 0, MIN(Q{row_idx}:S{row_idx}), "") * (1-IF(ISNUMBER($T$13), $T$13, 0)))'                                     
-                    elif header == "Descuento Potencial":
-                        sheet.cell(row=row_idx, column=col_idx).value = f'=IF($W$11 = "", "", (T{row_idx} * (1 - $U$13)))'   
+                    elif header == "Descuento Volumen":
+                        sheet.cell(row=row_idx, column=col_idx).value = f'=(T{row_idx} * (1 - $U$13)) '
                     else:
                         sheet.cell(row=row_idx, column=col_idx).value = row_data.get(header, "")
 
@@ -181,13 +187,13 @@ class ListaDePrecios(models.TransientModel):
             for row_idx, row_data in enumerate(table_data, start=15):
                 for col_idx, header in enumerate(headers, start=1):
                     if header == "300":
-                        sheet.cell(row=row_idx, column=col_idx).value = f'=Q{row_idx} * (1 - $T$12)'
+                        sheet.cell(row=row_idx, column=col_idx).value = f'=S{row_idx} * (1 - $T$12)'
                     elif header == "Total":
                         sheet.cell(row=row_idx, column=col_idx).value = f'=IF(U{row_idx} = "", "", (U{row_idx} * T{row_idx}))'
                     elif header == "Mejor Condición":
-                        sheet.cell(row=row_idx, column=col_idx).value = f''                                     
-                    elif header == "Descuento Potencial":
-                        sheet.cell(row=row_idx, column=col_idx).value = f''   
+                        sheet.cell(row=row_idx, column=col_idx).value = f'=(Q{row_idx} * (1 - $R$13))'                                     
+                    elif header == "Descuento Volumen":
+                        sheet.cell(row=row_idx, column=col_idx).value = f'=(R{row_idx} * (1 - $S$13))'  
                     else:
                         sheet.cell(row=row_idx, column=col_idx).value = row_data.get(header, "")
 
@@ -426,7 +432,7 @@ class ListaDePrecios(models.TransientModel):
         if sheet_name == 'Precios Con Iva':
             checo_ids = objects.filtered(lambda obj: obj.volumen > 0 or obj.promocion > 0 or obj.promo_dot > 0 or obj.outlet).ids
             #Eliminar todo lo de additional_discounts
-            c = self.env['additional_discounts.products_line'].search([('additional_prod_id.active','=',True)]).mapped('product_tmpl_id').ids + checo_ids
+            c = checo_ids
             ids_tuple = tuple(c)
             
             # Construir la consulta SQL con los IDs en la cláusula IN
@@ -480,16 +486,13 @@ class ListaDePrecios(models.TransientModel):
                     'Arribo': obj.fecha_aprox or None,
                     'DOT': obj.lot_name or 'N/A' or None,  
                     }
-                if self.partner_id:
-                    data_dict.update({'Volumen': self.calcular_porcentaje(self.calcular_porcentaje(obj.volumen, 16, 'suma'), self.partner_id.volume_profile.percent, 'resta'),})
-                else:
-                    data_dict.update({'Volumen': self.calcular_porcentaje(self.calcular_porcentaje(obj.volumen, 16, 'suma'), self.volume_profile.percent, 'resta'),})
+                data_dict.update({'Volumen': obj.volumen})
                 data_list.append(data_dict)            
                 data_dict.update({
                     'Promoción': obj.promocion * 1.16,
                     'Outlet': obj.outlet * 1.16,
                     'Mejor Condición': "",
-                    'Descuento Potencial': "",
+                    'Descuento Volumen': "",
                     '150': "",
                     '300': "",
                     '1000': "",
@@ -516,46 +519,50 @@ class ListaDePrecios(models.TransientModel):
             
             objects = objects.browse(ids)
             data_list = []     
+            exists_list = []
             for obj in objects:
                 dots = self.env['product.pricelist.item'].search([('pricelist_id', '=', 122), ('product_tmpl_id', '=', obj.product_id.id)]).mapped('lot_name')
                 for dot in dots:
-                    reservados = self.env['stock.quant'].search([
+                    if (obj.product_id.id, dot) not in exists_list: 
+                        exists_list.append((obj.product_id.id, dot))
+                        reservados = self.env['stock.quant'].search([
                                             ('location_id.usage', '=', 'internal'), 
                                             ('product_id.product_tmpl_id', '=', obj.product_id.id),
                                             ('lot_id.name', '=', dot),
                                             ('quantity', '>', 0)
                                             ])
-                    stock_qty = sum(reservados.mapped('quantity'))
-                    reserved_qty = sum(reservados.mapped('reserved_quantity'))
-                    avaiable_qty = stock_qty - reserved_qty
-                    data_dict = {                
-                        'id': obj.product_id.id,            
-                        'Código': obj.default_code,
-                        'Medida': obj.tire_measure_id.name if obj.tire_measure_id else None,
-                        'Capas': obj.layer_id.name if obj.layer_id else None,
-                        'Vel': obj.speed_id.name if obj.speed_id else None,
-                        'Carga': obj.index_of_load_id.name if obj.index_of_load_id else None,
-                        'Modelo': obj.model_id.name if obj.model_id else None,
-                        'Marca': obj.brand_id.name if obj.brand_id else None,
-                        'Tipo': obj.product_id.type_id.name or None,
-                        'Seg': obj.product_id.segment_id.name or None,
-                        'Tier': obj.tier_id.name if obj.tier_id else None,
-                        'Inv.': stock_qty,
-                        'Cantidad Disponible': avaiable_qty,
-                        'Trans.': (obj.transito_str + obj.backorder_str) or None,
-                        'Arribo': obj.fecha_aprox or None,
-                        'DOT': obj.lot_name or 'N/A' or None,  
-                        }
-                    data_list.append(data_dict)    
-                    dots_price = self.env['product.pricelist.item'].search([('pricelist_id', '=', 122), ('lot_name', '=', dot), ('product_tmpl_id', '=', obj.product_id.id)]).mapped('fixed_price')        
-                    data_dict.update({
-                        'Promo Dot': dots_price[0] * 1.16,
-                        'Mejor Condición': "",
-                        'Descuento Potencial': "",
-                        '300': "",
-                        'Pedido': "",
-                        'Total': "",
-                    })
+                        stock_qty = sum(reservados.mapped('quantity'))
+                        reserved_qty = sum(reservados.mapped('reserved_quantity'))
+                        avaiable_qty = stock_qty - reserved_qty
+                        #FIXED dot 
+                        data_dict = {                
+                            'id': obj.product_id.id,            
+                            'Código': obj.default_code,
+                            'Medida': obj.tire_measure_id.name if obj.tire_measure_id else None,
+                            'Capas': obj.layer_id.name if obj.layer_id else None,
+                            'Vel': obj.speed_id.name if obj.speed_id else None,
+                            'Carga': obj.index_of_load_id.name if obj.index_of_load_id else None,
+                            'Modelo': obj.model_id.name if obj.model_id else None,
+                            'Marca': obj.brand_id.name if obj.brand_id else None,
+                            'Tipo': obj.product_id.type_id.name or None,
+                            'Seg': obj.product_id.segment_id.name or None,
+                            'Tier': obj.tier_id.name if obj.tier_id else None,
+                            'Inv.': stock_qty,
+                            'Cantidad Disponible': avaiable_qty,
+                            'Trans.': (obj.transito_str + obj.backorder_str) or None,
+                            'Arribo': obj.fecha_aprox or None,
+                            'DOT': dot or 'N/A' or None,  
+                            }
+                        data_list.append(data_dict)    
+                        dots_price = self.env['product.pricelist.item'].search([('pricelist_id', '=', 122), ('lot_name', '=', dot), ('product_tmpl_id', '=', obj.product_id.id)]).mapped('fixed_price')        
+                        data_dict.update({
+                            'Promo Dot': dots_price[0] * 1.16,
+                            'Mejor Condición': "",
+                            'Descuento Volumen': "",
+                            '300': "",
+                            'Pedido': "",
+                            'Total': "",
+                        })
             return data_list
         
         if sheet_name == 'P. BRIDGESTONE':
@@ -598,10 +605,18 @@ class ListaDePrecios(models.TransientModel):
                 'Arribo': obj.fecha_aprox or None,
                 'DOT': obj.lot_name or 'N/A' or None,  
                 }
+           
             if self.partner_id:
-                data_dict.update({'Volumen': self.calcular_porcentaje(self.calcular_porcentaje(obj.volumen, 16, 'suma'), self.partner_id.volume_profile.percent, 'resta'),})
+                if obj.brand_id and obj.brand_id.name in ['BRIDGESTONE', 'FIRESTONE', 'FUZION', 'SEIBERLING']:
+                    data_dict.update({'Volumen': (obj.volumen * 1.16) * 0.9})
+                else:
+                    data_dict.update({'Volumen': (obj.volumen * 1.16)})
             else:
-                data_dict.update({'Volumen': self.calcular_porcentaje(self.calcular_porcentaje(obj.volumen, 16, 'suma'), self.volume_profile.percent, 'resta'),})
+                if obj.brand_id and obj.brand_id.name in ['BRIDGESTONE', 'FIRESTONE', 'FUZION', 'SEIBERLING']:
+                    data_dict.update({'Volumen': (obj.volumen * 1.16) * 0.9})
+                else:
+                    data_dict.update({'Volumen': (obj.volumen * 1.16)})
+                    
             data_list.append(data_dict)            
             data_dict.update({
                 'Promoción': obj.promocion * 1.16,
@@ -609,7 +624,7 @@ class ListaDePrecios(models.TransientModel):
                 'Promo Dot': obj.promo_dot * 1.16,
                 'Mejor Condición': "",
                 'Descuento Potencial': "",
-                'Financiero': "",
+                'Descuento Volumen': "",
                 'Pedido': "",
                 'Total': "",
             })
@@ -639,12 +654,21 @@ class ListaDePrecios(models.TransientModel):
         sheet1.title = "Precios Con Iva"
 
         financial,logistic = self.get_profile_data(partner_id)
-        #bs_percent = ['0%','4%','6%','8%','10%','12%']
+        volume_percent = ['0%','2%','3%']
          
         combo_data_sheet1 = [
             {'cell_ref': 'U13', 'values': logistic},
-            {'cell_ref': 'W13', 'values': financial},
-            #{'cell_ref': 'U13', 'values': bs_percent}
+            #{'cell_ref': 'W13', 'values': financial},
+            {'cell_ref': 'W13', 'values': volume_percent}
+        ]
+        combo_data_sheet4 = [
+            {'cell_ref': 'T13', 'values': logistic},
+            {'cell_ref': 'U13', 'values': volume_percent}
+        ]
+        
+        combo_data_sheet6 = [
+            {'cell_ref': 'R13', 'values': logistic},
+            {'cell_ref': 'S13', 'values': volume_percent}
         ]
         
         self.set_combos(sheet1, combo_data_sheet1)
@@ -660,16 +684,17 @@ class ListaDePrecios(models.TransientModel):
         
          # Definir los datos para las celdas
         data_for_sheet1 = [
-            {'cell_ref': 'T4:W4', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': BLACK, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': "Inventario + Promociones Diciembre 2024", 'data_type': 'string'},
+            {'cell_ref': 'T4:W4', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': BLACK, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': "Inventario + Promociones Enero 2025", 'data_type': 'string'},
             {'cell_ref': 'T5:W6', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': True, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "Consulte en su correo, por whatsapp y/o con su asesor, todas las Promociones del Mes.", 'data_type': 'string'},
             {'cell_ref': 'W7', 'font_name': 'Calibri', 'font_size': 11, 'font_color': '808080', 'bold': True, 'fill_color': WHITE, 'border': 'none', 'align': 'left', 'top_align': 'top', 'wrap_text': False, 'num_format': '#,##0.00', 'value': f"V{self.partner_id.volume_profile.name}F{self.partner_id.financial_profile.letter}L{self.partner_id.logistic_profile.letter}", 'data_type': 'string'},
             {'cell_ref': 'A5:H5', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': True, 'fill_color': WHITE, 'border': 'thin', 'align': 'left', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': "Términos y Condiciones", 'data_type': 'string'},
-            {'cell_ref': 'A6:H6', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': 'FFFFCB', 'border': 'thin', 'align': 'left', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': "Precios Outlet: Solo aplica descuento financiero.", 'data_type': 'string'},
+            {'cell_ref': 'A6:H6', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': 'FFFFCB', 'border': 'thin', 'align': 'left', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': "Precios Outlet: Solo aplica descuento de volumen.", 'data_type': 'string'},
             {'cell_ref': 'A7:H7', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': 'DDE5F2', 'border': 'thin', 'align': 'left', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': "Códigos en Promoción, consulte segunda hoja.", 'data_type': 'string'},
             {'cell_ref': 'A8:H8', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': 'FECCCB', 'border': 'thin', 'align': 'left', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': "Códigos que suman en la promoción Bridgestone, consulte tercera hoja.", 'data_type': 'string'},
             {'cell_ref': 'A9:H9', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': 'D9D9D9', 'border': 'thin', 'align': 'left', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': "Códigos promoción Dot, consulte cuarta hoja.", 'data_type': 'string'},
             {'cell_ref': 'A10:H10', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': True, 'fill_color': WHITE, 'border': 'thin', 'align': 'left', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': "Una vez salida la mercancía, no se aceptan devoluciones.", 'data_type': 'string'},
             {'cell_ref': 'V13', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': DARK_GRAY, 'border': 'thick', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '0%', 'value': "0%"},
+            {'cell_ref': 'W12', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': '00B04F', 'border': 'thick', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '0%', 'value':  f"""=IF(W13 = 0%, "Sin descuento", IF(W13 = 2%, "Min 400pz", IF(W13 = 3%, "Min 600pz", "Sin descuento")))""", 'data_type': 'string'},                                                                                                                                                                                                                                                
             {'cell_ref': 'W13', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': '00B04F', 'border': 'thick', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '0%', 'value': "0%"},
             {'cell_ref': 'U13', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': True, 'fill_color': 'F2F2F2', 'border': 'thick', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '0%', 'value': "0%"},
             {'cell_ref': 'X13', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': DARK_GRAY, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': f"=SUM(X15:X{num_rows_1})", 'data_type': 'string'},
@@ -750,7 +775,9 @@ class ListaDePrecios(models.TransientModel):
             {'cell_ref': 'U13', 'values': financial},    
             ]  
             
-            self.set_combos(sheet3, combo_data_sheet1)  
+            self.set_combos(sheet3, combo_data_sheet1)
+            self.set_combos(sheet4, combo_data_sheet4)
+            self.set_combos(sheet6, combo_data_sheet6)  
             
             num_rows_3, num_cols_3 = self.insert_table_sheet1_3(sheet3, promo_bridgestone, "TablaDatos3")
             num_rows_3, num_cols_3 = self.insert_table_sheet4(sheet4, promocion23, "TablaDatos4")
@@ -771,9 +798,11 @@ class ListaDePrecios(models.TransientModel):
             data_for_sheet3 = [
                 {'cell_ref': 'E1', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': True, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0.00', 'value': "", 'data_type': 'string'},
                 {'cell_ref': 'U13', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': True, 'fill_color': 'BAB6B5', 'border': 'thick', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '0%', 'value': "0%"},
-                {'cell_ref': 'W13', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': DARK_GRAY, 'border': 'thick', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '0%', 'value': "0%"},
-                {'cell_ref': 'U12', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': True, 'fill_color': 'BAB6B5', 'border': 'thick', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': f"""=IF(T13 = 0%, "Sin descuento", IF(T13 = 1%, "Min 80pz",  IF(T13 = 2%, "Min 250pz", IF(T13 = 4%,"Min 500pz","Sin descuento"))))""", 'data_type': 'string'},
-                {'cell_ref': 'X13', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': DARK_GRAY, 'border': 'thick', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': f"=SUM(X15:X{num_rows_3})", 'data_type': 'string'},
+                {'cell_ref': 'W12', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': True, 'fill_color': 'BAB6B5', 'border': 'thick', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '0%', 'value':  f"""=IF(W13 = 0%, "Sin descuento", IF(W13 = 2%, "Min 400pz", IF(W13 = 3%, "Min 600pz", "Sin descuento")))""", 'data_type': 'string'},
+                {'cell_ref': 'W13', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': True, 'fill_color': 'BAB6B5', 'border': 'thick', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '0%', 'value': "0%"},
+                {'cell_ref': 'U11', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': True, 'fill_color': 'BAB6B5', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': "Descuento Logístico", 'data_type': 'string'},
+                {'cell_ref': 'U12', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': True, 'fill_color': 'BAB6B5', 'border': 'thick', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': f"""=IF(U13 = 0%, "Sin descuento", IF(U13 = 1%, "Min 80pz",  IF(U13 = 2%, "Min 250pz", IF(U13 = 4%,"Min 500pz","Sin descuento"))))""", 'data_type': 'string'},
+                {'cell_ref': 'X13', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': 'BAB6B5', 'border': 'thick', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': f"=SUM(X15:X{num_rows_3})", 'data_type': 'string'},
                 {'cell_ref': 'A14', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': DARK_GRAY, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0.00', 'data_type': 'string'},
                 {'cell_ref': 'B14', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': DARK_GRAY, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0.00', 'data_type': 'string'},
                 {'cell_ref': 'C14', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': DARK_GRAY, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0.00', 'data_type': 'string'},
@@ -804,12 +833,17 @@ class ListaDePrecios(models.TransientModel):
             data_for_sheet4 = [
                 {'cell_ref': 'A5:H5', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': BLACK, 'border': 'thin', 'align': 'left', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': "Onyx", 'data_type': 'string'},
                 {'cell_ref': 'A6:H7', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': False, 'fill_color': '00B0F0', 'border': 'thin', 'align': 'left', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "EL PRECIO MOSTRADO DE PROMOCIÓN NO SE VE REFLEJADO EN SU FACTURA ya que solo es el estimado al aplicar la Nota de Crédito con la bonificación alcanzada al finalizar el mes.", 'data_type': 'string'},
-                {'cell_ref': 'A8:H8', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': 'FFFFCB', 'border': 'thin', 'align': 'left', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': "Precios Outlet: Solo aplica descuento financiero.", 'data_type': 'string'},
+                {'cell_ref': 'A8:H8', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': 'FFFFCB', 'border': 'thin', 'align': 'left', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': "Precios Outlet: Solo aplica descuento de volumen.", 'data_type': 'string'},
                 {'cell_ref': 'A9:H9', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': True, 'fill_color': WHITE, 'border': 'thin', 'align': 'left', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "Una vez salida la mercancía, no se aceptan devoluciones.", 'data_type': 'string'},
                 {'cell_ref': 'A10:H10', 'font_name': 'Calibri', 'font_size': 11, 'font_color': '00B050', 'bold': True, 'fill_color': WHITE, 'border': 'thin', 'align': 'left', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "Aplica descuento financiero según su fecha de pago.", 'data_type': 'string'}, 
                 {'cell_ref': 'E1', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': True, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0.00', 'value': "", 'data_type': 'string'},
                 {'cell_ref': 'V11:X11', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': '01B0F1', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "PROMOCIÓN DICIEMBRE", 'data_type': 'string'},
+                {'cell_ref': 'T11', 'font_name': 'Calibri', 'font_size': 11, 'font_color': '538DD5', 'bold': True, 'fill_color': 'C5D9F1', 'border': 'thick', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': "Descuento Logístico", 'data_type': 'string'},
+                {'cell_ref': 'T12', 'font_name': 'Calibri', 'font_size': 11, 'font_color': '538DD5', 'bold': True, 'fill_color': 'C5D9F1', 'border': 'thick', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': f"""=IF(T13 = 0%, "Sin descuento", IF(T13 = 1%, "Min 80pz",  IF(T13 = 2%, "Min 250pz", IF(T13 = 4%,"Min 500pz","Sin descuento"))))""", 'data_type': 'string'},
+                {'cell_ref': 'T13', 'font_name': 'Calibri', 'font_size': 11, 'font_color': '538DD5', 'bold': True, 'fill_color': 'C5D9F1', 'border': 'thick', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '0%', 'value': "0%", 'data_type': 'string'},
                 {'cell_ref': 'Y11', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': '01B0F1', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': "ACUMULADO", 'data_type': 'string'}, 
+                {'cell_ref': 'U12', 'font_name': 'Calibri', 'font_size': 11, 'font_color': '538DD5', 'bold': True, 'fill_color': 'C5D9F1', 'border': 'thick', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '0%', 'value':  f"""=IF(U13 = 0%, "Sin descuento", IF(U13 = 2%, "Min 400pz", IF(U13 = 3%, "Min 600pz", "Sin descuento")))""", 'data_type': 'string'},
+                {'cell_ref': 'U13', 'font_name': 'Calibri', 'font_size': 11, 'font_color': '538DD5', 'bold': True, 'fill_color': 'C5D9F1', 'border': 'thick', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '0%', 'value': "0%", 'data_type': 'string'},
                 {'cell_ref': 'V12', 'font_name': 'Calibri', 'font_size': 11, 'font_color': '538DD5', 'bold': True, 'fill_color': 'C5D9F1', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '0%', 'value': "6%"},
                 {'cell_ref': 'W12', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': '8DB4E2', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '0%', 'value': "8%"},
                 {'cell_ref': 'X12', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': 'C5D9F1', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '0%', 'value': "10%"},
@@ -845,7 +879,7 @@ class ListaDePrecios(models.TransientModel):
             promobrid = [
                 {'cell_ref': 'A5:H5', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': BLACK, 'border': 'thin', 'align': 'left', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': "PROMOCIÓN BRIDGESTONE", 'data_type': 'string'},
                 {'cell_ref': 'A6:H7', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': 'FFCCCC', 'border': 'thin', 'align': 'left', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "EL PRECIO MOSTRADO NO SE VE REFLEJADO EN SU FACTURA ya que solo es el estimado al aplicar la nota de crédito con la bonificación alcanzada al finalizar el mes.", 'data_type': 'string'},
-                {'cell_ref': 'A8:H8', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': 'FFFFCB', 'border': 'thin', 'align': 'left', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': "Precios Outlet: Solo aplica descuento financiero.", 'data_type': 'string'},
+                {'cell_ref': 'A8:H8', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': 'FFFFCB', 'border': 'thin', 'align': 'left', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': "Precios Outlet: Solo aplica descuento de volumen.", 'data_type': 'string'},
                 {'cell_ref': 'A9:H9', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': True, 'fill_color': WHITE, 'border': 'thin', 'align': 'left', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "Una vez salida la mercancía, no se aceptan devoluciones.", 'data_type': 'string'},
                 {'cell_ref': 'A10:H10', 'font_name': 'Calibri', 'font_size': 11, 'font_color': '00B050', 'bold': True, 'fill_color': WHITE, 'border': 'thin', 'align': 'left', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "Aplica descuento financiero según su fecha de pago.", 'data_type': 'string'}, 
                 {'cell_ref': 'T5:X5', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': RED, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0.00', 'value': "PROMOCIÓN BRIDGESTONE", 'data_type': 'string'},
@@ -879,6 +913,11 @@ class ListaDePrecios(models.TransientModel):
                 {'cell_ref': 'T11', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': True, 'fill_color': 'D9D9D9', 'border': 'thick', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "PROMOCIÓN DOTS", 'data_type': 'string'},
                 {'cell_ref': 'U11', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': True, 'fill_color': 'D9D9D9', 'border': 'thick', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': "ACUMULADO", 'data_type': 'string'}, 
                 {'cell_ref': 'T12', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': True, 'fill_color': 'D9D9D9', 'border': 'thick', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '0%', 'value': "3%"},
+                {'cell_ref': 'R11', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': True, 'fill_color': 'D9D9D9', 'border': 'thick', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': "Descuento Logístico", 'data_type': 'string'},
+                {'cell_ref': 'R12', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': True, 'fill_color': 'D9D9D9', 'border': 'thick', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': f"""=IF(R13 = 0%, "Sin descuento", IF(R13 = 1%, "Min 80pz",  IF(R13 = 2%, "Min 250pz", IF(R13 = 4%,"Min 500pz","Sin descuento"))))""", 'data_type': 'string'},
+                {'cell_ref': 'R13', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': True, 'fill_color': 'D9D9D9', 'border': 'thick', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '0%', 'value': "0%", 'data_type': 'string'},
+                {'cell_ref': 'S12', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': True, 'fill_color': 'D9D9D9', 'border': 'thick', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '0%', 'value':  f"""=IF(S13 = 0%, "Sin descuento", IF(S13 = 2%, "Min 400pz", IF(S13 = 3%, "Min 600pz", "Sin descuento")))""", 'data_type': 'string'},
+                {'cell_ref': 'S13', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': True, 'fill_color': 'D9D9D9', 'border': 'thick', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '0%', 'value': "0%", 'data_type': 'string'},
                 {'cell_ref': 'U12:U13', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': True, 'fill_color': 'D9D9D9', 'border': 'thick', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': f"=SUM(U15:U{num_rows_3})", 'data_type': 'string'}, 
                 {'cell_ref': 'T13', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': True, 'fill_color': 'D9D9D9', 'border': 'thick', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '0%', 'value': "En la compra de más de"},
                 {'cell_ref': 'A14', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': DARK_GRAY, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0.00', 'data_type': 'string'},
@@ -923,9 +962,9 @@ class ListaDePrecios(models.TransientModel):
             # Diccionario que define las columnas y sus formatos
             formats = {
                 'string': ['B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'P'],
-                'number': ['M', 'N', 'W', 'X'],
+                'number': ['M', 'N', 'X'],
                 'date': ['O'],
-                'currency': ['Q', 'R', 'S', 'T', 'U', 'V', 'Y']
+                'currency': ['Q', 'R', 'S', 'T', 'U', 'V', 'W', 'Y']
             }
             
             formats3 = {
@@ -939,7 +978,7 @@ class ListaDePrecios(models.TransientModel):
                 'string': ['B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K'],
                 'number': ['M', 'P', 'U'],
                 'date': ['O'],
-                'currency': ['Q', 'T', 'V']
+                'currency': ['Q', 'R', 'S', 'T', 'V']
             }
             #-------- Ocultar columnas ----------------------
             # Seleccionar la hoja que deseas ocultar
@@ -947,9 +986,9 @@ class ListaDePrecios(models.TransientModel):
             # Para ocultar la hoja:
             # sheet.sheet_state = 'hidden'
             
-            columna_a_ocultar_sheet3 = ['A', 'M', 'Q', 'R', 'S', 'T', 'W', 'Y']
-            columna_a_ocultar_sheet4 = ['A', 'M', 'N', 'O', 'Q', 'R', 'S', 'U', 'X', 'Z']
-            columna_a_ocultar_sheet6 = ['A', 'L', 'N', 'O', 'R', 'S', 'V']
+            columna_a_ocultar_sheet3 = ['A', 'M', 'Q', 'R', 'S', 'T', 'Y']
+            columna_a_ocultar_sheet4 = ['A', 'M', 'N', 'O', 'Q', 'R', 'S', 'X', 'Z']
+            columna_a_ocultar_sheet6 = ['A', 'L', 'N', 'O', 'V']
 
             # Itera sobre cada hoja
             for sheet in sheets:
@@ -967,6 +1006,8 @@ class ListaDePrecios(models.TransientModel):
                     for format_type, columns in formats6.items():
                         for column in columns:
                             self.format_column(sheet, column, format_type)
+                            sheet.sheet_view.showGridLines = False
+                            sheet.freeze_panes = 'A15'
                     for columna_sheet6 in columna_a_ocultar_sheet6:
                         sheet.column_dimensions[columna_sheet6].hidden = True
                 else:

@@ -42,7 +42,6 @@ class SaleOrderLine(models.Model):
                     raise UserError(
                         f"No hay suficiente stock disponible del producto '{total_available} < {record.product_uom_qty} {record.product_id.name} {record.single_dot}' en las ubicaciones internas. 200"
                     )
-
     def _ztyres_action_launch_stock_rule(self, previous_product_uom_qty=False):
         """
         Launch procurement group run method with required/custom fields genrated by a
@@ -261,7 +260,7 @@ class SaleOrderLine(models.Model):
         )
 
         return min_price_item
-
+    
     def _get_pricelist_price(self):
         search_domain = [
             ("product_tmpl_id", "in", self.product_id.product_tmpl_id.ids),

@@ -24,7 +24,6 @@ locked_names = [
                 'HUGO ALEJANDRO MALDONADO JIMENEZ',  
                 'ISABEL CRISTINA GONZALEZ PASTRANA',                
                 'JORDAN MISSAEL ROCHA HERNANDEZ',
-                'JOSE ANTONIO ABONCE VILLAGOMEZ',
                 'JOSE ANTONIO CAMACHO MARQUEZ',
                 'JOSE ANTONIO INZUNZA CORTEZ',
                 'JOSE ANTONIO RANGEL CERDA',

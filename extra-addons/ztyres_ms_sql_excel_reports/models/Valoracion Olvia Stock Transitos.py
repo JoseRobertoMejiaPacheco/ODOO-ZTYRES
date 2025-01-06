@@ -15,9 +15,9 @@ dates = [
     # ('JULIO', '2024-07-31 23:59:59'),
     # ('AGOSTO', '2024-08-31 23:59:59'),
     # ('SEPTIEMBRE', '2024-09-30 23:59:59'),
-    ('OCTUBRE', '2024-10-31 23:59:59'),
+    # ('OCTUBRE', '2024-10-31 23:59:59'),
     # ('NOVIEMBRE', '2024-11-30 23:59:59'),
-    # ('DICIEMBRE', '2024-12-31 23:59:59')
+    ('DICIEMBRE', '2024-12-31 23:59:59')
 ]
 
 for month,date in dates:
@@ -74,6 +74,6 @@ for month,date in dates:
     #file_path = f'/mnt/extra-addons/Valor de Inventario C {date}.xlsx'
     #df.to_excel(file_path,index=False)
 
-with pd.ExcelWriter('/mnt/extra-addons/Valo.xlsx') as writer:
+with pd.ExcelWriter('/mnt/extra-addons/Valo1225.xlsx') as writer:
     for _date,_df in df_list:
         _df.to_excel(writer, sheet_name=_date.replace(':',' '), index=False)

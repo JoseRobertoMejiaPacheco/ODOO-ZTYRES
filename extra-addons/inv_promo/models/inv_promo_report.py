@@ -22,6 +22,7 @@ class InvPromo(models.TransientModel):
     backorder = fields.Integer(string='Backorder')
     volumen = fields.Float(compute='_compute_volumen', digits=(16, 2), string='Precio Volumen')
     promocion = fields.Float(compute='_compute_promocion', digits=(16, 2), string='Precio promocion')
+    outlet = fields.Float(compute='_compute_outlet', digits=(16, 2), string='Precio outlet')
     promo_dot = fields.Float(digits=(16, 2), string='Precio Promo Dot')
     transito_str = fields.Integer(compute='_compute_transito_str', string='Transito')
     fecha_aprox = fields.Date(compute='_compute_transito_str', string='Fecha_aprox')
@@ -38,7 +39,12 @@ class InvPromo(models.TransientModel):
         item = pricelist_item.search(domain, order="fixed_price asc", limit=1)      
         return item.fixed_price 
     
-
+    @api.depends('product_id')
+    def _compute_outlet(self):
+        for record in self:
+            record.outlet = 0
+            if not record.outlet:
+                record.outlet = record._get_price(record.product_id.id, 108)
     
     @api.depends('product_id')
     def _compute_volumen(self):
@@ -54,8 +60,6 @@ class InvPromo(models.TransientModel):
             if not record.promo_dot:
                 record.promocion = record._get_price(record.product_id.id, 113)
             
-
-
     @api.depends('available')
     def _compute_inventario_str(self):
         for record in self:

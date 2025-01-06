@@ -7,7 +7,7 @@ class ResPartner(models.Model):
     
     def _get_discount_values(self, discount_type,profile=False):
         descuentos = []
-        if self:
+        if not profile:
             for record in self:
                 if record.financial_profile.name and discount_type == 'financiero':
                     for line in record.financial_profile.line_ids:
@@ -16,7 +16,7 @@ class ResPartner(models.Model):
                     for line in record.logistic_profile.line_ids:
                         descuentos.append((line.upper_limit, line.discount)) 
                 elif record.volume_profile and discount_type == 'volumen':
-                    record.append((line.percent or 0))                           
+                    descuentos.append((record.volume_profile.percent or 0))                           
         else:                    
             if profile and discount_type == 'financiero':
                 for line in profile.line_ids:
