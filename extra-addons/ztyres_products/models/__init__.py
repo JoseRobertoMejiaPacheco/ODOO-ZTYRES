@@ -22,4 +22,4 @@ from . import ztyres_products_separator
 from . import ztyres_products_width
 from . import ztyres_products_rim
 from . import ztyres_products_usage
-
+from. import ztyres_products_hq

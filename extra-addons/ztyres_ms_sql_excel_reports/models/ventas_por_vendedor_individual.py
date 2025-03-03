@@ -2,7 +2,7 @@ import io
 import openpyxl
 from openpyxl.styles import Font, PatternFill
 from odoo.http import request, Response
-from datetime import date
+from datetime import date, timedelta
 import calendar
 import pandas as pd
 from odoo import api, fields, models
@@ -268,5 +268,61 @@ class VentasPorVendedorIndividual(models.TransientModel):
             pivot_df4['Cotizaciones'] = pivot_df4['Cotizaciones'].replace(0, '')
             
         lista.append(('Reporte Reserva Ventas', pivot_df4))
+        
+        #---------------------------------------------------------------------------------------------------------------
+        datos = []
+
+        SaleOrderLine = self.env['sale.order.line']
+
+        sale_domain = [('state','in',['sale', 'draft', 'sent']),
+                    ('order_id.date_order','>=',primer_dia_mes),
+                    ('order_id.date_order','<=',ultimo_dia_mes),
+                    ('order_id.user_id.id', 'in', [vendedor_id])]
+
+        records = SaleOrderLine.search(sale_domain)
+
+        for record in records:
+            vals = {
+                "Pedido": record.order_id.name,
+                "Cliente": record.order_id.partner_id.name,
+                "fecha pedido": record.order_id.date_order,
+                "Cantidad pedida": record.product_uom_qty
+            }
+            datos.append(vals)
+            for item in record.invoice_lines:
+                vals.update({
+                    "Factura": item.move_id.name,
+                    "Fecha factura": item.move_id.invoice_date,
+                    "Cantidad Facturada": item.quantity
+                })
+            if record.order_id.state in ['sale']:
+                vals.update({
+                    "Entrega estimada": record.order_id.date_order + timedelta(days=5)
+                })
+
+        df40 = pd.DataFrame(datos)
+
+        df40 = df40.groupby(
+            ['Pedido', 'Cliente', 'fecha pedido', 'Factura', 'Fecha factura', 'Entrega estimada']
+        ).agg({
+            'Cantidad pedida': 'sum',
+            'Cantidad Facturada': 'sum'
+        }).reset_index()
+
+        new_names1 = {
+                    "Pedido": "Pedido",
+                    "Cliente": "Cliente",
+                    "fecha pedido": "fecha pedido",
+                    "Cantidad pedida": "Cantidad pedida",
+                    "Factura": "Factura",
+                    "Fecha factura": "Fecha factura",
+                    "Cantidad Facturada": "Cantidad Facturada",
+                    "Entrega estimada": "Entrega estimada",
+                }
+        df40.rename(columns=new_names1, inplace=True)
+        ordered_columns1 = list(new_names1.values())
+        df40 = df40[ordered_columns1]
+        lista.append(('Status Pedidos', df40))
+        #endregion
         
         return lista

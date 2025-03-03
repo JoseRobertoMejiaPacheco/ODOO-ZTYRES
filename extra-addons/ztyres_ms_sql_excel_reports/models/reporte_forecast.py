@@ -81,7 +81,6 @@ class Forecast(models.TransientModel):
                                     values='UCF', 
                                     aggfunc='first', 
                                     fill_value=0)
-        
         ######################################################################################
         df_tier4 = df_pivoted.copy()
         
@@ -92,7 +91,6 @@ class Forecast(models.TransientModel):
         df_tier4 = df_tier4.drop(columns=['BRIDGESTONE', 'CONTINENTAL', 'GOODYEAR', 'PIRELLI', 'MAXXIS', 'KUMHO', 'FALKEN', 'TORNEL','HANKOOK'])
         condicion2 = (df_tier4[['APTANY', 'SENTURY', 'SUNFULCESS']] == 0).all(axis=1)
         df_tier4 = df_tier4[~condicion2]
-        
         ######################################################################################
         df_filtro = df.copy()
         
@@ -184,7 +182,6 @@ class Forecast(models.TransientModel):
         # Reiniciar el índice para obtener un DataFrame bien formateado
         df_final2 = df_pivoted3.reset_index()
         
-        
         merged_df = pd.merge(df_pivoted, df_final, on='ciu', how='outer')
         
         merged_df2 = pd.merge(df_tier4, df_final2, on='ciu', how='outer')
@@ -198,12 +195,12 @@ class Forecast(models.TransientModel):
             "CONTINENTAL": "CONTINENTAL",	
             "GOODYEAR": "GOODYEAR",	
             "PIRELLI": "PIRELLI",
-            "July": "JUL",
-            "August": "AGO",
             "September": "SEP",
             "October": "OCT",
             "November": "NOV",
             "December": "DIC",
+            "January": "ENE",
+            "February": "FEB",
             "PV": "PV",
             "inv": "Disponible"
         }
@@ -216,15 +213,16 @@ class Forecast(models.TransientModel):
             "APTANY": "APTANY",	
             "SENTURY": "SENTURY",	
             "SUNFULCESS": "SUNFULCESS",
-            "July": "JUL",
-            "August": "AGO",
             "September": "SEP",
             "October": "OCT",
             "November": "NOV",
             "December": "DIC",
+            "January": "ENE",
+            "February": "FEB",
             "PV": "PV",
             "inv": "Disponible"
         }
+        
         # Renombrar columnas en el DataFrame fusionado
         merged_df.rename(columns=new_names1, inplace=True)
         # Ordenar las columnas según el orden deseado

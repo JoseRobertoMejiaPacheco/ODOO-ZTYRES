@@ -117,6 +117,7 @@ class AccountMove(models.Model):
     logistic_nc_text = fields.Html(compute='_compute_nc_text', string='Logístico')
     payment_discount_text = fields.Html(compute='_compute_payment_discount_text', string='Descuento o Monto a Pagar',store=True)
     credit_note_promo = fields.Many2one('account.move',string='Notas de Crédito Promo')
+    
     @api.depends('amount_total', 'partner_id','invoice_date')
     def _compute_payment_discount_text(self):
         for record in self:
@@ -131,7 +132,7 @@ class AccountMove(models.Model):
             if record.invoice_date and record.invoice_date.year == 2025:
                 # Calculamos el monto de NC BS y Logístico en cascada
                 bs_nc_amount = self.env['payment.discount.mixin'].compute_nc_amount_bs(record)
-                logistic_nc_amount = self.env['payment.discount.mixin']._get_logistic_amount(record)
+                logistic_nc_amount = self.env['payment.discount.mixin']._get_logistic_amount(record,bs_nc_amount)
                 
                 # Asignamos los valores calculados
                 record.bs_nc_amount = bs_nc_amount
@@ -217,7 +218,7 @@ class SaleOrder2(models.Model):
             if record.date_order and record.date_order.year == 2025:
                 # Calculamos el monto de NC BS y Logístico en cascada
                 bs_nc_amount = self.env['payment.discount.mixin'].compute_nc_amount_bs(record)
-                logistic_nc_amount = self.env['payment.discount.mixin']._get_logistic_amount(record)
+                logistic_nc_amount = self.env['payment.discount.mixin']._get_logistic_amount(record,bs_nc_amount)
 
                 # Asignamos los valores calculados
                 record.bs_nc_amount = bs_nc_amount
@@ -249,4 +250,4 @@ class SaleOrder2(models.Model):
             else:
                 record.payment_discount_text = False
 
-# odoo shell -d edu-ZTYRES_TEST -u discount_profiles additional_discounts --config /etc/odoo/odoo.conf --xmlrpc-port=8009 --workers=20
+# odoo shell -d ZTYRES --config /etc/odoo/odoo.conf --xmlrpc-port=8009 --workers=20

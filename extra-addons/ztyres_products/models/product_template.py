@@ -10,6 +10,7 @@ class ProductTemplate(models.Model):
     face_id = fields.Many2one('ztyres_products.face', string='Cara')
     layer_id = fields.Many2one('ztyres_products.layer', string='Capas')
     manufacturer_id = fields.Many2one('ztyres_products.manufacturer', string='Fabricante')
+    product_nationality = fields.Selection(related='manufacturer_id.product_nationality')
     brand_id = fields.Many2one('ztyres_products.brand', string='Marca')
     model_id = fields.Many2one('ztyres_products.model', string='Modelo')
     speed_id = fields.Many2one('ztyres_products.speed', string='Velocidad')
@@ -33,6 +34,7 @@ class ProductTemplate(models.Model):
         store=True,
         readonly=True
     )
+    hq_id = fields.Many2one('ztyres_products.hq', string='HQ')
 
     @api.depends('tire_measure_id.name', 'segment_id.name', 'type_id.name')
     def _compute_cui(self):

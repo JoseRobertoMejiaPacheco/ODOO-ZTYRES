@@ -26,6 +26,8 @@ class MyModel(models.TransientModel):
         transformed_df.loc[transformed_df['Trans'] < 0, 'Trans'] = 0
         transformed_df.loc[transformed_df['BO'].isnull(), 'CBO'] = np.nan
         
+        transformed_df.loc[transformed_df['Origen'] == 'Corea del Sur', 'Origen'] = 'Corea'
+        
         archivados_df = transformed_df.copy()
         transformed_df = transformed_df.loc[transformed_df['active'] == 1]
         transformed_df = transformed_df.drop(columns=['active'])
@@ -100,13 +102,13 @@ class MyModel(models.TransientModel):
             "segment_id": "Seg",
             "type_id": "Tipo",
             "tier_id": "Tier",
-            "country_of_origin": "Origen",            
-            "'AGOSTO'": 'AGO',
+            "country_of_origin": "Origen",
             "'SEPTIEMBRE'": 'SEP',
             "'OCTUBRE'": 'OCT',
             "'NOVIEMBRE'": 'NOV',
             "'DICIEMBRE'": 'DIC',
-            "'ENERO'": 'ENE',            
+            "'ENERO'": 'ENE',    
+            "'FEBRERO'": 'FEB',
             "qty_available": "Inv",
             "qty_reserved": "Res",
             "free_qty": "Disp",

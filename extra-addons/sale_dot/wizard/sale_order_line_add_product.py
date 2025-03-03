@@ -40,7 +40,7 @@ class SaleOrderLineAddProductWizard(models.TransientModel):
 
             for quant in stock_quants:
                 lot_name = quant.lot_id.name if quant.lot_id else 'Sin lote'
-
+                
                 # Si el lote ya está en el diccionario, actualizamos la cantidad y la relación m2m
                 if lot_name in lot_info:
                     lot_info[lot_name]['qty_available'] += (quant.quantity-quant.reserved_quantity)

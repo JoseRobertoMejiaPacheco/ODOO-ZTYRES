@@ -21,20 +21,23 @@ class PaymentDiscountMixin(models.AbstractModel):
                 monto_descuento, fecha_vencimiento = self._calculate_discount(record, shipping_with_taxes, profile_line)
                 descuentos.append((profile_line.discount, profile_line.upper_limit, fecha_vencimiento, monto_descuento))
         return descuentos
-
+    
     def _calculate_discount(self, record, shipping_with_taxes, profile_line):
+        discount = ((profile_line.discount / 100.0))
+        BS = record.bs_nc_amount*1.16
+        MT = record.amount_total
+        ST = MT - BS - shipping_with_taxes
+        NL = record.logistic_nc_amount*1.16
+        MF = ST * discount
+        TOTAL_PAGAR = ST - NL - MF + shipping_with_taxes
         
-        discount = (1 - (profile_line.discount / 100.0))
         if hasattr(record, 'invoice_line_ids'):
-            pagos = record.amount_total - record.amount_residual
-            fecha_vencimiento =  record.invoice_date_due + timedelta(days=profile_line.upper_limit)
+            fecha_vencimiento =  record.invoice_date + timedelta(days=profile_line.upper_limit)
+            return TOTAL_PAGAR, fecha_vencimiento
         else:
             fecha_vencimiento = record.date_order + timedelta(days=profile_line.upper_limit)
-            pagos = 0
-        monto_descuento = (((record.amount_total-record.bs_nc_amount*1.16-record.logistic_nc_amount*1.16 - (shipping_with_taxes + pagos)) * discount)) + shipping_with_taxes
-        
-        return monto_descuento, fecha_vencimiento
-
+            return TOTAL_PAGAR, fecha_vencimiento
+    
     def compute_payment_discount_text(self, record):
         """
         Calcula el texto HTML para mostrar el descuento o monto a pagar en la factura/orden.
@@ -106,19 +109,17 @@ class PaymentDiscountMixin(models.AbstractModel):
     def compute_nc_amount_bs(self, record):
         bridgestone_id = 2
         if hasattr(record, 'invoice_line_ids'):  # Es una factura
-            for line in record.invoice_line_ids:
-                print(line)
-            sum_subtotal_lines = sum(record.invoice_line_ids.filtered(lambda line: line.product_id.product_tmpl_id.manufacturer_id.id == bridgestone_id).mapped('price_subtotal'))
+            sum_subtotal_lines = sum(record.invoice_line_ids.filtered(lambda line: line.product_id.product_tmpl_id.manufacturer_id.id == bridgestone_id and line.sale_line_ids.list_origin in ['MAYOREO']
+                and line.product_id.id not in [50959]).mapped('price_subtotal'))
             return sum_subtotal_lines - (sum_subtotal_lines*.90)
         else:  # Es una orden de venta
-            for line in record.order_line.product_id.product_tmpl_id:
-                print(line)
-            sum_subtotal_lines = sum(record.order_line.filtered(lambda line: line.product_id.product_tmpl_id.manufacturer_id.id == bridgestone_id).mapped('price_subtotal'))
+            sum_subtotal_lines = sum(record.order_line.filtered(lambda line: line.product_id.product_tmpl_id.manufacturer_id.id == bridgestone_id and line.list_origin in ['MAYOREO']
+                and line.product_id.id not in [50959]).mapped('price_subtotal') )
             return sum_subtotal_lines - (sum_subtotal_lines*.90)
     #endregion
     
-    #region Logistic
-    def _get_logistic_amount(self,record):
+    #region Logistic karen se agarro a  la kim y a la paty .--.      q abra pasado?
+    def _get_logistic_amount(self,record,bs_nc_amount):
         amount = 0
         if hasattr(record, 'invoice_line_ids'):  # Es una factura
             
@@ -128,18 +129,15 @@ class PaymentDiscountMixin(models.AbstractModel):
                 and line.product_id.id not in [50959]
             )
         )
-            total_quantity = sum(filtered_lines.mapped('quantity'))
+            total_quantity = sum(record.invoice_line_ids.mapped('quantity'))
         else:
-            for line in record.order_line:
-                print(line.list_origin)
-            
             filtered_lines = record.order_line.filtered(
             lambda line: (
                 line.list_origin in ['MAYOREO','PROMOCIÓN','PROMOCIÓN DOT']
                 and line.product_id.id not in [50959]
             )
         )
-            total_quantity = sum(filtered_lines.mapped('product_uom_qty'))
+            total_quantity = sum(record.order_line.mapped('product_uom_qty'))
             
         applicable_discounts = self.env['discount_profiles.logistic.discount'].browse(record.partner_id.logistic_profile.id)
         f_disc = False
@@ -152,7 +150,7 @@ class PaymentDiscountMixin(models.AbstractModel):
                     f_disc_ids.append(f_disc)
         if f_disc_ids:
             discount = max(f_disc_ids, key=lambda x: x.discount).discount
-            amount = (sum(filtered_lines.mapped('price_subtotal'))-record.bs_nc_amount) * (discount / 100)
+            amount = (sum(filtered_lines.mapped('price_subtotal'))-bs_nc_amount) * (discount / 100)
         # Si no se encuentra un descuento exacto, se aplica el más alto disponible
         
         return amount
@@ -164,7 +162,7 @@ class PaymentDiscountMixin(models.AbstractModel):
         """
         if hasattr(record, 'invoice_line_ids'):  # Es una factura
             subtotal_lines = record.invoice_line_ids.filtered(lambda line: line.product_id.id == 50959).mapped('price_subtotal')
-            iva_amount = (sum(subtotal_lines) * 1.16)
+            iva_amount = (sum(subtotal_lines) * 1.16) - sum(subtotal_lines)
         else:  # Es una orden de venta
             subtotal_lines = record.order_line.filtered(lambda line: line.product_id.id == 50959).mapped('price_subtotal')
             iva_amount = (sum(subtotal_lines) * 1.16) - sum(subtotal_lines)

@@ -11,6 +11,8 @@ class InvPromo(models.TransientModel):
         cr = self.env.cr  # Obtén el cursor de la base de datos
         query = self._table_query()  # Construye la consulta SQL
         df = self.create_dot_dataframe(query)
+        df['speed_id'] = df['speed_id'].astype(int)
+        df['index_of_load_id'] = df['index_of_load_id'].astype(int)
         vals = df.to_dict(orient='records')
         return self.create(vals)
     

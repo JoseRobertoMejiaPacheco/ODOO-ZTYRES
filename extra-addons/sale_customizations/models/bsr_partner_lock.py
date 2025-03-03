@@ -27,7 +27,6 @@ locked_names = [
                 'JOSE ANTONIO CAMACHO MARQUEZ',
                 'JOSE ANTONIO INZUNZA CORTEZ',
                 'JOSE ANTONIO RANGEL CERDA',
-                'JOSE DE JESUS GUZMAN PALOMARES',
                 'JOSE MANUEL GONZALEZ MERCADO',
                 'JOSUE ERICK DE JESUS URQUIETA RAMIREZ',
                 'JP RINES Y LLANTAS S.A. DE C.V.',

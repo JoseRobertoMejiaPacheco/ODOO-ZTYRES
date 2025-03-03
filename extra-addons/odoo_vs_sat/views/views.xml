@@ -41,24 +41,6 @@
         <field name="view_mode">tree,form</field>
     </record>
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     <!-- Vista de Árbol (Lista) para Conciliación Complementos de Pago -->
     <record id="view_odoo_vs_sat_reconcilie_cdp_sat_bancos_tree" model="ir.ui.view">
         <field name="name">odoo_vs_sat_reconcilie_cdp_sat_bancos.tree</field>
@@ -86,9 +68,11 @@
                         <field name="start_date"/>
                         <field name="end_date"/>
                     </group>
-                    <group>
-                        <field name="attachment_ids" widget="many2many_binary"/>
-                    </group>
+                <group>
+                    <field name="attachment_bancos_ids" widget="many2many_binary"/>
+                    <field name="attachment_xml_sat_ids" widget="many2many_binary"/>
+                    <field name="attachment_conciliacion_ids" widget="many2many_binary" readonly="1" />
+                </group>
                 </sheet>
             </form>
         </field>

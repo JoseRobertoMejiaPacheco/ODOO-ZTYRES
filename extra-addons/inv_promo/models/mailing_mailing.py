@@ -27,11 +27,8 @@ class MailComposer(models.TransientModel):
         results = dict.fromkeys(res_ids, False)
         rendered_values = {}
         mass_mail_mode = self.composition_mode == 'mass_mail'
-        
         list_attachment =  [(4, attachment.id) for attachment in self.attachment_ids]
         lista_de_precios = self.env['inv_promo.lista_precios_wizard']
-        
-        
         # render all template-based value at once
         if mass_mail_mode and self.model:
             rendered_values = self.render_message(res_ids)
@@ -46,9 +43,7 @@ class MailComposer(models.TransientModel):
                     reply_to_value[res_id] = rendered_values.get(res_id, {}).get('email_from', False)
         x = 1
         for res_id in res_ids:
-            
             list_attachment =  [attach.id for attach in self.attachment_ids]
-            
             # static wizard (mail.message) values
             mail_values = {
                 'subject': self.subject,
@@ -64,20 +59,19 @@ class MailComposer(models.TransientModel):
                 'mail_activity_type_id': self.mail_activity_type_id.id,
                 'message_type': 'email' if mass_mail_mode else self.message_type,
             }
-
             # mass mailing: rendering override wizard static values
             if mass_mail_mode and self.model:
                 record = self.env[self.model].browse(res_id)
                 
                 if self.mass_mailing_id.send_list_price:
                     if record.partner_id:
-                        price_list_id = lista_de_precios.create_attachment(self.id,record.partner_id)
+                        for g in self.mass_mailing_id.pricelist_attachment_ids:
+                            print(g)
+                        price_list_id = self.mass_mailing_id.pricelist_attachment_ids.filtered(lambda r: r.partner_id.id == record.partner_id.id)
                         if price_list_id:
-                            at_id = price_list_id.id            
+                            at_id = price_list_id.attachment_id.id
                             list_attachment.append(at_id)
                             mail_values.update({'attachment_ids':list_attachment})
-                
-                
                 msggg = '%s  %s  %s'%(str(list_attachment),str(self.subject),str(x))
                 print(msggg)
                 mail_values['headers'] = repr(record._notify_by_email_get_headers())
@@ -114,9 +108,8 @@ class MailComposer(models.TransientModel):
 
             results[res_id] = mail_values
             x = x +1
-
         results = self._process_state(results)
-        return results    
+        return results
     
 class MailingMailing(models.Model):
     _inherit = 'mailing.mailing'

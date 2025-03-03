@@ -127,6 +127,8 @@ class SaleOrderLine(models.Model):
                                 record.product_id.free_qty,
                             )
                         )
+            else:
+                continue
 
     def rango_fechas(self, anos):
         # Filtrar solo los años que tengan el formato correcto (4 dígitos)
@@ -235,6 +237,8 @@ class SaleOrderLine(models.Model):
                                 record.product_id.free_qty,
                             )
                         )
+        else:
+            return
 
     def _get_valid_pricelists(self):
         return [1, 108, 113]
@@ -262,7 +266,14 @@ class SaleOrderLine(models.Model):
         return min_price_item
     
     def _get_pricelist_price(self):
-        search_domain = [
+        
+        if self.order_id.is_expo:
+            search_domain = [
+                ("product_tmpl_id", "in", self.product_id.product_tmpl_id.ids),
+                ("pricelist_id", "in", self.order_id.pricelist_id.ids)
+            ]            
+        else:
+            search_domain = [
             ("product_tmpl_id", "in", self.product_id.product_tmpl_id.ids),
             ("pricelist_id", "=", 122),
             ("lot_name", "=", self.single_dot),
@@ -271,10 +282,14 @@ class SaleOrderLine(models.Model):
         pricelist_item = self.env["product.pricelist.item"].search(
             search_domain, limit=1
         )
-        if pricelist_item:
+        if pricelist_item and not self.order_id.is_expo:
             self.list_origin = "PROMOCIÓN DOT"
             return pricelist_item.fixed_price
-
+        
+        elif self.order_id.is_expo:
+            self.list_origin = self.order_id.pricelist_id.name
+            return pricelist_item.fixed_price
+        
         # Calcular el precio usando la lista de precios válida
         self.ensure_one()
         self.product_id.ensure_one()

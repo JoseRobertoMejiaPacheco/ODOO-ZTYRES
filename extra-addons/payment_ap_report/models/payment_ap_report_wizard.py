@@ -10,7 +10,7 @@ class Wizard(models.TransientModel):
     
     def get_payment_ap_report(self):
         if self.partner_id:
-            return  self.env['payment_ap_report.report'].get_report(self.partner_id.ids)
+            return  self.env['payment_ap_report.report'].sudo().get_report(self.partner_id.ids)
         else:
             raise UserError("¡No ha seleccionado ningun cliente.")
     

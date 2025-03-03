@@ -173,6 +173,12 @@ class ZtyresMsSqlExcelReports(http.Controller):
         data = {"Mensaje": "Reporte actualizado correctamente"}
         return Response(json.dumps(data), content_type='application/json;charset=utf-8', status=200)
     
+    @http.route('/ventas_por_llantas', auth='public', methods=['GET'], website=True)
+    def reporte_ventas25(self):
+        request.env['reporte_ventas25'].sudo().get_report()
+        data = {"Mensaje": "Reporte actualizado correctamente"}
+        return Response(json.dumps(data), content_type='application/json;charset=utf-8', status=200)
+    
     @http.route('/ventas/<string:vendedor_id>', auth='public', methods=['GET'], website=True)
     def ventas_por_vendedor_individual(self, vendedor_id):
         vendedor_id = int(vendedor_id)   
@@ -224,6 +230,24 @@ class ZtyresMsSqlExcelReports(http.Controller):
             excel_file,
             headers={
                 'Content-Disposition': 'attachment; filename="antiguedad_de_saldos.xlsx"',
+                'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            }
+        )
+        
+    @http.route('/ventas_acumuladas', auth='public', methods=['GET'], website=True)
+    def ventas_acumuladas(self):
+        # Llamar a la función get_report para obtener los datos del reporte
+        report_data = request.env['ventas_acumuladas'].sudo()
+        lista = report_data.get_report()
+        # Generar el archivo Excel
+        report_generator  = request.env['excel_ventas_por_vendedor'].sudo()
+        excel_file = report_generator.generate_excel_report(lista)
+        
+        # Preparar la respuesta para descargar el archivo
+        return Response(
+            excel_file,
+            headers={
+                'Content-Disposition': 'attachment; filename="ventas_por_vendedor.xlsx"',
                 'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
             }
         )

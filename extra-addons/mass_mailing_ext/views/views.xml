@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+        <record id="view_mail_mass_mailing_inherit" model="ir.ui.view">
+            <field name="name">mass_mailing.mailing_mailing_view_form_full_width_inherit</field>
+            <field name="model">mailing.mailing</field>
+            <field name="inherit_id" ref="mass_mailing.view_mail_mass_mailing_form"/>
+            <field name="arch" type="xml">
+                <!-- Insertar el campo partner_id después del campo name -->
+                <field name="subject" position="after">
+                    <label for="send_list_price" string="Incluir Lista de Precios"/>
+                    <field name="send_list_price" />
+                    <label for="attachment_ids" string="Archivos"/>
+                    <field name="attachment_ids" />
+                </field>
+
+                <xpath expr="//header" position="inside">
+                    <button name="action_view_attachments"
+                            type="object"
+                            string="Archivos Adjuntos"
+                            icon="fa-paperclip"
+                            class="oe_stat_button"
+                            />                    
+                            <button name="generate_list"
+                            type="object"
+                            string="Generar Listas de Precio"
+                            icon="fa-paperclip"
+                            class="oe_stat_button"
+                            />
+                            <!-- attrs="{'invisible': [('pricelist_attachment_ids', '=', False)]}" -->
+                </xpath>
+
+            </field>
+        </record> 
+</odoo>

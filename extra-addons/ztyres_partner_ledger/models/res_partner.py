@@ -8,3 +8,4 @@ class Partner(models.Model):
     _name = 'res.partner'
     _inherit = 'res.partner'
     cie = fields.Char(string='Número de convenio exclusivo(CIE)',default='Sin CIE')
+    conpaq_account = fields.Char(string='Cuenta Conpaq', tracking=True)

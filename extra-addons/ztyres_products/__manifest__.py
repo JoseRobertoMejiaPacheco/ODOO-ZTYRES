@@ -50,6 +50,7 @@
         'views/ztyres_products_separator.xml',
         'views/ztyres_products_width.xml',        
         'views/ztyres_products_usage.xml',
+        'views/ztyres_products_hq.xml',
         'views/ztyres_products_menus.xml',
         
         

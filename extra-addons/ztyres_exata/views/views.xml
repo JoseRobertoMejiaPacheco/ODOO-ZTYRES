@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <!-- Vista Form para Facturación -->
+    <record id="ztyres_exata_facturacion_view_form" model="ir.ui.view">
+        <field name="name">ztyres_exata.facturacion.view.form</field>
+        <field name="model">ztyres_exata.facturacion</field>
+        <field name="arch" type="xml">
+            <form string="{{ display_name }}">
+                <header>
+                <field name="state" widget="statusbar" />
+                <button name="execute_jenkinks_task" type="object" string="Reintentar" class="btn-default" attrs="{'invisible': [('state', '!=', 'error')]}"/>                          
+                </header>
+                <sheet>
+                    <group>
+                        <field name="fecha" readonly="1"/>
+                        <field name="creado_por" readonly="1"/>
+                        <field name="respuesta" readonly="1"/>
+                        <field name="jenkins_message" readonly="1"/>
+                    </group>
+
+                    <!-- Agregamos la pestaña para las líneas -->
+                    <notebook>
+                        <page string="Líneas de Facturación">
+                            <field name="line_ids" readonly="1">
+                                <tree editable="bottom">
+                                    <field name="sku_goodyear"/>
+                                    <field name="volume_vendas"/>
+                                    <field name="faturamento_bruto"/>
+                                    <field name="data_faturamento"/>
+                                    <field name="codigo_goodyear_distribuidor"/>
+                                    <field name="id_cliente"/>
+                                </tree>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="ztyres_exata_facturacion_view_tree" model="ir.ui.view">
+        <field name="name">ztyres_exata.facturacion.view.tree</field>
+        <field name="model">ztyres_exata.facturacion</field>
+        <field name="arch" type="xml">
+            <tree string="Cargas Exata Goodyear">
+                <field name="fecha"/>
+                <field name="creado_por"/>                
+                <field name="state"/>
+                <field name="jenkins_message"/>
+                <field name="respuesta"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Acción para abrir el modelo Facturación -->
+    <record id="action_ztyres_exata_facturacion" model="ir.actions.act_window">
+        <field name="name">Cargas Exata Goodyear</field>
+        <field name="res_model">ztyres_exata.facturacion</field>
+        <field name="view_mode">tree,form,pivot</field>
+    </record>
+
+    <menuitem id="menu_ztyres_exata_root" name="Goodyear Exata"
+              parent="purchase.menu_purchase_root" 
+              sequence="100"
+              groups="ztyres_products.products_admin" 
+              action="action_ztyres_exata_facturacion"/>
+</odoo>

@@ -15,17 +15,21 @@ class AccountMoveLine(models.Model):
     )
 
     rangos_dots = fields.Char("Rangos Dots", compute="_compute_rangos_dots_from_sale")
+    single_dot = fields.Char("single_dot", compute="_compute_rangos_dots_from_sale")
+    list_origin = fields.Char("lista origen", compute="_compute_rangos_dots_from_sale")
 
     @api.depends('sol_id')  # Asegúrate de tener la relación adecuada para obtener las líneas de pedido de venta.
     def _compute_rangos_dots_from_sale(self):
         for record in self:
             sale_order_lines = record.sol_id  # Asegúrate de tener esta relación configurada.
             if sale_order_lines:
-                # Si tienes múltiples líneas, puedes ajustarlo según tu lógica.
-                # Por ejemplo, concatenar los valores de rangos_dots de todas las líneas de venta.
                 record.rangos_dots = ', '.join(sale_order_lines.mapped('rangos_dots'))
+                record.single_dot = ', '.join(str(dot) for dot in sale_order_lines.mapped('single_dot') if isinstance(dot, str))
+                record.list_origin = ', '.join(str(origin) for origin in sale_order_lines.mapped('list_origin') if isinstance(origin, str))
             else:
                 record.rangos_dots = False
+                record.single_dot = False
+                record.list_origin = False
     
     def _compute_currency_price_subtotal(self):
         for record in self:

@@ -44,6 +44,6 @@
     ],
     'application': True,
     'external_dependencies': {
-        'python': ['pandas', 'python-dotenv'],  # Añadir aquí las dependencias externas
+        'python': ['pandas'],  # Añadir aquí las dependencias externas
     },    
 }

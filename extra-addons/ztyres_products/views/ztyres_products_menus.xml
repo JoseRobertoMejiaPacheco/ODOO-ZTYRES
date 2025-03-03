@@ -133,38 +133,45 @@
                         groups="ztyres_products.products_admin"
                         sequence="17" />
 
+                <menuitem id="menu_hq_action"
+                        name="HQ"
+                        parent="menu_ztyres_products_in_config_purchase"
+                        action="ztyres_products.hq_action"
+                        groups="ztyres_products.products_admin"
+                        sequence="18" />
+
                 <menuitem id="menu_tire_measure_config"
                         name="Configuraciones de medidas"
                         parent="menu_ztyres_products_in_config_purchase"
                         groups="ztyres_products.products_admin"
-                        sequence="18" />
+                        sequence="19" />
 
                 <menuitem id="menu_width_action"
                         name="Ancho"
                         action="ztyres_products.width_action"
                         parent="menu_tire_measure_config"
                         groups="ztyres_products.products_admin"
-                        sequence="19" />
+                        sequence="20" />
 
                 <menuitem id="menu_separator_action"
                         name="Separador"
                         action="ztyres_products.separator_action"
                         parent="menu_tire_measure_config"
                         groups="ztyres_products.products_admin"
-                        sequence="20" />
+                        sequence="21" />
 
                 <menuitem id="menu_profile_action"
                         name="Perfil"
                         action="ztyres_products.profile_action"
                         parent="menu_tire_measure_config"
                         groups="ztyres_products.products_admin"
-                        sequence="21" />
+                        sequence="22" />
 
                 <menuitem id="menu_rim_action"
                         name="Rin"
                         action="ztyres_products.rim_action"
                         parent="menu_tire_measure_config"
                         groups="ztyres_products.products_admin"
-                        sequence="22" />
+                        sequence="23" />
         </data>
 </odoo>
