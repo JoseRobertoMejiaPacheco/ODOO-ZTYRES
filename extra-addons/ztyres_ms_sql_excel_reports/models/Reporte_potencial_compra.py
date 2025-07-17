@@ -10,8 +10,7 @@ class PotencialCompra(models.TransientModel):
     def get_report(self):
         ####Consulta Sql Probada
         query = """
-                SELECT 	
-                    rp_customer.x_studio_grupo AS grupo,
+                SELECT
                     rp_customer."name" as cliente, 
                     rp_salesperson."name" as vendedor,
                     aml."name", 
@@ -31,7 +30,7 @@ class PotencialCompra(models.TransientModel):
                 AND am.state = 'posted'
                 AND aml.display_type = 'product'
                 AND pt.detailed_type = 'product'
-                GROUP BY rp_customer.x_studio_grupo, rp_customer.name, aml."name", am.move_type, 
+                GROUP BY rp_customer.name, aml."name", am.move_type, 
                         aml.quantity, aml.date, rp_salesperson."name"
         """
         ##Retornar la consulta sql
@@ -43,14 +42,19 @@ class PotencialCompra(models.TransientModel):
         df['mes'] = df['fecha'].dt.month
         df = df.fillna('')
         
+        fecha_actual = date.today()
+        # Obtén el primer día del mes actual
+        primer_dia_mes = fecha_actual.replace(day=1)
+        ultimo_dia_mes = pd.to_datetime(primer_dia_mes) + pd.offsets.MonthEnd(0)
+        ultimo_dia_mes = ultimo_dia_mes.date()  # Convertir de Timestamp a date si es necesario
+        
         query2 = """
             SELECT 
              	rp_customer."name" as cliente, 
                 CASE 
                     WHEN am.move_type in ('out_refund') THEN -aml.quantity
                     ELSE aml.quantity
-                END AS piezasxmes,
-                aml."date" AS date_order
+                END AS piezasxmes
             FROM account_move_line aml 
             JOIN account_move am ON aml.move_id = am.id 
             JOIN product_product pp ON aml.product_id = pp.id
@@ -62,27 +66,19 @@ class PotencialCompra(models.TransientModel):
             AND am.state = 'posted'
             AND aml.display_type = 'product'
             AND pt.detailed_type = 'product'
+            AND aml."date" BETWEEN %s AND %s
         """
-        self.env.cr.execute(query2)
+        self.env.cr.execute(query2, (primer_dia_mes, ultimo_dia_mes))
         result2 = self.env.cr.dictfetchall()        #Crear dataframe dla consulta
         df2 = pd.DataFrame(result2)
         
-        fecha_actual = date.today()
-        # Obtén el primer día del mes actual
-        primer_dia_mes = fecha_actual.replace(day=1)
-        ultimo_dia_mes = primer_dia_mes.replace(day=28)  # Establece inicialmente el día 28
-        ultimo_dia_mes = ultimo_dia_mes + pd.offsets.MonthEnd(0)  # Ajusta al último día del mes
-
-
-        # Filtrar el DataFrame por el rango de fechas
-        df2 = df2.loc[(df2['date_order'] >= primer_dia_mes) & (df2['date_order'] <= ultimo_dia_mes)]
-        df2 = df2.drop(columns=['date_order'])
-        
-        
-        pivot_df3 = df2.pivot_table(index='cliente', values='piezasxmes', aggfunc='sum', fill_value=0)
+        if df2.empty:
+            pivot_df3 = pd.DataFrame(columns=['cliente', 'piezasxmes'])
+        else:
+            pivot_df3 = df2.pivot_table(index='cliente', values='piezasxmes', aggfunc='sum', fill_value=0)
         
         # Utilizar pivot_table para crear una columna por cada año diferente
-        pivot_df = df.pivot_table(index=['grupo','cliente', 'vendedor'], columns='año', values='cantidad', aggfunc='sum', fill_value=0)
+        pivot_df = df.pivot_table(index=['cliente', 'vendedor'], columns='año', values='cantidad', aggfunc='sum', fill_value=0)
         pivot_df.reset_index(inplace=True)
         pivot_df.columns.name = None
         pivot_df.drop(columns=[2020], inplace=True)

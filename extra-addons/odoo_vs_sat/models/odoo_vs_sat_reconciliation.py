@@ -48,6 +48,10 @@ class OdooVsSatReconciliation(models.Model):
             return
         
         df_sat = pd.read_excel(BytesIO(base64.b64decode(attachment.datas)))
+        df_sat['Tipo'] = df_sat['Tipo'].replace({
+            'E - Egreso': 'E',
+            'I - Ingreso': 'I'
+        })        
         df_sat['Fecha emision'] = pd.to_datetime(df_sat['Fecha emision'], errors='coerce')
         
         start_date = pd.to_datetime(self.start_date).replace(hour=0, minute=0, second=0)
@@ -66,8 +70,10 @@ class OdooVsSatReconciliation(models.Model):
         query = """
             SELECT
                 partner_id AS "ID CLIENTE ODOO",
+                rp.conpaq_account AS "C Contpaq",
+                rp.name AS "Cliente",
                 currency_id AS "ID Moneda Odoo",
-                name AS "Folio Odoo",
+                account_move.name AS "Folio Odoo",
                 invoice_date AS "Fecha Odoo",
                 l10n_mx_edi_cfdi_uuid AS "UUID Odoo",
                 amount_untaxed_signed AS "Total Odoo",
@@ -78,6 +84,7 @@ class OdooVsSatReconciliation(models.Model):
                     WHEN move_type = 'out_invoice' THEN 'I'
                 END AS "Tipo"
             FROM account_move
+            join res_partner rp on account_move.partner_id = rp.id
             WHERE invoice_date BETWEEN %s AND %s
             AND move_type IN ('out_invoice', 'out_refund')
             AND state = 'posted';

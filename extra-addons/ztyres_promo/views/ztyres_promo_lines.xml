@@ -1,0 +1,65 @@
+<?xml version='1.0' encoding='utf-8'?>
+<odoo>
+    <data>
+    <!-- Vistas para ztyres_promo.lines -->
+    <record id="view_ztyres_lines_tree" model="ir.ui.view">
+        <field name="name">ztyres_promo.lines.tree</field>
+        <field name="model">ztyres_promo.lines</field>
+        <field name="arch" type="xml">
+            <tree string="Líneas de Volumen">
+                <field name="date"/>
+                <field name="move_id" string="Factura"/>
+                <field name="product_name"/>
+                <field name="product_brand"/>
+                <field name="quantity"/>
+                <field name="price_subtotal"/>
+                <field name="partner_id"/>
+                <field name="state"/>
+                <field name="definitive_nc_id" invisible="1"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="view_ztyres_lines_form" model="ir.ui.view">
+        <field name="name">ztyres_promo.lines.form</field>
+        <field name="model">ztyres_promo.lines</field>
+        <field name="arch" type="xml">
+            <form string="Línea de Volumen">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="date"/>
+                            <field name="move_id" string="Factura"/>
+                            <field name="partner_id"/>
+                            <field name="state"/>
+                            <field name="rfc"/>
+                        </group>
+                        <group>
+                            <field name="product_name"/>
+                            <field name="product_code"/>
+                            <field name="product_brand"/>
+                            <field name="quantity"/>
+                            <field name="price_subtotal"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="sale_origin"/>
+                        <field name="list_origin"/>
+                        <field name="move_type"/>
+                    </group>
+                    <field name="definitive_nc_id" invisible="1"/>
+                </sheet>
+            </form>
+        </field>
+    </record>   
+
+    
+    <!-- Acción para abrir la lista/formulario -->
+    <record id="lines_action" model="ir.actions.act_window">
+        <field name="name">Detalle</field>
+        <field name="res_model">ztyres_promo.lines</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+    </data>
+</odoo>

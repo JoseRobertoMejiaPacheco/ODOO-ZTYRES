@@ -11,8 +11,14 @@ class InvPromo(models.TransientModel):
         cr = self.env.cr  # Obtén el cursor de la base de datos
         query = self._table_query()  # Construye la consulta SQL
         df = self.create_dot_dataframe(query)
+        df['tire_measure_id'] = df['tire_measure_id'].astype(int)
+        df['layer_id'] = df['layer_id'].astype(int)
         df['speed_id'] = df['speed_id'].astype(int)
         df['index_of_load_id'] = df['index_of_load_id'].astype(int)
+        df['model_id'] = df['model_id'].astype(int)
+        df['brand_id'] = df['brand_id'].astype(int)
+        df['original_equipment_id'] = df['original_equipment_id'].astype(int)
+        df['tier_id'] = df['tier_id'].astype(int)
         vals = df.to_dict(orient='records')
         return self.create(vals)
     
@@ -42,16 +48,13 @@ class InvPromo(models.TransientModel):
             index_of_load_id=('index_of_load_id', 'first'),
             model_id=('model_id', 'first'),
             brand_id=('brand_id', 'first'),
+            original_equipment_id=('original_equipment_id', 'first'),
             tier_id=('tier_id', 'first'),
-            lot_name=('lot_name', lambda x: f"{min(x)}-{max(x)}" if len(x.unique()) > 1 else x.iloc[0])
+            lot_name=('lot_name', lambda x: f"{min(x)}-{max(x)}" if len(x.unique()) > 1 else x.iloc[0]),
+            transit=('transit', 'first')
         ).reset_index()
 
-        # Mostrar el DataFrame resultante
-        print("DataFrame no promocional agrupado con todos los datos y rango de lot_name:")
-        print(df_no_promo_grouped)
-
         return df_no_promo_grouped
-    
     
     def get_df_promo_by_dot(self):
         productos_promocion = []
@@ -66,10 +69,7 @@ class InvPromo(models.TransientModel):
                 'lot_name': lot_name or 'N/A'
             })
         print(productos_promocion)
-        return productos_promocion            
-            
-        
-    
+        return productos_promocion
         
     def create_dot_dataframe(self, query):
         # Ejecutar la consulta SQL
@@ -88,7 +88,6 @@ class InvPromo(models.TransientModel):
         df_promo, df_no_promo = self.get_promo_dot_df(df)
         
         # Mostrar df_promo para ver su contenido
-         
         
         # Obtener el mapeo de 'promo_dot' con get_df_promo_by_dot
         promo_data = self.get_df_promo_by_dot()  # Lista de diccionarios
@@ -122,7 +121,6 @@ class InvPromo(models.TransientModel):
         print(query)  
         return query
 
-
     def _get_active_pricelist(self):
         query = ''
         PPIDS = [(1, 'mayoreo'), (113, 'promocion')]        
@@ -132,7 +130,6 @@ class InvPromo(models.TransientModel):
         if ',' in query:
             query = query[:query.rfind(',')]
         return query
-            
         
     def _select(self):
         return '''
@@ -145,11 +142,12 @@ class InvPromo(models.TransientModel):
         pt.index_of_load_id,
         pt.model_id, 
         pt.brand_id,
+        pt.original_equipment_id,
         pt.tier_id,
         lot.name AS lot_name, -- Obtener el nombre del lote desde stock_lot
-        SUM(sq.available) AS available -- Mantener la suma total de disponible por lot_name
+        SUM(sq.available) AS available, -- Mantener la suma total de disponible por lot_name
+        tr.transit AS transit
     '''
-        
         
     def _get_price_sql(self,id,name):
         return '''(
@@ -164,7 +162,6 @@ class InvPromo(models.TransientModel):
     def _from(self):
         return '''FROM product_product pp'''
 
-        
     def _join(self):
         return '''
                 JOIN product_template pt ON pp.product_tmpl_id = pt.id
@@ -182,9 +179,32 @@ class InvPromo(models.TransientModel):
                     GROUP BY 
                         sq.product_id, sq.lot_id -- Agrupar por lot_id para las cantidades por lote
                 ) sq ON sq.product_id = pp.id
-                LEFT JOIN stock_lot lot ON sq.lot_id = lot.id -- Realizar el JOIN con stock_lot para obtener el nombre del lote'''
+                LEFT JOIN stock_lot lot ON sq.lot_id = lot.id -- Realizar el JOIN con stock_lot para obtener el nombre del lote
+                LEFT JOIN (
+                WITH latest_purchase_dates AS (
+                    SELECT  
+                        pp.id AS id,
+                        MAX(po.date_planned) AS latest_date
+                    FROM stock_quant sq
+                    JOIN product_product pp ON sq.product_id = pp.id
+                    JOIN purchase_order_line pol ON pp.id = pol.product_id 
+                    JOIN purchase_order po ON pol.order_id = po.id
+                    WHERE sq.location_id IN (53, 24686, 24687) 
+                    AND po.state = 'purchase'
+                    GROUP BY pp.id
+                )
+                SELECT 
+                    pp.id AS product_id,
+                    SUM(sq.quantity) AS transit,
+                    DATE(lpd.latest_date + INTERVAL '10 days') AS fecha
+                FROM stock_quant sq
+                JOIN product_product pp ON sq.product_id = pp.id
+                JOIN latest_purchase_dates lpd ON pp.id = lpd.id
+                WHERE sq.location_id IN (53, 24686, 24687) 
+                GROUP BY pp.id, lpd.latest_date
+                ORDER BY pp.id
+                ) tr ON tr.product_id = pp.id'''
 
-        
     def _group_by(self):
         return '''
             GROUP BY 
@@ -197,9 +217,12 @@ class InvPromo(models.TransientModel):
                 pt.index_of_load_id,
                 pt.model_id,
                 pt.brand_id,
+                pt.original_equipment_id,
                 pt.tier_id,
-                lot.name -- Agrupar por lot_name
+                lot.name, -- Agrupar por lot_name
+                tr.transit
             HAVING 
                 SUM(sq.available) > 0 -- Solo mostrar productos con cantidad disponible positiva
+                OR tr.transit > 0
             ORDER BY 
                 pt.tire_measure_id ASC;'''

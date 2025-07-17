@@ -13,7 +13,7 @@
 
                 <!-- Atributos en el campo price_unit -->
                 <xpath expr="//field[@name='order_line']/tree/field[@name='price_unit']" position="attributes">
-                    <attribute name="attrs">{"readonly": [["product_id","!=",50959]]}</attribute>
+                    <attribute name="attrs">{"readonly": [["product_id","not in",[50959,58209]]]}</attribute>
                 </xpath>
 
                 <!-- Atributo readonly en el campo discount -->
@@ -24,7 +24,7 @@
                 <!-- Campos después del descuento -->
                 <xpath expr="//field[@name='order_line']/tree/field[@name='discount']" position="after">
                     <field name="price_unit_discount" optional="hide"/>
-                    <field name="list_origin" string="Lista de Origen" optional="show"/>
+                    <field name="list_origin" string="Lista de Origen" readonly="1" optional="show"/>
                 </xpath>
 
                 <xpath expr="/form/header[last()]" position="inside">
@@ -59,6 +59,11 @@
         <field name="model">sale.order</field>
         <field name="inherit_id" ref="sale.view_order_form"/>
         <field name="arch" type="xml">
+        
+            <field name='partner_shipping_id' position='after'>
+                <field name='promo_onyx' />
+                <field name='cubic_volume' />
+            </field>        
             <!-- Añadir un botón para abrir el asistente de agregar producto -->
             <xpath expr="//field[@name='order_line']" position="after">
                 <button name="action_open_add_product_wizard"

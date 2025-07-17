@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+
+
+  <menuitem id="ztyres_volumen.principal_menu" name="Politicas y Promociones" sequence="1000"/>
+  <menuitem id="ztyres_volumen.secundary_menu"  parent="ztyres_volumen.principal_menu" name="Volumen" sequence="1000"/>
+  <menuitem id="ztyres_volumen.history"  name="Historico" parent="ztyres_volumen.secundary_menu" action="ztyres_volumen.ztyres_volumen_action"/>
+  <menuitem id="ztyres_volumen.menu_ztyres_volumen_group" name="Grupos" parent="ztyres_volumen.secundary_menu" action="ztyres_volumen.action_ztyres_volumen_group" sequence="20"/>
+
+  <menuitem id="ztyres_promo.principal_menu" parent="ztyres_volumen.principal_menu" name="Promociones" action="ztyres_promo.ztyres_promo_action" sequence="1000"/>  
+</odoo>

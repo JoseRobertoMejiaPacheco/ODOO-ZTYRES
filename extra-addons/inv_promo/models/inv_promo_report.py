@@ -14,6 +14,7 @@ class InvPromo(models.TransientModel):
     index_of_load_id = fields.Many2one('ztyres_products.index_of_load', string='Indice de Carga')
     model_id = fields.Many2one('ztyres_products.model', string='Modelo')
     brand_id = fields.Many2one('ztyres_products.brand', string='Marca')
+    original_equipment_id = fields.Many2one('ztyres_products.original_equipment', string='Equipo Original')
     tier_id = fields.Many2one('ztyres_products.tier', string='Tier')
     total_quantity = fields.Float(string='Cantidad')
     available = fields.Float(string='Cantidad Disponible')
@@ -69,7 +70,6 @@ class InvPromo(models.TransientModel):
                 record.inventario_str = "=%s"%(record.available)
             else:
                 record.inventario_str = '0'
-                
 
     def _compute_transito_str(self):
         for record in self:

@@ -1,0 +1,53 @@
+<?xml version='1.0' encoding='utf-8'?>
+<odoo>
+    <!-- Nuevos accesos para los modelos de multipayment_tool -->
+    <record id="access_multipayment_tool_payments" model="ir.model.access">
+        <field name="name">Access Payments</field>
+        <field name="model_id" ref="multipayment_tool.model_multipayment_tool_payments" />
+        <field name="group_id" ref="apply_payments.group_apply_out_invoice_manager" />
+        <field name="perm_read" eval="1" />
+        <field name="perm_write" eval="1" />
+        <field name="perm_create" eval="1" />
+        <field name="perm_unlink" eval="1" />
+    </record>
+
+    <record id="access_multipayment_tool_payment_form" model="ir.model.access">
+        <field name="name">Access Payment Form</field>
+        <field name="model_id" ref="multipayment_tool.model_multipayment_tool_payment_form" />
+        <field name="group_id" ref="apply_payments.group_apply_out_invoice_manager" />
+        <field name="perm_read" eval="1" />
+        <field name="perm_write" eval="1" />
+        <field name="perm_create" eval="1" />
+        <field name="perm_unlink" eval="1" />
+    </record>
+
+    <record id="access_multipayment_tool_abstract_move" model="ir.model.access">
+        <field name="name">Access Abstract Move</field>
+        <field name="model_id" ref="multipayment_tool.model_multipayment_tool_abstract_move" />
+        <field name="group_id" ref="apply_payments.group_apply_out_invoice_manager" />
+        <field name="perm_read" eval="1" />
+        <field name="perm_write" eval="1" />
+        <field name="perm_create" eval="1" />
+        <field name="perm_unlink" eval="1" />
+    </record>
+
+    <record id="access_multipayment_tool_detail_line" model="ir.model.access">
+        <field name="name">Access Detail Line</field>
+        <field name="model_id" ref="multipayment_tool.model_multipayment_tool_detail_line" />
+        <field name="group_id" ref="apply_payments.group_apply_out_invoice_manager" />
+        <field name="perm_read" eval="1" />
+        <field name="perm_write" eval="1" />
+        <field name="perm_create" eval="1" />
+        <field name="perm_unlink" eval="1" />
+    </record>
+
+    <record id="access_multipayment_tool_discount" model="ir.model.access">
+        <field name="name">Access Discount</field>
+        <field name="model_id" ref="multipayment_tool.model_multipayment_tool_discount" />
+        <field name="group_id" ref="apply_payments.group_apply_out_invoice_manager" />
+        <field name="perm_read" eval="1" />
+        <field name="perm_write" eval="1" />
+        <field name="perm_create" eval="1" />
+        <field name="perm_unlink" eval="1" />
+    </record>
+</odoo>

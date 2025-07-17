@@ -1,0 +1,107 @@
+<?xml version='1.0' encoding='utf-8'?>
+<odoo>
+    <data>
+  <record id="ztyres_volumen.notas_credito_tree" model="ir.ui.view">
+    <field name="name">ztyres_volumen.notas_credito.tree</field>
+    <field name="model">ztyres_volumen.notas_credito</field>
+    <field name="arch" type="xml">
+      <tree>
+        <field name="nombre"/>
+        <field name="status"/>
+        <field name="start_date"/>
+        <field name="end_date"/>
+        <field name="bs_discount"/>
+      </tree>
+    </field>
+  </record>
+
+  <record id="ztyres_volumen.notas_credito_form" model="ir.ui.view">
+    <field name="name">ztyres_volumen.notas_credito.form</field>
+    <field name="model">ztyres_volumen.notas_credito</field>
+    <field name="arch" type="xml">
+      <form>
+        <header>
+          <field name="status" widget="statusbar" />
+          <button name="action_calcular_nc" type="object" string="Calcular NC" class="btn-default" attrs="{'invisible': [('status', 'in', ['done'])]}" />
+          <button name="action_approve" type="object" string="Aprobar Notas de Crédito" class="btn-default" attrs="{'invisible': [('status', 'in', ['done','approve'])]}" groups="ztyres_volumen.group_supervisor_nc_volumen_promociones"/>
+          <button name="action_confirmar_nc" type="object" string="Confirmar NC" class="btn-default"  attrs="{'invisible': [('status', 'not in', ['approve'])]}" />     
+          <button name="check_sat_status" type="object" string="Verificar estatus  timbrado SAT" class="btn-default" />                    
+        </header>
+        <sheet>
+        <div class="oe_button_box" name="button_box">
+                <!-- Smart button para Notas de Crédito -->
+
+                <button name="action_open_line_ids"
+                        type="object"
+                        class="oe_stat_button"
+                        icon="fa-file-text">
+                    <field name="count_line_ids" widget="statinfo" string="Resumen NC"/>
+                </button>
+                
+                <!-- Smart button para Detalle -->
+                <button name="action_open_detailed_line_ids"
+                        type="object"
+                        class="oe_stat_button"
+                        icon="fa-list-alt">
+                    <field name="count_detailed_line_ids" widget="statinfo" string="Detalle"/>
+                </button>
+            </div>
+          <div class="oe_title">
+              <h1>
+                  <field name="nombre" readonly="1"/>
+              </h1>
+          </div>
+          <group>
+            <field name="bs_discount" attrs="{'readonly': [('status', 'in', ['done'])]}"/>
+            <field name="start_date" attrs="{'readonly': [('status', 'in', ['done'])]}"/>
+            <field name="end_date" attrs="{'readonly': [('status', 'in', ['done'])]}"/>
+            <field name="pricelist_ids" attrs="{'readonly': [('status', 'in', ['done'])]}"/>
+          </group>
+
+          <notebook>
+            <page string="Líneas de Facturación">
+                <field name="line_ids" domain="[('total_nc_untaxed','>',0)]" readonly="1">
+                    <tree editable="bottom">
+                      <field name="partner_id"/>
+                      <field name="rfc"/>
+                      <field name="group_id"/>
+                      <field name="quantity"/>
+                      <field name="reward_percent" string="Descuento %"/>
+                      <field name="price_subtotal"/>
+                      <field name="price_subtotal_bs"/>
+                      <field name="base"/>
+                      <field name="total_nc_untaxed"/>
+                      <field name="nc_credit_id"/>
+                      <field name="sat_estatus"/>
+                      <button name="action_view_details" type="object" string="Ver detalles" class="btn-primary"/>
+                    </tree>
+                </field>
+            </page>
+            <page string="Condiciones">
+               <field name="policy_line_ids">
+                <tree editable="bottom">
+                            <field name="lower_limit" string="De (Llantas)"/>
+                            <field name="upper_limit" string="A (Llantas)"/>
+                            <field name="discount" string="Porcentaje de Descuento"/>
+                        </tree>
+              </field>
+            </page>
+            <page string="Clientes Excluidos">
+               <field name="excluded_partner_ids"/>
+            </page>
+            </notebook>
+
+        </sheet>
+      </form>
+    </field>
+  </record>
+
+  <!-- View for the action -->
+  <record id="ztyres_volumen_action" model="ir.actions.act_window">
+    <field name="name">Volumen</field>
+    <field name="res_model">ztyres_volumen.notas_credito</field>
+    <field name="view_mode">tree,form</field>
+  </record>
+
+    </data>
+</odoo>

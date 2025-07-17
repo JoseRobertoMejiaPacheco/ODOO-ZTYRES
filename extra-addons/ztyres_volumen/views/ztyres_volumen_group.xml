@@ -1,0 +1,58 @@
+<?xml version='1.0' encoding='utf-8'?>
+<odoo>
+    <data>
+<record id="view_ztyres_volumen_group_search" model="ir.ui.view">
+        <field name="name">ztyres_volumen.group.search</field>
+        <field name="model">ztyres_volumen.group</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="partner_ids"/>
+                <group expand="1" string="Agrupar por">
+                    <filter name="group_name" string="Grupo" context="{'group_by':'name'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- VISTA TREE -->
+    <record id="view_ztyres_volumen_group_tree" model="ir.ui.view">
+        <field name="name">ztyres_volumen.group.tree</field>
+        <field name="model">ztyres_volumen.group</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="name" string="Nombre del Grupo"/>
+                <!--
+                    Por defecto, un Many2many en vista tree no se suele mostrar
+                    de forma expandida, pero podrías usar un widget many2many_tags
+                -->
+                <field name="partner_ids" widget="many2many_tags" string="Clientes" />
+            </tree>
+        </field>
+    </record>
+
+    <!-- VISTA FORM -->
+    <record id="view_ztyres_volumen_group_form" model="ir.ui.view">
+        <field name="name">ztyres_volumen.group.form</field>
+        <field name="model">ztyres_volumen.group</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <field name="name" string="Nombre del Grupo"/>
+                        <field name="partner_ids" widget="many2many_tags" string="Clientes"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- ACCIÓN -->
+    <record id="action_ztyres_volumen_group" model="ir.actions.act_window">
+        <field name="name">Grupos</field>
+        <field name="res_model">ztyres_volumen.group</field>
+        <field name="view_mode">tree,form</field>
+        <field name="search_view_id" ref="view_ztyres_volumen_group_search"/>
+    </record>        
+    </data>
+</odoo>

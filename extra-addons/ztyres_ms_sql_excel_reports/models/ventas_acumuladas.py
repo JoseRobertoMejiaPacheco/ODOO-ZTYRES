@@ -1,20 +1,32 @@
 from odoo.http import request, Response
-from datetime import date
+from datetime import date, datetime
 import pandas as pd
+import calendar
 from odoo import api, fields, models
 
 class VentasAcumuladas(models.TransientModel):
     _name = 'ventas_acumuladas'
 
-    def get_report(self):
-        # fecha_actual = date.today()
-        # # Obtén el primer día del mes actual
-        # primer_dia_mes = fecha_actual.replace(day=1)
-        # ultimo_dia_mes = primer_dia_mes.replace(day=28)  # Establece inicialmente el día 28
-        # ultimo_dia_mes = ultimo_dia_mes + pd.offsets.MonthEnd(0)  # Ajusta al último día del mes
+    def get_report(self, mes, anio):
         
-        primer_dia_mes = pd.to_datetime('2025-01-01')
-        ultimo_dia_mes = pd.to_datetime('2025-01-31')
+        meses = {
+            'enero': 1, 'febrero': 2, 'marzo': 3, 'abril': 4,
+            'mayo': 5, 'junio': 6, 'julio': 7, 'agosto': 8,
+            'septiembre': 9, 'octubre': 10, 'noviembre': 11, 'diciembre': 12
+        }
+        mes = mes.lower()
+        
+        if mes not in meses:
+            raise ValueError(f"Nombre del mes '{mes}' no es válido.")
+        
+        mes_numero = meses[mes]
+        
+        # Obtener primer y último día del mes
+        primer_dia = datetime(anio, mes_numero, 1)
+        ultimo_dia = datetime(anio, mes_numero, calendar.monthrange(anio, mes_numero)[1])
+        
+        primer_dia_mes = pd.to_datetime(primer_dia)
+        ultimo_dia_mes = pd.to_datetime(ultimo_dia)
         
         lista = []
         datos = []
@@ -26,7 +38,7 @@ class VentasAcumuladas(models.TransientModel):
                     ('product_id.product_tmpl_id.detailed_type', '=', 'product'),
                     ('move_id.invoice_date', '>=', primer_dia_mes),
                     ('move_id.invoice_date', '<=', ultimo_dia_mes),
-                    ('move_id.partner_id.id', 'in', [7102, 7181, 7101]),
+                    ('move_id.partner_id.id', 'in', [7102, 7181, 7101, 6994, 7097, 11190, 11202, 10938]),
                 ]
 
         records = self.env['account.move.line'].search(search_domain)
@@ -37,6 +49,7 @@ class VentasAcumuladas(models.TransientModel):
                 'Id': record.move_id.id,
                 'Cliente': record.move_id.partner_id.name,
                 'Factura': record.move_id.name,
+                'Fecha': record.move_id.invoice_date,
                 'Producto': record.product_id.name,
                 'Fabricante': record.product_id.manufacturer_id.name,
                 'Lista origen': record.list_origin,
@@ -47,7 +60,6 @@ class VentasAcumuladas(models.TransientModel):
 
         df = pd.DataFrame(datos)
 
-        df.to_excel('/mnt/extra-addons/aaaahhhh2.xlsx')
 
         query2 = """
             SELECT 
@@ -82,7 +94,7 @@ class VentasAcumuladas(models.TransientModel):
             AND aml2.id IN (
             		SELECT aml.id FROM account_move_line aml
         			JOIN account_move am ON aml.move_id = am.id
-        			WHERE am.partner_id IN (7102, 7181, 7101)
+        			WHERE am.partner_id IN (7102, 7181, 7101, 6994, 7097, 11190, 11202, 10938)
         			AND am.invoice_date BETWEEN %s AND %s
         			AND am.move_type IN ('out_invoice')
                 )

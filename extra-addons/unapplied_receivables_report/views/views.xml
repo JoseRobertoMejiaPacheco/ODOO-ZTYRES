@@ -1,0 +1,66 @@
+<odoo>
+  <data>
+    <!-- Acción para abrir la vista -->
+    <record id="action_unapplied_receivables_report" model="ir.actions.act_window">
+        <field name="name">Reporte No Aplicadas</field>
+        <field name="res_model">unapplied.receivables.report</field>
+        <field name="view_mode">tree</field>
+        <field name="help" type="html">
+            <p>Este reporte muestra las cuentas por cobrar que aún no han sido aplicadas.</p>
+        </field>
+    </record>
+
+    <!-- Vista de lista -->
+    <record id="view_unapplied_receivables_report_tree" model="ir.ui.view">
+        <field name="name">unapplied.receivables.report.tree</field>
+        <field name="model">unapplied.receivables.report</field>
+        <field name="arch" type="xml">
+            <tree string="Reporte de Cuentas por Cobrar No Aplicadas">
+                <field name="partner_id"/>
+                <field name="move_id"/>
+                <field name="move_type"/>
+                <field name="date"/>
+                <field name="invoice_date"/>
+                <field name="date_maturity"/>
+                <field name="amount"/>
+                <field name="amount_residual_currency"/>
+                <field name="currency_id"/>
+                <field name="state"/>
+                <field name="parent_state"/>
+                <field name="account_id"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Vista de formulario (opcional) -->
+    <record id="view_unapplied_receivables_report_form" model="ir.ui.view">
+        <field name="name">unapplied.receivables.report.form</field>
+        <field name="model">unapplied.receivables.report</field>
+        <field name="arch" type="xml">
+            <form string="Detalle de Cuenta No Aplicada">
+                <sheet>
+                    <group>
+                        <field name="partner_id"/>
+                        <field name="move_id"/>
+                        <field name="move_type"/>
+                        <field name="date"/>
+                        <field name="invoice_date"/>
+                        <field name="date_maturity"/>
+                        <field name="amount"/>
+                        <field name="amount_residual_currency"/>
+                        <field name="currency_id"/>
+                        <field name="state"/>
+                        <field name="parent_state"/>
+                        <field name="account_id"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Añadir al menú -->    
+     <menuitem name="Reporte de documentos pendientes por aplicar" sequence="0" id="receivables_report" parent="account.menu_finance_reports"/>
+    <menuitem id="menu_unapplied_receivables_report" name="Pagos/NC No Aplicados" parent="receivables_report" action="action_unapplied_receivables_report"/>
+    
+  </data>
+</odoo>

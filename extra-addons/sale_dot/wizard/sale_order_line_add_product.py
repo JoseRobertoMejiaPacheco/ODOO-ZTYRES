@@ -17,6 +17,7 @@ class SaleOrderLineAddProductWizard(models.TransientModel):
         self.total_qty = sum(self.lines.mapped('qty'))
     
     def get_lots_and_quantities(self, product):
+        
         grouped_lot_info = []
         
         # Obtener todas las cantidades relacionadas con el producto en ubicaciones 'internal' (stock)
@@ -101,6 +102,20 @@ class SaleOrderLineAddProductWizard(models.TransientModel):
                 'discount_price': 0,  # Lo mismo con los descuentos
                 'subtotal': 0  # Lo mismo con el subtotal
             }
+        
+        is_expo = self._context.get('is_expo',False)
+        if is_expo and product:
+            lot_info[False] = {
+                'lots_ids': [],  # Inicializamos la relación m2m
+                'single_dot': 'False',
+                'product_id': product.id,
+                'qty_available': 0,
+                'qty': 0,  # Se podría ajustar según la lógica de negocio
+                'origin_list': '',
+                'price': 0,  # Se puede agregar el precio si es necesario
+                'discount_price': 0,  # Lo mismo con los descuentos
+                'subtotal': 0  # Lo mismo con el subtotal
+            }            
             # Convertir el diccionario a una lista de tuplas para ser usado en la vista o en otro proceso
         grouped_lot_info = [(0, 0, lot_data) for lot_data in lot_info.values()]
         return grouped_lot_info
@@ -126,11 +141,11 @@ class SaleOrderLineAddProductWizard(models.TransientModel):
         order_line_id = self.env.context.get('active_id')
         if not order_line_id:
             return
-        
+        order_id = self.env['sale.order'].browse(order_line_id)
         # Crear las líneas de pedido de venta para los productos seleccionados
         for line in self.lines:
             product = self.product_id
-            if product and line.qty>0 or product.id == 50959:
+            if product and line.qty>0 or product.id in [50959,58209]:                
                 # Creación de la línea de pedido
                 vals = {
                     'product_id': product.id,
@@ -140,15 +155,15 @@ class SaleOrderLineAddProductWizard(models.TransientModel):
                     'single_dot': line.single_dot,
                     'dot_range':'',
                 }
-                created_line = self.env['sale.order.line'].create(vals)
-                created_line._compute_price_unit()
-                if product.id == 50959:
+                order_id.with_context({'skip_shipping_price':True,'check_availability':False}).order_line = [(0, 0, vals)]
+                order_id.order_line.filtered(lambda l: l.product_id.id == product.id)._compute_price_unit()
+        #         created_line._compute_price_unit()
+        #         if product.id == 50959:
                     
-                    created_line.product_uom_qty =line.qty
-                    created_line.price_unit=120
-                    
-                
-        self.env['sale.order'].browse(order_line_id).quotation_action_confirm()
+        #             created_line.product_uom_qty =line.qty
+        #             created_line.price_unit=120
+        
+        order_id.quotation_action_confirm()
 
 class SaleOrderLineAddProductWizardLine(models.TransientModel):
     _name = 'sale.order.line.add.product.wizard.line'
@@ -170,9 +185,9 @@ class SaleOrderLineAddProductWizardLine(models.TransientModel):
     
     @api.onchange('qty')
     def _check_qty(self):
-        if not (self.qty>0 and self.qty <= self.qty_available):
+        is_expo = self._context.get('is_expo',False)
+        if not (self.qty>0 and self.qty <= self.qty_available) and not is_expo:
             self.qty = 0
-            user_id = self.env.user.id
             raise ValidationError('No se pueden agregar más llantas de las disponibles')
                 
             

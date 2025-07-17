@@ -17,13 +17,14 @@ class AccountEdiFormat(models.Model):
         edi_docs = move_id.mapped('edi_document_ids')
         
         for edi_document in edi_docs:
-            rfc = self._get_rfc_from_xml(edi_document)
-            if rfc == 'XAXX010101000':
-                return True  # Retornar True si se encuentra un RFC genérico
+            for item in move_id:
+                rfc = self._get_rfc_from_xml(edi_document)
+                if rfc == 'XAXX010101000' or item.generic_edi:
+                    return True  # Retornar True si se encuentra un RFC genérico
             
         # Validar consistencia de valores en el campo 'generic_edi'
         return self._validate_generic_edi_values(move_id)
-
+    
     def _is_generic_rfc_in_xml(self, edi_document):
         """
         Verifica si el archivo XML adjunto contiene un RFC genérico en el nodo 'Receptor'.

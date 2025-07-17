@@ -110,7 +110,35 @@ class MyModel(models.TransientModel):
         """
         params = (tuple(product_tmpl_ids),)
         return self.execute_query(query, params)
-
+    
+    def get_upf_expo(self, product_tmpl_ids):
+        query = """
+        WITH RankedRecords AS (
+            SELECT
+                pp.product_tmpl_id AS id,
+                aml."date" AS fecha_upf_expo,
+                aml.price_unit AS upf_expo,
+                ROW_NUMBER() OVER (PARTITION BY pp.product_tmpl_id
+                                ORDER BY aml.create_date DESC, aml.price_unit DESC) AS rn
+            FROM account_move_line AS aml
+            JOIN product_product AS pp ON aml.product_id = pp.id
+            JOIN account_move AS am ON aml.move_id = am.id
+            JOIN product_template AS pt ON pp.product_tmpl_id = pt.id
+            WHERE am.state = 'posted' 
+                AND aml.display_type = 'product'
+                AND am.move_type = 'out_invoice'
+                AND pt.active = true
+                AND pt."type" = 'product'
+                AND am.currency_id = 2
+                AND pp.product_tmpl_id IN %s
+        )
+        SELECT id, fecha_upf_expo, upf_expo
+        FROM RankedRecords
+        WHERE rn = 1;
+        """
+        params = (tuple(product_tmpl_ids),)
+        return self.execute_query(query, params)
+    
     def get_avg_x_studio_costo_final_new(self, product_tmpl_ids, to_date = False):
         desired_fields = [
             'id',
@@ -123,7 +151,6 @@ class MyModel(models.TransientModel):
         result = [{key: value[1] if isinstance(value, tuple) else value for key, value in record.items()} for record in records]
         df = pd.DataFrame(result)
         df = df.loc [df['qty_available'] != 0]
-        
         query = """
             SELECT 
                 am.currency_id AS moneda_pedido, 
@@ -155,10 +182,8 @@ class MyModel(models.TransientModel):
         params = (tuple(product_tmpl_ids), to_date)
         result2 = self.execute_query(query, params)
         df2 = pd.DataFrame(result2)
-        
         # Nuevo DataFrame para almacenar los registros
         nuevo_df = pd.DataFrame(columns=['moneda_pedido', 'id','pp_id', 'codigo', 'cantidad', 'costo_final_promedio', 'fecha_pedido_compra'])
-        
         # Iterar sobre los registros del segundo DataFrame
         for index, row in df2.iterrows():
             codigo = row['id']
@@ -178,15 +203,13 @@ class MyModel(models.TransientModel):
                         # Guardar el registro en el nuevo DataFrame
                         # nuevo_df = nuevo_df.append({'moneda_pedido': row['moneda_pedido'] ,'id': codigo, 'cantidad': cantidad_a_restar, 'costo_final_promedio': row['costo_final_promedio'], 'fecha_pedido_compra': row['fecha_pedido_compra']}, ignore_index=True)
                         nuevo_df = pd.concat([nuevo_df, pd.DataFrame([{'moneda_pedido': row['moneda_pedido'], 'id': codigo, 'cantidad': cantidad_a_restar, 'costo_final_promedio': row['costo_final_promedio'], 'fecha_pedido_compra': row['fecha_pedido_compra']}])], ignore_index=True)
-
                         # Actualizar la cantidad restante
                         cantidad_restante -= cantidad_a_restar
                     # Si la cantidad disponible es igual a 0, salir del bucle
                     if cantidad_disponible == 0:
                         break
-                    
+        
         reports_core = self.env['ztyres_ms_sql_excel_core']
-                    
         nuevo_df['monto_en_moneda_empresa'] = nuevo_df.apply(lambda row: self.convert_to_company_currency(row['moneda_pedido'], row['costo_final_promedio'], row['fecha_pedido_compra']), axis=1)
         # Calcular la suma ponderada del costo por ID
         nuevo_df['Costo Ponderado'] = nuevo_df['cantidad'] * nuevo_df['monto_en_moneda_empresa']
@@ -267,17 +290,17 @@ class MyModel(models.TransientModel):
                     
         reports_core = self.env['ztyres_ms_sql_excel_core']
                     
-        nuevo_df['monto_en_moneda_empresa'] = nuevo_df.apply(lambda row: self.convert_to_company_currency(row['moneda_pedido'], row['costo_final_promedio'], row['fecha_pedido_compra']), axis=1)
+        # nuevo_df['monto_en_moneda_empresa'] = nuevo_df.apply(lambda row: self.convert_to_company_currency(row['moneda_pedido'], row['costo_final_promedio'], row['fecha_pedido_compra']), axis=1)
         # Calcular la suma ponderada del costo por ID
-        nuevo_df['Costo Ponderado'] = nuevo_df['cantidad'] * nuevo_df['monto_en_moneda_empresa']
+        nuevo_df['Costo Ponderado'] = nuevo_df['cantidad'] * nuevo_df['costo_final_promedio']
         
         reports_core.action_insert_dataframe(nuevo_df, 'pmp2')
         # Agrupar por ID y calcular la suma ponderada del costo y la suma de la cantidad
         grupo = nuevo_df.groupby('id').agg({'Costo Ponderado': 'sum', 'cantidad': 'sum'})
         # Calcular el costo promedio por ID
         grupo['costo_final_promedio'] = grupo['Costo Ponderado'] / grupo['cantidad']
-        new_df = grupo.rename(columns={'monto_en_moneda_empresa': 'costo_final_promedio'})
-        return new_df
+        # new_df = grupo.rename(columns={'monto_en_moneda_empresa': 'costo_final_promedio'})
+        return grupo
 
     def get_ucfinal(self, product_tmpl_ids):
         query = """
@@ -424,7 +447,7 @@ class MyModel(models.TransientModel):
             SELECT 
                 pp.product_tmpl_id AS id,
                 am."date" AS fecha_pedido_compra,
-                aml.price_unit AS price_unit,
+                aml.price_unit AS costo_factura_promedio,
                 am.currency_id AS monto_en_moneda_empresa
             FROM 
                 account_move_line AS aml
@@ -441,7 +464,6 @@ class MyModel(models.TransientModel):
         params = (tuple(product_tmpl_ids),)
         result = self.execute_query(query, params)
         df = self.dict_to_df(result)
-        df['costo_factura_promedio'] = df.apply(lambda row: self.convert_to_company_currency(row['monto_en_moneda_empresa'], row['price_unit'], row['fecha_pedido_compra']), axis=1)
         res = df[['id','costo_factura_promedio']]
         res = res.groupby('id')['costo_factura_promedio'].mean()
         return res
@@ -502,9 +524,12 @@ class MyModel(models.TransientModel):
             'model_id',
             'brand_id',
             'manufacturer_id',
+            'product_nationality',
             'segment_id',
             'type_id',
             'tier_id',
+            'product_dot_range',
+            'hq_id',
             'qty_available',
             'standard_price',
             'active'
@@ -568,6 +593,11 @@ class MyModel(models.TransientModel):
     def add_upf(self, dataframe):
         ids = dataframe['id'].tolist()
         dfs_to_merge = self.dict_to_df(self.get_upf(ids))
+        return dataframe.merge(dfs_to_merge, on='id', how='left')
+    
+    def add_upf_expo(self, dataframe):
+        ids = dataframe['id'].tolist()
+        dfs_to_merge = self.dict_to_df(self.get_upf_expo(ids))
         return dataframe.merge(dfs_to_merge, on='id', how='left')
 
     def add_backorder(self, dataframe):

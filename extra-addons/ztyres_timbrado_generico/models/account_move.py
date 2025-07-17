@@ -10,8 +10,10 @@ class account_move(models.Model):
         selection=[('draft', 'No Timbrado'), ('done', 'Timbrado')],default=False
     )
     
-    edi_vat_receptor = fields.Char(compute='_compute_edi_vat_receptor', string='RFC Receptor')
-    #@api.depends('')
+    
+    edi_vat_receptor = fields.Char(compute='_compute_edi_vat_receptor', string='RFC Receptor',store=True)
+    
+    @api.depends('l10n_mx_edi_cfdi_uuid')
     def _compute_edi_vat_receptor(self):
         for move in self:
             move.edi_vat_receptor = ''

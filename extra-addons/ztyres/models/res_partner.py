@@ -21,7 +21,7 @@ class ResPartner(models.Model):
         for partner in self:
             total_overdue_3_days = 0
             for aml in partner.unreconciled_aml_ids:
-                date_maturity = aml.date_maturity + timedelta(days=3) if aml.date_maturity else today > aml.date
+                date_maturity = aml.date_maturity + timedelta(days=1) if aml.date_maturity else today > aml.date
                 if isinstance(date_maturity, (date, datetime)):
                     is_overdue = today > date_maturity
                 else:
@@ -88,7 +88,7 @@ class ResPartner(models.Model):
         user_id = self.env.user.id
 
         # Verifica si el usuario tiene permiso para crear un registro
-        if user_id not in [43,2,85]:
+        if user_id not in [43,2,85,116]:
             raise UserError("Solo el usuario con ID 2 puede crear registros en res.partner.")
 
         # Llama al método original de create para realizar la creación del registro

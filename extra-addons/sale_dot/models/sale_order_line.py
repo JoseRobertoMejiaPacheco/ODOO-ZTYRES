@@ -8,6 +8,7 @@ from odoo.exceptions import ValidationError, UserError
 class SaleOrderLine(models.Model):
     _inherit = "sale.order.line"
     
+    
     single_dot = fields.Char(string="DOT")
     lots_ids = fields.Many2many("stock.lot")
     dot_range = fields.Char(related='product_id.dot_range')
@@ -19,7 +20,18 @@ class SaleOrderLine(models.Model):
     )
     list_origin = fields.Char(string="Lista de Origen")
     pricelist_id = fields.Many2one("product.pricelist", string="Lista de Precios")
-        
+    
+    @api.constrains('price_unit')
+    def _check_price_unit(self):
+        for line in self:
+            if not self.env.context.get('is_expo',False):
+                return
+            if not self.env.context.get('skip_shipping_price',False):
+                return 
+            if line.price_unit <= 0:
+                raise ValidationError(_(
+                    "El precio unitario para %s debe ser mayor que cero.") % line.product_id.display_name)
+    
     @api.constrains("product_uom_qty")
     def _constrains_check_product_availability_dot(self):
 
@@ -241,8 +253,10 @@ class SaleOrderLine(models.Model):
             return
 
     def _get_valid_pricelists(self):
+        if self.order_id.promo_onyx:
+            return [124]
         return [1, 108, 113]
-
+    
     def get_item_with_min_price_after_discount(self):
         domain = [
             ("product_tmpl_id", "in", self.product_id.product_tmpl_id.ids),
@@ -254,14 +268,21 @@ class SaleOrderLine(models.Model):
                 else self._get_valid_pricelists(),
             ),
         ]
+        min_price_item = []
         pricelist_items = self.pricelist_item_id.search(domain)
-
-        # Buscar el ítem con el menor precio después de descuento
-        min_price_item = min(
-            pricelist_items,
-            key=lambda item: item.fixed_price if item.fixed_price else float("inf"),
-            default=None,
-        )
+        if self.order_id.promo_onyx:
+            min_price_item = min(
+                pricelist_items,
+                key=lambda item: item.fixed_price if item.fixed_price else float("inf"),
+                default=None,
+            )
+        if not min_price_item:
+            # Buscar el ítem con el menor precio después de descuento
+            min_price_item = min(
+                pricelist_items,
+                key=lambda item: item.fixed_price if item.fixed_price else float("inf"),
+                default=None,
+            )
 
         return min_price_item
     
@@ -283,7 +304,8 @@ class SaleOrderLine(models.Model):
             search_domain, limit=1
         )
         if pricelist_item and not self.order_id.is_expo:
-            self.list_origin = "PROMOCIÓN DOT"
+            self.list_origin in ["PROMOCIÓN DOT", "LISTA PROMO DOT"]
+            self.list_origin = pricelist_item.pricelist_id.name
             return pricelist_item.fixed_price
         
         elif self.order_id.is_expo:
@@ -293,7 +315,6 @@ class SaleOrderLine(models.Model):
         # Calcular el precio usando la lista de precios válida
         self.ensure_one()
         self.product_id.ensure_one()
-
         self.pricelist_item_id = self.get_item_with_min_price_after_discount()
         self.list_origin = self.pricelist_item_id.pricelist_id.name
         self.pricelist_id = self.pricelist_item_id.pricelist_id.id
@@ -304,5 +325,5 @@ class SaleOrderLine(models.Model):
             self.order_id.date_order or fields.Date.today(),
             currency=self.currency_id or self.order_id.company_id.currency_id,
         )
-    
+
         return price

@@ -1,0 +1,188 @@
+<odoo>
+  <data>
+
+    <record id="view_product_selection_tree" model="ir.ui.view">
+        <field name="name">product.selection.tree</field>
+        <field name="model">product.product</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="name"/>
+                <field name="default_code"/>
+                <field name="list_price"/>
+            </tree>
+        </field>
+    </record>
+
+<record id="view_ztyres_promo_notas_credito_form" model="ir.ui.view">
+    <field name="name">ztyres.promo.notas.credito.form</field>
+    <field name="model">ztyres_promo.notas_credito</field>
+    <field name="arch" type="xml">
+        <form string="Notas de Crédito">
+                <header>
+                <button name="action_calcular_nc" type="object" string="Calcular NC" attrs="{'invisible': [('status', 'in', ['done'])]}"/>                                
+                <button name="action_approve_p" type="object" string="Aprobar Promocion" class="btn-default" attrs="{'invisible': [('status', 'in', ['done','approve','action_approve_p'])]}" groups="ztyres_volumen.group_supervisor_nc_volumen_promociones"/> 
+                <button name="action_approve" type="object" string="Aprobar Notas de Crédito" class="btn-default" attrs="{'invisible': [('status', 'in', ['done','approve'])]}" groups="ztyres_volumen.group_supervisor_nc_volumen_promociones"/>                
+                <button name="action_confirmar_nc" type="object" string="Confirmar NC" class="btn-default" attrs="{'invisible': [('status', 'not in', ['approve'])]}"/>
+                <button name="check_sat_status" type="object" string="Verificar estatus  timbrado SAT" class="btn-default" attrs="{'invisible': [('status', 'in', ['done'])]}" />                   
+                <!-- <button name="action_calcular_reporte_lic" type="object" string="Calcular NC"/> -->
+                  <field name="status" widget="statusbar"/>
+                  <button name="download_zip_xmls" 
+        string="Descargar XMLs Facturas" 
+        type="object" 
+        context="{'move_type': 'out_invoice'}"
+        class="oe_highlight"/>
+        <button name="download_zip_xmls" 
+        string="Descargar XMLs Notas de Credito" 
+        type="object" 
+        context="{'move_type': 'out_refund'}"
+        class="oe_highlight"/>
+                </header>        
+            <sheet>
+        <div class="oe_button_box" name="button_box">
+                <!-- Smart button para Notas de Crédito -->
+
+                <button name="action_open_line_ids"
+                        type="object"
+                        class="oe_stat_button"
+                        icon="fa-file-text">
+                    <field name="count_line_ids" widget="statinfo" string="Resumen NC"/>
+                </button>
+                
+                <!-- Smart button para Detalle -->
+                <button name="action_open_detailed_line_ids"
+                        type="object"
+                        class="oe_stat_button"
+                        icon="fa-list-alt">
+                    <field name="count_detailed_line_ids" widget="statinfo" string="Detalle"/>
+                </button>
+            </div>
+          <div class="oe_title">
+              <h1>
+                  <field name="nombre" placeholder="Escriba el Nombre de la promoción"/>
+              </h1>
+          </div>            
+                <group>
+                    <field name="start_date"/>
+                    <field name="end_date"/>
+                    <field name="generic_edi"/> 
+                    <field name="apply_on_groups"/>                 
+                </group>
+                
+                <notebook>
+                
+                    <page string="Lineas de facturacion">
+                            <field name="line_ids" domain="[('total_nc_untaxed','&gt;',0)]" readonly="1">
+                                <tree editable="bottom">
+                                    <field name="partner_id"/>
+                                    <field name="group_id"/>
+                                    <field name="price_subtotal"/>
+                                    <field name="quantity"/>
+                                    <field name="total_nc_untaxed"/>
+                                    <field name="reward_percent"/>
+                                    <field name="nc_credit_id"/>
+                                    <field name="definitive_nc_id" invisible="1"/>                                  
+                                    <field name="rfc"/>
+                                    <field name="sat_estatus"/>
+                                  <button name="action_view_details" type="object" string="Ver detalles" class="btn-primary"/>
+                                </tree>
+                            </field>
+                    </page>
+
+                    <page string="Productos Participantes">
+                        <separator string="Productos Participantes" colspan="4"/>
+                        <group col="2">
+                            <field name="brand_ids" widget="many2many_tags"/>
+                            <field name="tier_ids" widget="many2many_tags"/>
+                            <field name="measure_ids" widget="many2many_tags"/>
+                            <field name="segment_ids" widget="many2many_tags"/>
+                        </group>
+                    
+                    <separator string="Tipo de política" colspan="4"/>
+                    <group>
+                        <field name="promo_type"/>
+                    </group>
+                    
+                    
+                    <separator string="Políticas de Cantidad" colspan="4" attrs="{'invisible': [('promo_type','!=','quantity')]}"/>
+                    <group>
+                        <field name="limite_qty" attrs="{'invisible': [('promo_type','!=','quantity')]}"/>
+                        <field name="policy_line_qty_ids" attrs="{'invisible': [('promo_type','!=','quantity')]}">
+                            <tree editable="bottom">
+                                <field name="lower_limit"/>
+                                <field name="upper_limit"/>
+                                <field name="discount"/>
+                            </tree>
+                        </field>                    
+                    </group>
+
+
+                    <separator string="Políticas de Monto" colspan="4" attrs="{'invisible': [('promo_type','!=','amount')]}"/>
+                    <group>
+                        <field name="limite_amount" attrs="{'invisible': [('promo_type','!=','amount')]}"/>  
+                        <field name="policy_line_amount_ids" attrs="{'invisible': [('promo_type','!=','amount')]}">
+                            <tree editable="bottom">
+                                <field name="lower_limit"/>
+                                <field name="upper_limit"/>
+                                <field name="discount"/>
+                            </tree>
+                        </field>                    
+                    </group>
+
+
+                        <separator string="Productos" colspan="4"/>
+                        <group>
+                            <field name="product_ids" domain="[('type', '=', 'product')]" context="{'tree_view_ref': 'ztyres_promo.view_product_selection_tree','search_default_filter_product': 1, 'create': 0, 'edit': 0, 'delete': 0}">
+                                <tree>
+                                    <field name="id"/>
+                                    <field name="name"/>
+                                    <field name="default_code"/>
+                                </tree>
+                            </field>                        
+                        </group>
+                        <!-- Grupo de botones mejor alineados -->
+                        <group colspan="4" class="oe_button_box">
+<button name="action_open_excel_import" 
+                                    type="object" 
+                                    string="Cargar Códigos (.xlsx)"
+                                    class="oe_highlight"
+                                    icon="fa fa-file-excel"/>
+                                    
+                            <button name="clear_product_relations" 
+                                    type="object" 
+                                    string="Limpiar Productos"
+                                    class="oe_stat_button"
+                                    icon="fa fa-trash"
+                                    confirm="¿Está seguro que desea eliminar todas las relaciones con productos?"/>
+                                    <field name="not_found"/>
+                        </group>
+                    </page>
+                                <page string="Clientes Excluidos">
+               <field name="excluded_partner_ids"/>
+            </page>
+                </notebook>
+            </sheet>
+        </form>
+    </field>
+</record>
+
+    <record id="view_ztyres_promo_notas_credito_tree" model="ir.ui.view">
+        <field name="name">ztyres.promo.notas.credito.tree</field>
+        <field name="model">ztyres_promo.notas_credito</field>
+        <field name="arch" type="xml">
+            <tree string="Notas de Crédito">
+                <field name="nombre"/>
+                <field name="start_date"/>
+                <field name="end_date"/>
+                <field name="status"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="ztyres_promo_action" model="ir.actions.act_window">
+        <field name="name">Promociones</field>
+        <field name="res_model">ztyres_promo.notas_credito</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+  </data>
+</odoo>

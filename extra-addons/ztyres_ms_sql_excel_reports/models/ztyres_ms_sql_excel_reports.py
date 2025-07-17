@@ -25,8 +25,10 @@ class MyModel(models.TransientModel):
         
         transformed_df.loc[transformed_df['Trans'] < 0, 'Trans'] = 0
         transformed_df.loc[transformed_df['BO'].isnull(), 'CBO'] = np.nan
-        
-        transformed_df.loc[transformed_df['Origen'] == 'Corea del Sur', 'Origen'] = 'Corea'
+        transformed_df['HQ'] = pd.to_numeric(transformed_df['HQ'], errors='coerce')
+        transformed_df['HQ'] = np.floor(transformed_df['HQ']).astype('Int64')
+        transformed_df['CPFac'] = transformed_df['CPFac'].round(2)
+        transformed_df['CFinalP'] = transformed_df['CFinalP'].round(2)
         
         archivados_df = transformed_df.copy()
         transformed_df = transformed_df.loc[transformed_df['active'] == 1]
@@ -34,8 +36,8 @@ class MyModel(models.TransientModel):
         
         fob_cif = transformed_df.copy()
         
-        columnas_deseadas = ['Id', 'Codigo', 'Medida', 'Cara', 'Capas', 'Vel', 'Carga', 'Modelo', 'Marca', 'Fabricante', 'Seg', 'Tipo', 
-                             'Tier', 'Origen', 'Inv', 'Trans', 'Outlet', 'UCF', 'UCFinal', 'FUCF', 'CPF', 'CFinalP', 'BO', 'CBO']
+        columnas_deseadas = ['Id', 'Codigo', 'Medida', 'Cara', 'C', 'V', 'L', 'Modelo', 'Marca', 'Fabricante', 'Seg', 'Tipo', 
+                             'Tier', 'DOT', 'Origen', 'Inv', 'Trans', 'Outlet', 'UCF', 'UCFinal', 'FUCF', 'CPF', 'CFinalP', 'BO', 'CBO', 'HQ']
         
         fob_cif = fob_cif[columnas_deseadas]
         # Filtrar por valores específicos en la columna 'Fabricante'
@@ -47,13 +49,45 @@ class MyModel(models.TransientModel):
         
         transformed_df = transformed_df.sort_values(by=['Medida', 'Tier', 'Seg', 'Tipo', 'Mayoreo'])
         
+        #PENDIENTE('Ctrans') PENDIENTE('FUCFac') PENDIENTE('CPFac') PENDIENTE('CPFin')
+        columnas_deseadas2 = ['Id', 'Codigo', 'Medida', 'Cara', 'C', 'V', 'L', 'Modelo', 'Marca', 'Fabricante', 'Seg', 'Tipo', 
+                              'Tier', 'DOT', 'Origen', 'Inv', 'Res', 'Disp', 'Mayoreo', 'Outlet', 'UPF', 'FUPF', 'upf_expo', 'fecha_upf_expo', 'Trans', 'UCF', 'UCFinal',
+                              'BO', 'CBO', 'CPFac', 'CFinalP', 'HQ', 'Mode']
+        
+        nacional_df = transformed_df[(transformed_df['Mode'].isin(['Nacional', 'national']))]
+        importado_df = transformed_df[(transformed_df['Mode'].isin(['Importado', 'imported']))]
+        expo_df = transformed_df[(transformed_df['Fabricante'].isin(['BRIDGESTONE','CONTINENTAL','GOODYEAR','KUMHO','MAXXIS','ONYX','PIRELLI','TORNEL']))]
+        
+        nacional_df = nacional_df[columnas_deseadas2]
+        importado_df = importado_df[columnas_deseadas2]
+        expo_df = expo_df[columnas_deseadas2]
+        
+        groupby_ciu = transformed_df.copy()
+        
+        columnas_deseadas3 = ['CIU','Medida','Cara','C','Seg','Tipo','Tier','FEB','MAR','ABR','MAY','JUN','JUL','Inv','Res','Disp','Trans','BO']
+        
+        groupby_ciu = groupby_ciu[columnas_deseadas3]
+        
+        groupby_ciu = groupby_ciu.groupby(['CIU', 'Medida', 'Cara', 'C', 'Seg', 'Tipo', 'Tier'])[['FEB', 'MAR', 'ABR', 'MAY','JUN','JUL','Inv', 'Res', 'Disp', 'Trans', 'BO']].sum().reset_index()
+
+        
+        expo_df = expo_df.drop(columns=['Mayoreo', 'Outlet'])
+        nacional_df = nacional_df.drop(columns=['fecha_upf_expo', 'upf_expo'])
+        importado_df = importado_df.drop(columns=['fecha_upf_expo', 'upf_expo'])
+        expo_df = expo_df.drop(columns=['UPF', 'FUPF'])
+        transformed_df = transformed_df.drop(columns=['CPFac', 'fecha_upf_expo', 'upf_expo'])
+        
         # Exportar el DataFrame a un archivo Excel
-        # self.export_to_excel(transformed_df)
+        # self.export_to_excel(transformed_df) 
         # Insertar el DataFrame en la base de datos
         reports_core = self.env['ztyres_ms_sql_excel_core']
         reports_core.action_insert_dataframe(transformed_df, 'reporte_direccion')
         reports_core.action_insert_dataframe(archivados_df, 'reporte_direccion_archivados')
         reports_core.action_insert_dataframe(fob_cif, 'reporte_fob_cif')
+        reports_core.action_insert_dataframe(nacional_df, 'reporte_nacional')
+        reports_core.action_insert_dataframe(importado_df, 'reporte_importado')
+        reports_core.action_insert_dataframe(expo_df, 'reporte_expo')
+        reports_core.action_insert_dataframe(groupby_ciu, 'stock_por_tier')
 
     def transform_data(self, product_df, last_six_months):
         reports_direccion = self.env['ztyres_ms_sql_excel_reports_direccion']
@@ -70,6 +104,7 @@ class MyModel(models.TransientModel):
         transformed_df = reports_direccion.add_ucfinal(transformed_df)
         transformed_df = reports_direccion.add_avg_x_studio_costo_final(transformed_df)
         transformed_df = reports_direccion.add_upf(transformed_df)
+        transformed_df = reports_direccion.add_upf_expo(transformed_df)
         
         return transformed_df
 
@@ -93,22 +128,23 @@ class MyModel(models.TransientModel):
             "name": "Nombre",
             "tire_measure_id": "Medida",
             "face_id": "Cara",
-            "layer_id": "Capas",
-            "speed_id": "Vel",
-            "index_of_load_id": "Carga",
+            "layer_id": "C",
+            "speed_id": "V",
+            "index_of_load_id": "L",
             "model_id": "Modelo",
             "brand_id": "Marca",
             "manufacturer_id": "Fabricante",
             "segment_id": "Seg",
             "type_id": "Tipo",
             "tier_id": "Tier",
-            "country_of_origin": "Origen",
-            "'SEPTIEMBRE'": 'SEP',
-            "'OCTUBRE'": 'OCT',
-            "'NOVIEMBRE'": 'NOV',
-            "'DICIEMBRE'": 'DIC',
-            "'ENERO'": 'ENE',    
+            "product_dot_range": "DOT",
+            "country_of_origin": "Origen", 
             "'FEBRERO'": 'FEB',
+            "'MARZO'": 'MAR',
+            "'ABRIL'": 'ABR',
+            "'MAYO'": 'MAY',
+            "'JUNIO'": 'JUN',
+            "'JULIO'": 'JUL',
             "qty_available": "Inv",
             "qty_reserved": "Res",
             "free_qty": "Disp",
@@ -118,15 +154,19 @@ class MyModel(models.TransientModel):
             "'outlet'" : "Outlet",
             "upf": "UPF",
             "fecha_upf": "FUPF",
+            "upf_expo" : "upf_expo",
+            "fecha_upf_expo" : "fecha_upf_expo",
             "ultimo_costo_factura" : "UCF",
             "ultimo_costo_final_": "UCFinal",
             "fecha_ultimo_costo_factura" : "FUCF",
             "standard_price" : "CPF", #Costo_Promdio_Odoo
-            #"costo_factura_promedio" : "CFP",
+            "costo_factura_promedio" : "CPFac",
             "costo_final_promedio" : "CFinalP",
+            "hq_id": "HQ",
             "purchase_backorder": "BO",
             "last_price_unit": "CBO", 
-            'active': 'active'
+            'active': 'active',
+            "product_nationality": "Mode",
         }
         
         # Crear un nuevo DataFrame con las columnas en el orden deseado

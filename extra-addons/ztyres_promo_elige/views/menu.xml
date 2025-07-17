@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Submenú Promociones -->
+    <menuitem id="ztyres_promo_elige.menu_promociones" parent="ztyres_promo.principal_menu" name="Promociones" sequence="200"/>
+    <!-- Opciones bajo Promociones -->
+    <menuitem id="ztyres_promo_elige.menu_elige_promo" parent="ztyres_promo_elige.menu_promociones" name="Elige Promo" action="ztyres_promo_elige.action_ztyres_promo_elige" sequence="10"/>
+    <menuitem id="ztyres_promo_elige.menu_promociones_secundarias" parent="ztyres_promo_elige.menu_promociones" name="Lista de Promociones" action="ztyres_promo.ztyres_promo_action" sequence="20"/>
+</odoo>

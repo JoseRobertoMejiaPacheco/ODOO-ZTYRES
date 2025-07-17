@@ -44,11 +44,36 @@ class SaleOrder(models.Model):
         invoice_vals['narration'] = self.note  # Asumiendo que `note` es el campo de términos y condiciones en sale.order
         return invoice_vals
     
-    # def copy(self, default=None):
-    #     # Agregar codigo de validacion aca
-    #     raise UserError(_('No es posible duplicar un pedido de Venta'))    
-
+    def _get_amount_confirmed_invoices(self):
+        domain = [
+        ('invoice_status','in',['no']),
+        ('partner_id','in',self.partner_id.ids),
+        ('x_studio_solicitud_de_embarques','in',['Si']),
+        ('state','in',['posted'])
+        ]
+        orders = self.search(domain)
+        if orders:
+            return sum(orders.mapped('amount_total'))
+        else:
+            return 0.0       
+    def _get_names_confirmed_invoices(self):
+        domain = [
+        ('invoice_status','in',['no']),
+        ('partner_id','in',self.partner_id.ids),
+        ('x_studio_solicitud_de_embarques','in',['Si']),
+        ('state','in',['posted'])
+        ]
+        orders = self.search(domain)
+        if orders:
+            return orders.mapped('name')
+        else:
+            return 0.0             
+    def copy(self, default=None):
+        # Agregar codigo de validacion aca
+        raise UserError(_('No es posible duplicar un pedido de Venta'))    
+    
     def _lock_credit_warning_message(self,updated_credit):
+        updated_credit = self._get_amount_confirmed_invoices()+updated_credit
         ''' Build the warning message that will be displayed in a yellow banner on top of the current record
             if the partner exceeds a credit limit (set on the company or the partner itself).
             :param record:                  The record where the warning will appear (Invoice, Sales Order...).
@@ -58,17 +83,17 @@ class SaleOrder(models.Model):
         partner_id = self.partner_id.commercial_partner_id
         if not partner_id.credit_limit or updated_credit <= partner_id.credit_limit:
             return ''
-        msg = _('%s se alcanzó el límite de crédito de : %s\nTotal adeudado ',
+        msg = _('%s alcanzó el límite de crédito de : %s\nTotal adeudado ',
                 partner_id.name,
                 formatLang(self.env, partner_id.credit_limit, currency_obj=self.company_id.currency_id))
         if updated_credit > partner_id.credit:
-            msg += _('(incluido este documento) ')
+            msg += _('(incluido este documento)')
         msg += ': %s' % formatLang(self.env, updated_credit, currency_obj=self.company_id.currency_id)
         raise UserError(msg)
     
 
     def _onchange_check_customer_invoices(self):
-        if float(self.partner_id.total_overdue_3_days) > 1:
+        if float(self.partner_id.total_overdue_3_days) >= 1:
             raise UserError(_('Este cliente tiene facturas vencidas. $ %s Por favor, verifica su situación antes de proceder con el pedido de venta.'%(str(self.partner_id.total_overdue))))
 
 

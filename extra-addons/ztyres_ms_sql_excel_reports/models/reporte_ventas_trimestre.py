@@ -15,10 +15,11 @@ class Logsusuarios(models.TransientModel):
                 CASE 
                     WHEN am.move_type in ('out_refund') THEN -aml.quantity
                     ELSE aml.quantity
-                END as cantidad,
-                rp_customer."name" as cliente, 
-                rp_salesperson."name" as vendedor,
-                am.invoice_date as fecha
+                END AS cantidad,
+                rp_customer."name" AS cliente, 
+                rp_salesperson."name" AS vendedor,
+                am.invoice_date AS fecha,
+                zpb."name" AS marca
             FROM account_move_line aml 
             JOIN account_move am ON aml.move_id = am.id 
             JOIN product_product pp ON aml.product_id = pp.id
@@ -28,6 +29,7 @@ class Logsusuarios(models.TransientModel):
             JOIN res_partner rp_salesperson ON ru.partner_id = rp_salesperson.id  -- Unión para obtener el vendedor
             JOIN ztyres_products_tier zpt ON pt.tier_id = zpt.id 
             JOIN ztyres_products_tire_measure zptm ON pt.tire_measure_id = zptm.id  
+            JOIN ztyres_products_brand zpb ON pt.brand_id = zpb.id
             WHERE am.move_type IN ('out_invoice', 'out_refund')            
             AND am.state = 'posted'
             AND aml.display_type = 'product'
@@ -45,9 +47,9 @@ class Logsusuarios(models.TransientModel):
 
         # Filtrar por los últimos tres meses
         df_filtrado = df[df['fecha'] >= primer_dia_trimestre]
-        df_filtrado = df_filtrado.drop(columns=['fecha'])
+        #df_filtrado = df_filtrado.drop(columns=['fecha'])
         
-        df_filtrado2 = df_filtrado.groupby(['cliente', 'vendedor', 'tier', 'medida'])['cantidad'].sum().reset_index()
+        df_filtrado2 = df_filtrado.groupby(['cliente', 'vendedor', 'tier', 'medida', 'marca', 'fecha'])['cantidad'].sum().reset_index()
         
         top_20_por_tier = (df_filtrado.groupby(['tier', 'medida'])['cantidad'].sum().groupby('tier', group_keys=False).apply(lambda x: x.nlargest(60)).reset_index())
         

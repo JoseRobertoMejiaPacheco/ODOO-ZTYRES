@@ -1,0 +1,79 @@
+<?xml version='1.0' encoding='utf-8'?>
+<odoo>
+    <data>
+    <!-- Vistas para Current Policy Volume (Cantidad) -->
+    <record id="view_current_policy_qty_tree" model="ir.ui.view">
+        <field name="name">ztyres_promo.current_policy_qty.tree</field>
+        <field name="model">ztyres_promo.current_policy_qty</field>
+        <field name="arch" type="xml">
+            <tree string="Políticas por Cantidad">
+                <field name="lower_limit"/>
+                <field name="upper_limit"/>
+                <field name="min_qty"/>
+                <field name="discount"/>
+                <field name="notas_credito_id" invisible="1"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="view_current_policy_qty_form" model="ir.ui.view">
+        <field name="name">ztyres_promo.current_policy_qty.form</field>
+        <field name="model">ztyres_promo.current_policy_qty</field>
+        <field name="arch" type="xml">
+            <form string="Política por Cantidad">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="lower_limit"/>
+                            <field name="upper_limit"/>
+                        </group>
+                        <group>
+                            <field name="min_qty"/>
+                            <field name="discount"/>
+                        </group>
+                    </group>
+                    <field name="notas_credito_id" invisible="1"/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Vistas para Current Policy Volume Amount (Monto) -->
+    <record id="view_current_policy_amount_tree" model="ir.ui.view">
+        <field name="name">ztyres_promo.current_policy_amount.tree</field>
+        <field name="model">ztyres_promo.current_policy_amount</field>
+        <field name="arch" type="xml">
+            <tree string="Políticas por Monto">
+                <field name="lower_limit"/>
+                <field name="upper_limit"/>
+                <field name="min_qty"/>
+                <field name="discount"/>
+                <field name="notas_credito_id" invisible="1"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="view_current_policy_amount_form" model="ir.ui.view">
+        <field name="name">ztyres_promo.current_policy_amount.form</field>
+        <field name="model">ztyres_promo.current_policy_amount</field>
+        <field name="arch" type="xml">
+            <form string="Política por Monto">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="lower_limit"/>
+                            <field name="upper_limit"/>
+                        </group>
+                        <group>
+                            <field name="min_qty"/>
+                            <field name="discount"/>
+                        </group>
+                    </group>
+                    <field name="notas_credito_id" invisible="1"/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    </data>
+</odoo>

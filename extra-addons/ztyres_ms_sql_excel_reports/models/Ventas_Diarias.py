@@ -14,8 +14,8 @@ class ReservaVentas(models.TransientModel):
         # ultimo_dia_mes = primer_dia_mes.replace(day=28)  # Establece inicialmente el día 28
         # ultimo_dia_mes = ultimo_dia_mes + pd.offsets.MonthEnd(0)  # Ajusta al último día del mes
 
-        primer_dia_mes = date(2024, 1, 1)  # Primer día de enero de 2000
-        ultimo_dia_mes = date(2024, 12, 31)  # Último día de diciembre de 2024
+        primer_dia_mes = date(2025, 1, 1)  # Primer día de enero de 2000
+        ultimo_dia_mes = date(2025, 12, 31)  # Último día de diciembre de 2024
         
         primer_dia_mes_ts = pd.Timestamp(primer_dia_mes)
         ultimo_dia_mes_ts = pd.Timestamp(ultimo_dia_mes)

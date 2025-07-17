@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="module_category_ztyres_volumen" model="ir.module.category">
+        <field name="name">Ztyres Políticas Comerciales y Promociones</field>
+        <field name="sequence">1</field>
+    </record>
+
+    <record id="group_administrador_nc_volumen" model="res.groups">
+        <field name="name">Ztyres Volumen Usuario</field>
+        <field name="category_id" ref="module_category_ztyres_volumen"/>
+    </record>
+
+    <record id="group_administrador_nc_promociones" model="res.groups">
+        <field name="name">Ztyres Promociones Usuario</field>
+        <field name="category_id" ref="module_category_ztyres_volumen"/>
+    </record>
+
+    <record id="group_supervisor_nc_volumen_promociones" model="res.groups">
+        <field name="name">Ztyres Volumen y Promociones Admin</field>
+        <field name="category_id" ref="module_category_ztyres_volumen"/>
+        <field name="implied_ids" eval="[(4, ref('group_administrador_nc_volumen')), (4, ref('group_administrador_nc_promociones'))]"/>
+    </record>
+
+</odoo>

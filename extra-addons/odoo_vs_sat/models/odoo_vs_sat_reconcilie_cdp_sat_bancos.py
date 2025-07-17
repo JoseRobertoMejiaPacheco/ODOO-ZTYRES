@@ -190,6 +190,8 @@ class OdooVsSatReconcilieCDP(models.Model):
                 return 'AJUSTE'    
             if fila['id_diario'] in [139]:
                 return 'AJUSTE'    
+            if fila['id_diario'] in [143]:
+                return 'AJUSTE'                
             if fila['id_diario'] in [4]:
                 return 'DIFERENCIA CAMBIARIA'    
             elif fila['uuid']:
@@ -307,7 +309,7 @@ class OdooVsSatReconcilieCDP(models.Model):
             origen_1 = renglon['origen_1'] if pd.notna(renglon['origen_1']) else ""
             if id_diario == 138 and origen_1 == 'BANCOS' and origen_3 == 'ODOO':
                 return 'CORRECTO'
-            elif id_diario not in [4,138] and origen_1 == 'BANCOS' and origen_2 == 'SAT' and origen_3 == 'ODOO':
+            elif id_diario not in [4,138,143] and origen_1 == 'BANCOS' and origen_2 == 'SAT' and origen_3 == 'ODOO':
                 return 'CORRECTO'
             else:
                 return 'INCORRECTO'

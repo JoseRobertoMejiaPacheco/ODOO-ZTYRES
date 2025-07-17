@@ -66,14 +66,18 @@ class VentasPorVendedorIndividual(models.TransientModel):
             lista.append(('ventas por tier', pivot_df2))
         
         codes_tuple = tuple(codes)
-        codes_tuple2 = tuple(codes2)
-        codes_tuple3 = tuple(codes3)
-        codes_combined = codes_tuple + codes_tuple2 + codes_tuple3
+        # codes_tuple2 = tuple(codes2)
+        # codes_tuple3 = tuple(codes3)
+        # codes_combined = codes_tuple + codes_tuple2 + codes_tuple3
         
         query3 = """
-            select
+            SELECT
                 pt.id AS id,
+                rp2."name" as cliente,
             	aml."name" AS producto,
+                zpm."name" as modelo,
+                zpb."name" as marca,
+            	zpt."name" as tier,
             	rp."name" AS vendedor, 
                 SUM(CASE
                 WHEN am.move_type IN ('out_refund') THEN -aml.quantity
@@ -85,47 +89,58 @@ class VentasPorVendedorIndividual(models.TransientModel):
             LEFT JOIN product_template pt ON pp.product_tmpl_id = pt.id 
             LEFT JOIN res_users ru ON am.invoice_user_id = ru.id
             LEFT JOIN res_partner rp ON ru.partner_id = rp.id
+            LEFT JOIN ztyres_products_brand zpb on pt.brand_id = zpb.id
+            LEFT JOIN ztyres_products_tier zpt on pt.tier_id = zpt.id
+            LEFT JOIN ztyres_products_model zpm on pt.model_id = zpm.id
+            LEFT JOIN res_partner rp2 on am.partner_id = rp2.id
             WHERE am.invoice_date BETWEEN %s AND %s
             AND am.state IN ('posted')
             AND am.move_type IN ('out_invoice', 'out_refund')
             AND pt.detailed_type IN ('product')
             AND aml.display_type IN ('product')
             AND ru.id NOT IN (31, 78, 54, 89)
-            AND pt.id IN %s
             AND ru.id IN (%s)
-            GROUP BY rp."name", aml."name", pt.id
+            GROUP BY rp."name", aml."name", pt.id, zpb."name", zpt."name", rp2."name", zpm."name"
             ORDER BY rp."name"
             """
         ##Retornar la consulta sql
-        self.env.cr.execute(query3, (primer_dia_mes, ultimo_dia_mes, codes_combined, vendedor_id))
+        self.env.cr.execute(query3, (primer_dia_mes, ultimo_dia_mes, vendedor_id))
         result3 = self.env.cr.dictfetchall() 
         df3 = pd.DataFrame(result3)
         
         # Inicializar pivot_df como un DataFrame vacío si no hay resultados
         if df3.empty:
-            pivot_df3 = pd.DataFrame(columns=['producto', 'vendedor', 'cantidad']) 
-            pivot_df5 = pd.DataFrame(columns=['producto', 'vendedor', 'cantidad']) 
-            pivot_df6 = pd.DataFrame(columns=['producto', 'vendedor', 'cantidad']) 
-            lista.append(('Promo del mes', pivot_df3))
+            pivot_df3 = pd.DataFrame(columns=['cliente', 'vendedor', 'cantidad']) 
+            pivot_df5 = pd.DataFrame(columns=['cliente', 'vendedor', 'cantidad']) 
+            pivot_df7 = pd.DataFrame(columns=['cliente', 'vendedor', 'cantidad'])
+            lista.append(('Promo Tier 4', pivot_df3))
             lista.append(('Promo Bridgestone', pivot_df5))
-            lista.append(('Promo T4-Plus', pivot_df6))
+            lista.append(('Promo Tier 3', pivot_df7))
         else:
-            pivot_df3 = df3[df3['id'].isin(codes_tuple2)]
-            pivot_df3 = pivot_df3.pivot_table(index='producto', columns='vendedor', values='cantidad', aggfunc='sum', fill_value=0)
-            pivot_df3.reset_index(inplace=True)
+            pivot_df3 = df3[df3['marca'].isin(['DELINTE', 'FIREMAX', 'APTANY', 'DOUBLESTAR'])]
+            if pivot_df3.empty:
+                pivot_df3 = pd.DataFrame(columns=['cliente', 'vendedor', 'cantidad'])
+            else:
+                pivot_df3 = pivot_df3.pivot_table(index=['cliente'], columns='vendedor', values='cantidad', aggfunc='sum', fill_value=0)
+                pivot_df3.reset_index(inplace=True)
             
             pivot_df5 = df3[df3['id'].isin(codes_tuple)]
-            pivot_df5 = pivot_df5.pivot_table(index='producto', columns='vendedor', values='cantidad', aggfunc='sum', fill_value=0)
-            pivot_df5.reset_index(inplace=True)
+            if pivot_df5.empty:
+                pivot_df5 = pd.DataFrame(columns=['cliente', 'vendedor', 'cantidad'])
+            else:
+                pivot_df5 = pivot_df5.pivot_table(index=['cliente'], columns='vendedor', values='cantidad', aggfunc='sum', fill_value=0)
+                pivot_df5.reset_index(inplace=True)
             
-            pivot_df6 = df3[df3['id'].isin(codes_tuple3)]
-            pivot_df6 = pivot_df6.pivot_table(index='producto', columns='vendedor', values='cantidad', aggfunc='sum', fill_value=0)
-            pivot_df6.reset_index(inplace=True)
+            pivot_df7 = df3[df3['modelo'].isin(['MS932 SPORT', 'PATAGONIA X/T', 'COVERT GRIP CV'])]
+            if pivot_df7.empty:
+                pivot_df7 = pd.DataFrame(columns=['cliente', 'vendedor', 'cantidad'])
+            else:
+                pivot_df7 = pivot_df7.pivot_table(index=['cliente'], columns='vendedor', values='cantidad', aggfunc='sum', fill_value=0)
+                pivot_df7.reset_index(inplace=True)
             
-            lista.append(('Promo del mes', pivot_df3))
+            lista.append(('Promo Tier 4', pivot_df3))
             lista.append(('Promo Bridgestone', pivot_df5))
-            lista.append(('Promo T4-Plus', pivot_df6))
-            
+            lista.append(('Promo Tier 3', pivot_df7))
 ###########################################################################################################################################
         desired_fields = [
             'name',

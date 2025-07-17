@@ -26,10 +26,10 @@ class PaymentDiscountMixin(models.AbstractModel):
         discount = ((profile_line.discount / 100.0))
         BS = record.bs_nc_amount*1.16
         MT = record.amount_total
-        ST = MT - BS - shipping_with_taxes
+        ST = MT  - shipping_with_taxes
         NL = record.logistic_nc_amount*1.16
         MF = ST * discount
-        TOTAL_PAGAR = ST - NL - MF + shipping_with_taxes
+        TOTAL_PAGAR = ST - NL - MF - BS+ shipping_with_taxes
         
         if hasattr(record, 'invoice_line_ids'):
             fecha_vencimiento =  record.invoice_date + timedelta(days=profile_line.upper_limit)
@@ -125,7 +125,7 @@ class PaymentDiscountMixin(models.AbstractModel):
             
             filtered_lines = record.invoice_line_ids.filtered(
             lambda line: (
-                line.sale_line_ids.list_origin in ['MAYOREO','PROMOCIÓN','PROMOCIÓN DOT']
+                line.sale_line_ids.list_origin in ['MAYOREO','PROMOCIÓN','PROMOCIÓN DOT', 'LISTA PROMO DOT']
                 and line.product_id.id not in [50959]
             )
         )
@@ -133,7 +133,7 @@ class PaymentDiscountMixin(models.AbstractModel):
         else:
             filtered_lines = record.order_line.filtered(
             lambda line: (
-                line.list_origin in ['MAYOREO','PROMOCIÓN','PROMOCIÓN DOT']
+                line.list_origin in ['MAYOREO','PROMOCIÓN','PROMOCIÓN DOT', 'LISTA PROMO DOT']
                 and line.product_id.id not in [50959]
             )
         )
@@ -150,7 +150,7 @@ class PaymentDiscountMixin(models.AbstractModel):
                     f_disc_ids.append(f_disc)
         if f_disc_ids:
             discount = max(f_disc_ids, key=lambda x: x.discount).discount
-            amount = (sum(filtered_lines.mapped('price_subtotal'))-bs_nc_amount) * (discount / 100)
+            amount = (sum(filtered_lines.mapped('price_subtotal'))) * (discount / 100)
         # Si no se encuentra un descuento exacto, se aplica el más alto disponible
         
         return amount

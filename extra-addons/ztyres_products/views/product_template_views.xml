@@ -19,6 +19,7 @@
                         attrs="{'invisible': [('tire', '=', False)]}">
                         <group string="Propiedades de llanta" col="4">
                             <group>
+                                <field name="volume_f" string='Volumen Fórmula'/>
                                 <field name="cui" string='CIU'/>
                                 <field name="tire_measure_id" />
                                 <field name="face_id" />

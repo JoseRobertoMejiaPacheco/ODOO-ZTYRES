@@ -33,3 +33,5 @@ from . import reporte_ventas
 from . import reporte_antiguedad_de_saldos
 from . import ventas_25
 from . import ventas_acumuladas
+from . import reporte_ventas_6meses
+from . import facturas_y_nc

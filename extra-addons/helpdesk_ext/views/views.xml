@@ -1,0 +1,27 @@
+<odoo>
+  <data>
+    <record model="ir.ui.view" id="helpdesk_ticket_view_form">
+      <field name="name">helpdesk_ticket_view_form</field>
+      <field name="model">helpdesk.ticket</field>
+      <field name="inherit_id" ref="helpdesk.helpdesk_ticket_view_form" />
+      <field name="arch" type="xml">
+
+            <xpath expr="//field[@name='team_id']" position="attributes">
+                <attribute name="string">Área</attribute>
+            </xpath>
+            <xpath expr="//field[@name='tag_ids']" position="replace"/>
+            <xpath expr="//field[@name='tag_ids']" position="attributes">
+              <attribute name="attrs">{}</attribute>
+              <attribute name="force_save">True</attribute>
+              <attribute name="invisible">1</attribute>
+              <attribute name="options">{"color_field": "color", "no_create": true}</attribute>
+              <attribute name="string">Departamento</attribute>
+            </xpath>            
+            <field name='team_id' position='after'>
+              <field name="tag_ids" widget="many2many_tags" options="{'color_field': 'color'}"/>
+            </field>
+            
+      </field>
+    </record>
+  </data>
+</odoo>

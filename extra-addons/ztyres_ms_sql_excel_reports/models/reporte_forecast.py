@@ -195,12 +195,12 @@ class Forecast(models.TransientModel):
             "CONTINENTAL": "CONTINENTAL",	
             "GOODYEAR": "GOODYEAR",	
             "PIRELLI": "PIRELLI",
-            "September": "SEP",
-            "October": "OCT",
-            "November": "NOV",
-            "December": "DIC",
             "January": "ENE",
             "February": "FEB",
+            "March": "MAR",
+            "April": "ABR",
+            "May": "MAY",
+            "june": "JUN",
             "PV": "PV",
             "inv": "Disponible"
         }
@@ -213,12 +213,13 @@ class Forecast(models.TransientModel):
             "APTANY": "APTANY",	
             "SENTURY": "SENTURY",	
             "SUNFULCESS": "SUNFULCESS",
-            "September": "SEP",
-            "October": "OCT",
-            "November": "NOV",
             "December": "DIC",
             "January": "ENE",
             "February": "FEB",
+            "March": "MAR",
+            "April": "ABR",
+            "May": "MAY",
+            "june": "JUN",
             "PV": "PV",
             "inv": "Disponible"
         }

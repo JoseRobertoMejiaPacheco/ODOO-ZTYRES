@@ -32,11 +32,7 @@ class MailingList(models.Model):
         'mailing_id', 
         string='Adjuntos de Lista de Precios'
     )
-    send_list_price = fields.Selection(
-        selection=[('yes', 'Sí'), ('no', 'No')],
-        string='Adjuntar Lista de Precios',
-        default='no',
-    )
+    send_list_price = fields.Boolean('Enviar lista de Precios?',default=False)
     
     def generate_list(self):
         """Generar lista de precios y adjuntarlas al registro actual"""
@@ -46,7 +42,7 @@ class MailingList(models.Model):
         # Obtener los socios asociados a las listas de contacto
         partner_ids = self.contact_list_ids.mapped('contact_ids').mapped('partner_id')
         
-        if self.send_list_price == 'yes':
+        if self.send_list_price:
             for partner in partner_ids.with_progress(msg="Generando Listas"):
                 # Crear la lista de precios
                 lista_de_precios = self.env['inv_promo.lista_precios_wizard'].sudo()

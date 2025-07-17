@@ -210,7 +210,7 @@ class SaleOrder2(models.Model):
     logistic_nc_amount = fields.Float(compute='_compute_nc_amount', string='Monto NC Logístico', store=True)
     bs_nc_text = fields.Html(compute='_compute_nc_text', string='Bridgestone')
     logistic_nc_text = fields.Html(compute='_compute_nc_text', string='Logístico')
-    
+    promo_onyx = fields.Boolean(string='Promoción Onyx 500 llantas')
     @api.depends('amount_total', 'partner_id')
     def _compute_nc_amount(self):
         for record in self:

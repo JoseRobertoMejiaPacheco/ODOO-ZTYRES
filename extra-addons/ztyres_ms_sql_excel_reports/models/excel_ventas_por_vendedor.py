@@ -24,16 +24,34 @@ class ExcelVentasPorVendedor(models.TransientModel):
 #-------------------------------------------------------------------------------------------------------------
         for etiqueta, df in lista:
             sheet = wb.create_sheet(etiqueta)
-            # Escribir los encabezados
-            headers = df.columns.tolist()
-            for col_num, header in enumerate(headers, 1):
-                cell = sheet.cell(row=1, column=col_num, value=header)
-                cell.font = header_font
-                cell.fill = header_fill
 
-            # Escribir los datos
-            for row_num, row in enumerate(df.itertuples(index=False, name=None), 2):
-                for col_num, value in enumerate(row, 1):
+            if isinstance(df.columns, pd.MultiIndex):
+                num_niveles = len(df.columns.levels)  # Número de niveles del MultiIndex
+
+                # Escribir encabezados (incluyendo índice en la primera columna)
+                for row_num, level_values in enumerate(zip(*df.columns.values), start=1):
+                    sheet.cell(row=row_num, column=1, value="Índice")  # Nombre para el índice en la primera celda
+                    for col_num, value in enumerate(level_values, start=2):  # Datos desde la 2da columna
+                        cell = sheet.cell(row=row_num, column=col_num, value=value)
+                        cell.font = header_font
+                        cell.fill = header_fill
+
+                start_row = num_niveles + 1  # Ajustar la fila donde empiezan los datos
+
+            else:
+                # Escribir encabezados simples
+                headers = ["Índice"] + df.columns.tolist()  # Agregar el índice en la primera columna
+                for col_num, header in enumerate(headers, 1):
+                    cell = sheet.cell(row=1, column=col_num, value=header)
+                    cell.font = header_font
+                    cell.fill = header_fill
+                
+                start_row = 2  # Datos comienzan en la segunda fila
+
+            # Escribir los datos incluyendo el índice en la primera columna
+            for row_num, (idx, row) in enumerate(df.iterrows(), start=start_row):
+                sheet.cell(row=row_num, column=1, value=idx)  # Escribe el índice correctamente
+                for col_num, value in enumerate(row, start=2):  # Inicia desde la segunda columna
                     sheet.cell(row=row_num, column=col_num, value=value)
 #-------------------------------------------------------------------------------------------------------------
         # Ajustar el ancho de las columnas automáticamente

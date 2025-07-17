@@ -99,6 +99,7 @@ class ApplyOutInvoicePayments(models.Model):
                         amount=line.payment_amount
                     )                
                 record.payment_id.action_l10n_mx_edi_force_generate_cfdi()
+                record.payment_id.action_process_edi_web_services()
             if not record.name:
                 record.name = self.env['ir.sequence'].next_by_code('apply_out_invoice.sequence') or '/'
             
@@ -110,7 +111,7 @@ class ApplyOutInvoicePayments(models.Model):
         for record in self:
             record.amount_pending = round(record.outstanding_amount - sum(record.lines.mapped('payment_amount')), 3)
             record.amount_applied = sum(record.lines.mapped('payment_amount'))
-            
+    
     @api.depends('payment_id')
     def _compute_outstanding_amount(self):
         for record in self:

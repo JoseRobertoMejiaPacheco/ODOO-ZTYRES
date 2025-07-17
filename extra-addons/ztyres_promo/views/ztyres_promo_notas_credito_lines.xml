@@ -1,0 +1,36 @@
+<?xml version='1.0' encoding='utf-8'?>
+<odoo>
+    <data>
+        <!-- Vistas para notas_credito_lines -->
+        <record id="view_notas_credito_lines_tree" model="ir.ui.view">
+            <field name="name">ztyres_promo.notas_credito_lines.tree</field>
+            <field name="model">ztyres_promo.notas_credito_lines</field>
+            <field name="arch" type="xml">
+                <tree string="Líneas de Notas de Crédito" decoration-danger="sat_estatus != 'valid'">
+                    <field name="partner_id" widget="many2one_avatar"/>
+                    <field name="group_id"/>
+                    <field name="rfc"/>
+                    <field name="quantity"/>
+                    <field name="price_subtotal" string="Subtotal"/>
+                    <field name="total_nc_untaxed" string="Total NC"/>
+                    <field name="reward_percent" string="% Recompensa"/>
+                    <field name="nc_credit_id" string="Nota de Crédito"/>
+                    <field name="sat_estatus" invisible="1"/>
+                    <button name="action_view_details" string="Ver Detalles" type="object" class="oe_highlight" icon="fa-list"/>
+                </tree>
+            </field>
+        </record>
+
+        <!-- Acción para abrir la lista/formulario -->
+        <record id="action_ztyres_promo_notas_credito_lines" model="ir.actions.act_window">
+            <field name="name">Resumen NC</field>
+            <field name="res_model">ztyres_promo.notas_credito_lines</field>
+            <field name="view_mode">tree,form</field>
+            <field name="help" type="html">
+                <p class="o_view_nocontent_smiling_face">
+                    No hay líneas de notas de crédito registradas
+                </p>
+            </field>
+        </record>
+    </data>
+</odoo>

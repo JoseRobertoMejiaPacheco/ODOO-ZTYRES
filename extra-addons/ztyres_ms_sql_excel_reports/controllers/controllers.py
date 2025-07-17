@@ -89,12 +89,6 @@ class ZtyresMsSqlExcelReports(http.Controller):
         data = {"message": "Informacion Actualizada"}
         return Response(json.dumps(data), content_type='application/json;charset=utf-8', status=200)
     
-    @http.route('/reporte_promo_bridg', auth='public', methods=['GET'], website=True)
-    def reporte_promos_bridgestone(self):
-        request.env['reporte_promos_bridgestone'].sudo().get_all_products()
-        data = {"message": "Informacion Actualizada"}
-        return Response(json.dumps(data), content_type='application/json;charset=utf-8', status=200)
-    
     @http.route('/potencial_compra', auth='public', methods=['GET'], website=True)
     def reporte_potencial_compra(self):
         request.env['reporte_potencial_compra'].sudo().get_report()
@@ -234,10 +228,46 @@ class ZtyresMsSqlExcelReports(http.Controller):
             }
         )
         
-    @http.route('/ventas_acumuladas', auth='public', methods=['GET'], website=True)
-    def ventas_acumuladas(self):
+    @http.route('/ventas_acumuladas/<string:mes>/<int:anio>', auth='public', methods=['GET'], website=True)
+    def ventas_acumuladas(self, mes, anio):
         # Llamar a la función get_report para obtener los datos del reporte
         report_data = request.env['ventas_acumuladas'].sudo()
+        lista = report_data.get_report(mes, anio)
+        # Generar el archivo Excel
+        report_generator  = request.env['excel_ventas_por_vendedor'].sudo()
+        excel_file = report_generator.generate_excel_report(lista)
+        
+        # Preparar la respuesta para descargar el archivo
+        return Response(
+            excel_file,
+            headers={
+                'Content-Disposition': 'attachment; filename="ventas_acumuladas.xlsx"',
+                'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            }
+        )
+        
+    @http.route('/reporte_promos', auth='public', methods=['GET'], website=True)
+    def reporte_promos_bridgestone(self):
+        # Llamar a la función get_report para obtener los datos del reporte
+        report_data = request.env['reporte_promos_bridgestone'].sudo()
+        lista = report_data.get_all_products()
+        # Generar el archivo Excel
+        report_generator  = request.env['excel_ventas_por_vendedor'].sudo()
+        excel_file = report_generator.generate_excel_report(lista)
+        
+        # Preparar la respuesta para descargar el archivo
+        return Response(
+            excel_file,
+            headers={
+                'Content-Disposition': 'attachment; filename="reporte_promos.xlsx"',
+                'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            }
+        )
+        
+    @http.route('/ventas_bridgestone', auth='public', methods=['GET'], website=True)
+    def ventas_bridgestone(self):
+        # Llamar a la función get_report para obtener los datos del reporte
+        report_data = request.env['ventas_6_meses'].sudo()
         lista = report_data.get_report()
         # Generar el archivo Excel
         report_generator  = request.env['excel_ventas_por_vendedor'].sudo()
@@ -247,7 +277,25 @@ class ZtyresMsSqlExcelReports(http.Controller):
         return Response(
             excel_file,
             headers={
-                'Content-Disposition': 'attachment; filename="ventas_por_vendedor.xlsx"',
+                'Content-Disposition': 'attachment; filename="ventas_bridgestone.xlsx"',
+                'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            }
+        )
+        
+    @http.route('/facturas/<string:mes>/<int:anio>', auth='public', methods=['GET'], website=True)
+    def facturas_y_notasdecredito(self, mes, anio):
+        # Llamar a la función get_report para obtener los datos del reporte
+        report_data = request.env['facturas_y_notasdecredito'].sudo()
+        lista = report_data.get_report(mes, anio)
+        # Generar el archivo Excel
+        report_generator  = request.env['excel_ventas_por_vendedor'].sudo()
+        excel_file = report_generator.generate_excel_report(lista)
+        
+        # Preparar la respuesta para descargar el archivo
+        return Response(
+            excel_file,
+            headers={
+                'Content-Disposition': 'attachment; filename="facturas.xlsx"',
                 'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
             }
         )

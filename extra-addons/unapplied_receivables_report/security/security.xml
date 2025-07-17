@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ============== -->
+    <!-- Nuevo Grupo    -->
+    <!-- ============== -->
+    <record id="group_unapplied_receivables_report_user" model="res.groups">
+        <field name="name">Pagos sin Aplicar / Usuario</field>
+        <!-- Si no quieres que aparezca en Contabilidad, usa: ref="base.module_category_hidden" -->
+    </record>
+
+    <!-- ========================================== -->
+    <!-- Permisos para el modelo unapplied_receivables_report -->
+    <!-- ========================================== -->
+    <record id="access_unapplied_receivables_report_user" model="ir.model.access">
+        <field name="name">unapplied.receivables.report.user.access</field>
+        <field name="model_id" ref="model_unapplied_receivables_report"/>
+        <field name="group_id" ref="group_unapplied_receivables_report_user"/>
+        <field name="perm_read">1</field>
+        <field name="perm_write">1</field>
+        <field name="perm_create">1</field>
+        <field name="perm_unlink">1</field>
+    </record>
+</odoo>

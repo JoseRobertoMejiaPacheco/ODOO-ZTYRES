@@ -1,0 +1,33 @@
+<?xml version='1.0' encoding='utf-8'?>
+<odoo>
+    <data>
+        <record id="view_product_excel_wizard_form" model="ir.ui.view">
+            <field name="name">ztyres.promo.product.excel.wizard.form</field>
+            <field name="model">ztyres_promo.product_excel_wizard</field>
+            <field name="arch" type="xml">
+                <form string="Importar Productos desde Excel">
+                    <sheet>
+                        <group>
+                            <label for="file" string="Seleccione archivo Excel"/>
+                            <div class="o_row">
+                                <field name="file" 
+                                       string="Archivo Excel"
+                                       required="1"
+                                       widget="binary"
+                                       filename="file_name"
+                                       class="oe_no_button"/>
+                                <field name="file_name" readonly="1" class="oe_inline" 
+                                invisible="1"
+                                 nolabel="1"/>
+                            </div>
+                        </group>
+                    </sheet>
+                    <footer>
+                        <button name="action_import" string="Importar" type="object" class="oe_highlight"/>
+                        <button string="Cancelar" class="btn-secondary" special="cancel"/>
+                    </footer>
+                </form>
+            </field>
+        </record>
+    </data>
+</odoo>

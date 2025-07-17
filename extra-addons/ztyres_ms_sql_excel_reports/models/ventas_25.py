@@ -21,6 +21,27 @@ class MyModel(models.TransientModel):
         return converted_amount
     
     def get_report(self):
+        
+        desired_fields = [
+            'name',
+            'user_id'
+        ]
+        
+        search_domain = [
+            ('type', 'in', ['contact']),  # Filtrar por contactos
+            ('partner_share', 'in', True), # Solo aquellos que compartan como socio
+            ('active', 'in', True),
+            ('category_id', 'not in', [11, 2, 13]),
+            ('user_id', 'not in', False)
+        ]
+        records = self.env['res.partner'].search_read(search_domain, fields=desired_fields)
+        result3 = [{key: value[1] if isinstance(value, tuple) else value for key, value in record.items()} for record in records]
+        df30 = pd.DataFrame(result3)
+        
+        df30 = df30.rename(columns={
+            'name': 'cliente',
+            'user_id': 'vendedor'
+        })
 
         # Definir las fechas para el filtro
         primer_dia_mes = pd.to_datetime('2025-01-01')
@@ -72,17 +93,28 @@ class MyModel(models.TransientModel):
         # Ejecutar la consulta
         self.env.cr.execute(query, (tuple(no_vendedores), primer_dia_mes, ultimo_dia_mes))
         result = self.env.cr.dictfetchall()
-
-        # Crear un DataFrame
         df = pd.DataFrame(result)
         
-        df['vendedor'] = df['vendedor'].replace({
-        'DARIANA JANETH OROZCO VAZQUEZ': 'RICARDO DE COSS',
-        'MOISÉS ALFARO VÁZQUEZ': 'RICARDO DE COSS'
-            }
-        )
+        ventas_lic = [
+            'DARIANA JANETH OROZCO VAZQUEZ',
+            'MOISÉS ALFARO VÁZQUEZ',
+            'CARMEN MIRELES',
+            'ATXEL MIGUEL RAMIREZ HIDALGO',
+            'JUANA PATRICIA REYES GOMES',
+            'RICARDO DE COSS'
+        ]
+        
+        vendedores_Actuales = [
+            'DIEGO GOMEZ',
+            'HUMBERTO MORENO',
+            'RAMIRO BARRIOS MACÍAS',
+            'JOSE AARON FONSECA RADA'
+        ]
+        
+        df.loc[df['vendedor'].isin (ventas_lic), 'vendedor'] = 'RICARDO DE COSS'
+        df.loc[~df['vendedor'].isin(vendedores_Actuales + ventas_lic), 'vendedor'] = 'OTROS'
 
-
+        
         df['fecha'] = pd.to_datetime(df['fecha'])
         df['mes'] = df['fecha'].dt.month.map(meses_es)
         df.loc[(df['fabricante'] == 'SUNFULCESS', 'fabricante')] = 'FIREMAX'
@@ -113,12 +145,28 @@ class MyModel(models.TransientModel):
                                               values='subtotal2', 
                                               aggfunc='sum', 
                                               fill_value=0)
+                    
+        nuevas = []
+        for col in ['RICARDO DE COSS', 'OTROS']:
+            if col in df_pivoted3.columns:
+                nuevas.append(col)
+                
+        otras = [col for col in df_pivoted3.columns if col not in nuevas]
+        df_pivoted3 = df_pivoted3[nuevas + otras]
         
         df_pivoted4 = df3_totales.pivot_table(index=['mes'], 
                                       columns='vendedor', 
                                       values='cantidad', 
                                       aggfunc='sum', 
                                       fill_value=0)
+        
+        nuevas = []
+        for col in ['RICARDO DE COSS', 'OTROS']:
+            if col in df_pivoted4.columns:
+                nuevas.append(col)
+                
+        otras = [col for col in df_pivoted4.columns if col not in nuevas]
+        df_pivoted4 = df_pivoted4[nuevas + otras]
         
         orden_meses = [meses_es[m] for m in range(1, 13)]
 

@@ -1,0 +1,79 @@
+<?xml version='1.0' encoding='utf-8'?>
+<odoo>
+    <data>
+        <!-- Vista Tree (Lista) -->
+        <record id="view_ztyres_volumen_notas_credito_lines_tree" model="ir.ui.view">
+            <field name="name">ztyres_volumen.notas_credito_lines.tree</field>
+            <field name="model">ztyres_volumen.notas_credito_lines</field>
+            <field name="arch" type="xml">
+                <tree string="Líneas de Notas de Crédito">
+                    <field name="partner_id"/>
+                    <field name="group_id"/>
+                    <field name="price_subtotal"/>
+                    <field name="quantity"/>
+                    <field name="price_subtotal_bs"/>
+                    <field name="base"/>
+                    <field name="total_nc_untaxed"/>
+                    <field name="reward_percent"/>
+                    <field name="nc_credit_id"/>
+                    <field name="definitive_nc_id" invisible="1"/>
+                    <field name="rfc"/>
+                    <button name="action_view_details" type="object" string="Ver detalles" class="btn-primary"/>
+                </tree>
+            </field>
+        </record>
+
+        <!-- Vista Form (Formulario) -->
+        <record id="view_ztyres_volumen_notas_credito_lines_form" model="ir.ui.view">
+            <field name="name">ztyres_volumen.notas_credito_lines.form</field>
+            <field name="model">ztyres_volumen.notas_credito_lines</field>
+            <field name="arch" type="xml">
+                <form string="Líneas de Notas de Crédito">
+                    <sheet>
+                        <group>
+                            <group>
+                                <field name="partner_id"/>
+                                <field name="group_id"/>
+                                <field name="rfc"/>
+                            </group>
+                            <group>
+                                <field name="price_subtotal"/>
+                                <field name="quantity"/>
+                                <field name="price_subtotal_bs"/>
+                            </group>
+                            <group>
+                                <field name="base"/>
+                                <field name="total_nc_untaxed"/>
+                                <field name="reward_percent"/>
+                            </group>
+                            <group>
+                                <field name="nc_credit_id"/>
+                                <field name="definitive_nc_id" invisible="1"/>
+                            </group>
+                        </group>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+
+        <!-- Vista Search (Búsqueda) -->
+        <record id="view_ztyres_volumen_notas_credito_lines_search" model="ir.ui.view">
+            <field name="name">ztyres_volumen.notas_credito_lines.search</field>
+            <field name="model">ztyres_volumen.notas_credito_lines</field>
+            <field name="arch" type="xml">
+                <search string="Buscar Líneas de Notas de Crédito">
+                    <field name="partner_id"/>
+                    <field name="group_id"/>
+                    <field name="rfc"/>
+                </search>
+            </field>
+        </record>
+
+        <!-- Acción para abrir la lista/formulario -->
+        <record id="action_ztyres_volumen_notas_credito_lines" model="ir.actions.act_window">
+            <field name="name">Resumen NC</field>
+            <field name="res_model">ztyres_volumen.notas_credito_lines</field>
+            <field name="view_mode">tree,form</field>
+        </record>
+    </data>
+</odoo>
