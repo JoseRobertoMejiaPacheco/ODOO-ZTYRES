@@ -10,6 +10,64 @@ class AccountMove(models.Model):
     partner_credit_limit = fields.Float(related='partner_id.credit_limit', readonly=True)
     partner_credit_amount_overdue = fields.Monetary(related='partner_id.credit_amount_overdue', readonly=True)
     
+    solicitar_cancelacion = fields.Boolean(string="Solicitar Cancelación")
+    firma_calidad = fields.Boolean(string="Autoriza Calidad")
+    firma_finanzas = fields.Boolean(string="Autoriza Finanzas")
+    
+     # campos auxiliares para controlar permisos
+    can_edit_solicitar_cancelacion = fields.Boolean(
+        compute="_compute_permisos", store=False
+    )
+    can_edit_firma_calidad = fields.Boolean(
+        compute="_compute_permisos", store=False
+    )
+    can_edit_firma_finanzas = fields.Boolean(
+        compute="_compute_permisos", store=False
+    )
+    
+    can_cancel_edi = fields.Boolean(
+        compute="_compute_permisos_cancel",
+        store=False
+    )
+    
+    show_edi_cancel_button_final = fields.Boolean(
+        compute="_compute_show_edi_cancel_button_final",
+        string="Aprobar Cancelación",
+        store=True
+    )
+
+    @api.depends('create_uid')
+    def _compute_permisos(self):
+        for rec in self:
+            user = rec.env.user
+            rec.can_edit_solicitar_cancelacion = user.has_group('ztyres.group_solicitud')
+            rec.can_edit_firma_calidad = user.has_group('ztyres.group_calidad')
+            rec.can_edit_firma_finanzas = user.has_group('ztyres.group_finanzas')
+            
+    @api.depends('show_edi_cancel_button_final')
+    def _compute_permisos_cancel(self):
+        for rec in self:
+            rec.can_cancel_edi = rec.show_edi_cancel_button_final and rec.env.user.has_group('ztyres.group_cancel_edi')
+
+            
+    @api.depends('firma_calidad', 'firma_finanzas', 'state')  # o cualquier campo que afecte edi_show_cancel_button
+    def _compute_show_edi_cancel_button_final(self):
+        for rec in self:
+            rec.show_edi_cancel_button_final = (
+                rec.firma_calidad and 
+                rec.firma_finanzas and 
+                rec.state in ('posted')
+            )
+    def copy(self, default=None):
+        default = dict(default or {})
+        # Reiniciamos los checks
+        default.update({
+            'solicitar_cancelacion': False,
+            'firma_calidad': False,
+            'firma_finanzas': False,
+        })
+        return super().copy(default)
+
     def unlink(self):
         for move in self:
             if move.l10n_mx_edi_cfdi_uuid:

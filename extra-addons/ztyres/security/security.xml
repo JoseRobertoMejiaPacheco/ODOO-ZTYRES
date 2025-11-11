@@ -43,5 +43,32 @@
             <field name="name">Cancelar Pedidos de Venta</field>
             <field name="category_id" ref="sale_exceptions_category" />
         </record>
+        <!--GRUPOS PARA SOLICITAR CANCELACION -->
+        <record model="ir.module.category" id="cancelaciones_ztyres">
+            <field name="name">Solicitar Cancelación</field>
+            <field name="description">Solicitar Cancelación</field>
+            <field name="sequence">10</field>
+        </record>
+        <record id="group_cancel" model="res.groups">
+            <field name="name">Solicitar Cancelación</field>
+            <field name="category_id" ref="cancelaciones_ztyres" />
+        </record>
+        <record id="group_calidad" model="res.groups">
+            <field name="name">Autoriza Calidad</field>
+            <field name="category_id" ref="cancelaciones_ztyres" />
+        </record>
+        <record id="group_finanzas" model="res.groups">
+            <field name="name">Autoriza Finanzas</field>
+            <field name="category_id" ref="cancelaciones_ztyres" />
+        </record>
+        <record id="group_solicitud" model="res.groups">
+            <field name="name">Solicitud</field>
+            <field name="category_id" ref="cancelaciones_ztyres" />
+        </record>
+        <record id="group_cancel_edi" model="res.groups">
+            <field name="name">Cancelar EDI</field>
+            <field name="category_id" ref="cancelaciones_ztyres" />
+        </record>
+
     </data>
 </odoo>

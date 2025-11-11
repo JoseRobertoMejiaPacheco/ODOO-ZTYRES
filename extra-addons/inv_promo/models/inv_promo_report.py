@@ -26,7 +26,7 @@ class InvPromo(models.TransientModel):
     outlet = fields.Float(compute='_compute_outlet', digits=(16, 2), string='Precio outlet')
     promo_dot = fields.Float(digits=(16, 2), string='Precio Promo Dot')
     transito_str = fields.Integer(compute='_compute_transito_str', string='Transito')
-    fecha_aprox = fields.Date(compute='_compute_transito_str', string='Fecha_aprox')
+    fecha_str = fields.Date(compute='_compute_fecha_str', string='Fecha_aprox')
     inventario_str = fields.Char(compute='_compute_inventario_str', string='Inventario')
     backorder_str = fields.Integer(compute='_compute_backorder_str', string='Bo')
     lot_name = fields.Char(string='lot_name')
@@ -75,10 +75,16 @@ class InvPromo(models.TransientModel):
         for record in self:
             if record.transit > 0:
                 record.transito_str = record.transit
-                record.fecha_aprox = record.fecha
             else:
                 record.transito_str = None
-                record.fecha_aprox = None
+                
+    def _compute_fecha_str(self):
+        for record in self:
+            print (record.fecha)
+            if record.transit > 0:
+                record.fecha_str = record.fecha
+            else:
+                record.fecha_str = None
 
     def _compute_backorder_str(self):
         for record in self:

@@ -1,0 +1,405 @@
+<html lang="es-MX">
+            <head>
+                <meta charset="utf-8"/>
+                <meta name="viewport" content="initial-scale=1"/>
+                <title>Odoo Report</title>
+                <link type="text/css" rel="stylesheet" href="/web/assets/665551-c8f6dd8/web.report_assets_common.min.css" data-asset-bundle="web.report_assets_common" data-asset-version="c8f6dd8"/>
+                
+                
+                <script type="text/javascript">
+                    window.odoo = {};
+                    window.odoo.__session_info__ = {is_report: true};
+                </script>
+                <script type="text/javascript" src="/web/assets/670526-5d58795/web.assets_common.min.js" data-asset-bundle="web.assets_common" data-asset-version="5d58795"/>
+                <script type="text/javascript" src="/web/assets/665553-c8f6dd8/web.report_assets_common.min.js" data-asset-bundle="web.report_assets_common" data-asset-version="c8f6dd8"/>
+            </head>
+            <body class="container" dir="ltr">
+                <div id="wrapwrap">
+                    <main>
+                        
+            
+
+            
+
+        <div class="o_company_1_layout header">
+            <div class="o_background_header">
+            <div class="float-end">
+                <div class="mt0 text-end h3"><p>JUNTOS EN EL CAMINO</p></div>
+            </div>
+            <img class="float-start" alt="Logo" src="data:image/png;base64,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"/>
+            <div class="float-start company_address">
+                <ul class="list-unstyled">
+                    <li><p>ZTYRES SA DE CV<br/>
+Carretera León Lagos 2237A/4 37690 León, GUA<br/>
+Mexico</p></li>
+                </ul>
+            </div>
+            <div class="clearfix mb8"/>
+            </div>
+        </div>
+
+        <div class="o_company_1_layout article o_report_layout_striped " style="background-image: url();" data-oe-model="account.move" data-oe-id="717244" data-oe-lang="es_MX">
+            <div class="address row">
+                <div name="address" class="col-5 ms-auto">
+                    
+                                <address class="mb-0">
+    <address class="mb-0" itemscope="itemscope" itemtype="http://schema.org/Organization">
+    <div>
+            <span itemprop="name">KATANA RACING INC DBA WHOLESALE TIRE  DISTRIBUTORS</span>
+    </div>
+        <div itemprop="address" itemscope="itemscope" itemtype="http://schema.org/PostalAddress">
+            <div class="d-flex align-items-baseline">
+                <span class="w-100 d-block" itemprop="streetAddress">2875 Pomona Blvd<br/>POMONA CA 91768<br/>Estados Unidos</span>
+            </div>
+        </div>
+    </address></address>
+                                <div id="partner_vat_address_same_as_shipping">
+                                    RFC: <span>470045800</span>
+          <p name="l10n_mx_fiscal_regime_receptor">
+              Régimen Fiscal: <span>General de Ley Personas Morales</span>
+          </p>
+                                </div>
+                            
+                </div>
+            </div>
+             
+                <div class="row">
+                        <div class="offset-col-6 col-6" name="address_same_as_shipping">
+                        </div>
+                </div>
+                <div class="mt-5">
+                    <div class="page">
+            
+
+    <div class="row">
+      <div class="col">
+        
+      </div>
+    </div>
+                        <h2>
+                            <span>Factura</span>
+                            <span>VNAC/2025/17222</span>
+                        </h2>
+
+                        <div id="informations" class="row mt-4 mb-4">
+                            <div class="col-auto col-3 mw-100 mb-2" name="invoice_date">
+                                <strong>Fecha de factura:</strong>
+                                <p class="m-0">12/09/2025</p>
+                            </div>
+                            <div class="col-auto col-3 mw-100 mb-2" name="due_date">
+                                <strong>Fecha límite:</strong>
+                                <p class="m-0">12/09/2025</p>
+                            </div>
+                            <div class="col-auto col-3 mw-100 mb-2" name="origin">
+                                <strong>Origen:</strong>
+                                <p class="m-0">S83652</p>
+                            </div>
+                    <div name="cfdi_vals['usage']" class="col-auto col-3 mw-100 mb-2">
+                        <strong>Uso:</strong>
+                        <p><span>S01</span><span> - </span><span>Sin efectos fiscales</span></p>
+                    </div>
+                    <div class="col-auto col-3 mw-100 mb-2">
+                        <strong>Forma de Pago:</strong>
+                        <p>99 - Por definir</p>
+                    </div>
+                <div class="col-auto col-3 mw-100 mb-2">
+                    <strong>Método de Pago:</strong>
+                    <p>PPD</p>
+                </div>
+            <div class="col-auto col-3 mw-100 mb-2" name="invoice_incoterm_id">
+                <strong>Incoterm:</strong>
+                <p class="m-0">DPU</p>
+            </div>
+                        </div>
+    <div class="row">
+      </div>
+    <div class="row">
+      <div class="col-3">
+        <span>
+          <strong>Régimen Fisal:</strong>
+          <br/>
+        </span>
+        <span>General de Ley Personas Morales</span>
+      </div>
+    </div>
+    <div class="col-3">
+      <span>
+        <strong>Número de convenio exclusivo(CIE):</strong>
+        <br/>
+      </span>
+      <span>Sin CIE</span>
+    </div>
+    <div class="row">
+      </div>
+
+
+                        <table class="table table-sm o_main_table table-borderless" name="invoice_line_table">
+                            <thead>
+                                <tr>
+            <th class="text-center">
+                <span/>
+            </th>
+                                    <th name="th_description" class="text-center"><span>Descripción</span>
+    </th>
+                                    <th name="th_quantity" class="text-center"><span>Cantidad</span></th>
+                                    <th name="th_priceunit" class="text-end "><span>Precio unitario</span></th>
+            <th class="text-center">
+                <span>Código Unidad</span>
+            </th>
+                                    <th name="th_taxes" class="text-start "><span>Impuestos</span></th>
+                                    <th name="th_subtotal" class="text-end text-center">
+                                        <span>Importe</span>
+                                    </th>
+                <th class="text-center">Fracción arancelaria</th>
+                <th class="text-center">Cant. De aduanas</th>
+                <th>Unidad de Aduanas</th>
+                                </tr>
+                            </thead>
+                            <tbody class="invoice_tbody">
+
+
+                                    <tr class="">
+            <td><span>ST</span>
+                    <br/>Número de Pedimiento:
+                    <ul>
+                            <li><span>25  24  1664  5305041</span></li>
+                    </ul></td>
+                                            <td name="account_invoice_line_name">
+         <span>[109444] 235/40 R19 N04V GOODYEAR EAGLE TOURING</span>
+          <span>DOT: </span>
+          <span>2025</span>
+      </td>
+    <td class="text-end">
+                                                <span>952</span>
+                                                <span>Unidades</span>
+                                            </td>
+                                            <td class="text-end ">
+                                                <span class="text-nowrap">109.84</span>
+                                            </td>
+            <td class="text-end"><span>H87</span></td>
+                                            <td name="td_taxes" class="text-start  text-nowrap">
+                                                <span id="line_tax_ids">IVA(0%)</span>
+                                            </td>
+                                            <td class="text-end o_price_total">
+                                                <span class="text-nowrap">$ <span class="oe_currency_value">104,567.68</span></span>
+                                            </td>
+                <td class="text-end"><span>4011101099</span></td>
+                <td class="text-end"><span>952.000</span></td>
+                <td><span>Unidades</span></td>
+                                    </tr>
+
+
+                                    <tr class="">
+            <td/>
+                                            <td name="account_invoice_line_name">
+         <span>[FT] FLETE TERRESTRE</span>
+          <span>DOT: </span>
+          <span>N/A</span>
+      </td>
+    <td class="text-end">
+                                                <span>1</span>
+                                                <span>Servicio</span>
+                                            </td>
+                                            <td class="text-end ">
+                                                <span class="text-nowrap">3,000.00</span>
+                                            </td>
+            <td class="text-end"><span>E48</span></td>
+                                            <td name="td_taxes" class="text-start  text-nowrap">
+                                                <span id="line_tax_ids"/>
+                                            </td>
+                                            <td class="text-end o_price_total">
+                                                <span class="text-nowrap">$ <span class="oe_currency_value">3,000.00</span></span>
+                                            </td>
+                <td class="text-end"/>
+                <td class="text-end"><span>1.000</span></td>
+                <td><span>Servicio</span></td>
+                                    </tr>
+
+                            </tbody>
+                        </table>
+
+                    <div class="clearfix mb-4">
+                <tr class="border-black o_total">
+                    <td name="td_amount_total_piezas">
+                        <strong>Total de Piezas: </strong>
+                    </td>
+                    <td name="td_amount_sum_total_piezas" class="text-right">
+                        </td><th>
+                            953.0
+                        </th>
+                    
+                </tr>
+                        <div id="total" class="row">
+                            <div class="col-6 ms-auto">
+                                <table class="table table-sm table-borderless" style="page-break-inside: avoid;">
+
+                                    
+            
+                <tr class="border-black o_subtotal">
+                    <td><strong>Importe sin impuestos</strong></td>
+
+                    <td class="text-end">
+                        <span>$ 107,567.68</span>
+                    </td>
+                </tr>
+
+            
+                <tr>
+                        <td>
+                            <span>IVA 0%</span>
+                            <span class="text-nowrap"> de
+                                $ 104,567.68
+                            </span>
+                        </td>
+                        <td class="text-end o_price_total">
+                            <span class="text-nowrap">$ 0.00</span>
+                        </td>
+                </tr>
+
+            
+            
+            <tr class="border-black o_total">
+                <td>Total</td>
+                <td class="text-end">
+                    <span>$ 107,567.68</span>
+                </td>
+            </tr>
+
+                                    
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+            <div class="page-break1">
+                <style>
+                    .page-break1 {
+                        page-break-before: always;
+                    }
+                </style>                               
+                    
+                <div><table class="page-break1 table table-sm o_main_table table-borderless"><th>Descuento</th><th>Dias de Pago</th><th>Fecha máxima</th><th>Cantidad a pagar</th><tr><td>3%</td><td>0 Días</td><td>2025-09-12</td><td>$104,340.65</td></tr></table></div>
+                <div>
+                    <p>No se aceptan pagos en efectivo y cheques que no sean nominativos a la empresa. Por lo tanto, ningún empleado de la empresa puede aceptar dinero en efectivo o cheques a su nombre.</p>
+                    <p>Devoluciones por errores de Ztyres serán aceptadas sin cargo, siempre y cuando se hagan dentro del mes de facturación con previa notificación. Las devoluciones por motivos atribuibles al cliente causarán una penalización del 5% sobre lo facturado, más gastos de envío.</p>
+                    <p>No se permiten devoluciones de ningún tipo en pedidos de códigos participantes de promociones y/o paquetes especiales, salvo en casos atribuibles a ZTyres.</p>
+                    <p>Por favor, revise que su pedido no presente ningún daño o alteración ocasionados por la paquetería. De ser así, no lo reciba, anótelo en la boleta y repórtelo de inmediato a su asesor.</p>
+                </div>
+            </div>
+                    <p name="payment_communication" class="mt-4">
+                        Utilice la siguiente referencia al realizar su pago: <b><span>VNAC/2025/17222</span></b>
+                            <br/>
+                            on this account: <span class="fw-bold">1296963169 - BANORTE</span>
+                    </p>
+                    <div name="payment_term"><p>Términos de pago: pago inmediato</p></div>
+                <p>
+                    <span>CIENTO SIETE MIL QUINIENTOS SESENTA Y SIETE DOLLARS 68/100 M.E.</span>
+                </p>
+                <div>
+                    <div class="row">
+                        <div class="col-12">
+                            <div align="center">
+                                <span><strong>Comercio Exterior</strong></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-12">
+                            <table class="table table-sm text-center mt4 mb4" align="center" style="font-size:10px">
+                                <thead>
+                                    <tr style="background-color:grey; color:white;">
+                                        <th class="text-center">Tipo de operación</th>
+                                        <th class="text-center">Clave de certificado</th>
+                                        <th class="text-center">Origen del certificado</th>
+                                        <th class="text-center">Subdivisión</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><span/></td>
+                                        <td><span>A1</span></td>
+                                        <td><span>No</span></td>
+                                        <td><span/></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                            <table class="table table-sm text-center mt4 mb4" align="center" style="font-size:10px">
+                                <thead>
+                                    <tr style="background-color:grey; color:white;">
+                                        <th class="text-center">Incoterm</th>
+                                        <th class="text-center">Tasa USD</th>
+                                        <th class="text-center">USD totales</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                <tr>
+                                <td><span>DPU</span></td>
+                                <td><span>18.592000</span></td>
+                                <td><span>107567.68</span></td>
+                                </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="row" id="complement">
+                    <div class="barcode col-3">
+                        <img alt="Código de barras" src="/report/barcode/?barcode_type=QR&amp;value=https%3A%2F%2Fverificacfdi.facturaelectronica.sat.gob.mx%2Fdefault.aspx%3Fre%3DZTY011015H42%26rr%3DXEXX010101000%26tt%3D107567.68%26id%3D98a9aa83-60d9-4ee9-b86d-56c8d64c5126%26fe%3D54k51Q%3D%3D&amp;width=180&amp;height=180"/>
+                    </div>
+                    <div class="complement-details col-9">
+                        <div class="digital-stamp">
+                            <span>Sello digital del emisor</span>
+                        </div>
+                        <div class="digital-stamp-content">
+                            <span>H7NxhojwKyvki+bEG7O2rhZKTZleAcanhZ7O+VHxYeP83uErJqHZ/4+TI30pQIEsF8ciW83bneIaq1AKY8V7TlPa89UnxYse+7X3GR4zoNzqK09Qpxn2aflnR2aK4NI67PVASv9GIi+YLsrSY0Xwg5kj1DvP5rLOwItazCYKws0rBo0py5XjtW6fWqjNf3QYhnKsQaTOBR+vpZ9LzI0fA/ikb5uQ5pUsD/PuQltNaJ9lzlCAeiaxW9O5IrrM2NGz6D0P8euQuCsU9ufvFrVJubitdaX/Gh50olTDDwxseP5qJ+gvmmopiYazZUSj5GVKYy0WriV8HZ77neAu54k51Q==</span>
+                        </div>
+                        <div class="digital-stamp">
+                            <span>Sello digital de SAT</span>
+                        </div>
+                        <div class="digital-stamp-content">
+                            <span>WoFnj5iyxWenoFGTuohWI3/LJHDZ3Qf9kRmHCsPvBIuSyKYurs3ScN++lDJ1hjdgkzCOIkepjsaZXhM1QYdpDRDqG5REt8F5TRvn6rWGZea+iQwVFqSmCYQpRszMcrscSMtb9ZasZJUHhYJAq3AEVQ/Sk0WvV23K+VvK8ii/IzmTT7ZgA2c5q1euiVO/K3wi/B/yspzcuDbm/69NyIC2pgRGGMx6nk46eMXy0PnBI6ZOUyXISR9HG1wSfz2Lr88n8u8vP2KKbD5pE4j3idqy3HbMnVZUH2H55Kq0uOC3I1R9KeVZuHfJ7w7gVR6tSc0Ho3paxDPIb0qse88pi5V5Xg==</span>
+                        </div>
+                        <div class="digital-stamp">
+                            <span>Cadena original del complemento del certificado digital del SAT</span>
+                        </div>
+                        <div class="digital-stamp-content">
+                            <span class="nowrap">||1.1|98a9aa83-60d9-4ee9-b86d-56c8d64c5126|2025-09-12T11:35:05|LSO1306189R5|H7NxhojwKyvki+bEG7O2rhZKTZleAcanhZ7O+VHxYeP83uErJqHZ/4+TI30pQIEsF8ciW83bneIaq1AKY8V7TlPa89UnxYse+7X3GR4zoNzqK09Qpxn2aflnR2aK4NI67PVASv9GIi+YLsrSY0Xwg5kj1DvP5rLOwItazCYKws0rBo0py5XjtW6fWqjNf3QYhnKsQaTOBR+vpZ9LzI0fA/ikb5uQ5pUsD/PuQltNaJ9lzlCAeiaxW9O5IrrM2NGz6D0P8euQuCsU9ufvFrVJubitdaX/Gh50olTDDwxseP5qJ+gvmmopiYazZUSj5GVKYy0WriV8HZ77neAu54k51Q==|00001000000509846663||</span>
+                        </div>
+                        <div class="digital-stamp">
+                            <span>Información Extra</span>
+                        </div>
+                        <div class="digital-stamp-content">
+                            <span>Certificado del emisor:</span> <span>00001000000702837475</span>
+                            <span> | Certificado SAT:</span> <span>00001000000509846663</span>
+                            <span> | Lugar de expedición:</span> <span>37690</span>
+                            <span> | Régimen Fiscal:</span><span>601</span>
+                            <span> | Fecha de Emisión:</span> <span>2025-09-12 11:34:58</span>
+                            <span> | Fecha de Certificación:</span> <span>2025-09-12 11:35:05</span>
+                            <span> | Folio Fiscal:</span> <span>98a9aa83-60d9-4ee9-b86d-56c8d64c5126</span>
+                        </div>
+                        <div class="digital-stamp-content text-center">
+                            <strong>Este documento es una representación impresa de un CFDI</strong>
+                        </div>
+                    </div>
+                </div>
+                    <p name="incoterm">
+                        <strong>Incoterm: </strong><span>DPU</span> - <span>ENTREGADO EN LUGAR DE DESCARGA</span>
+                    </p>
+                    </div>
+                </div>
+            
+        </div>
+
+        <div class="o_company_1_layout footer o_background_footer">
+            <div class="text-center">
+                <ul class="list-inline">
+                    <div><p>+52 477 102 3900 facturacion@ztyres.com ztyres.com ZTY011015H42</p></div>
+                </ul>
+            </div>
+        </div>
+
+            
+        
+                    </main>
+                </div>
+            </body>
+        </html>

@@ -23,7 +23,7 @@ class InvPromo(models.TransientModel):
         return self.create(vals)
     
     def get_pricelist_items_promo_dot(self):
-        return self.env['product.pricelist.item'].search([('pricelist_id', '=', 122)])
+        return self.env['product.pricelist.item'].search([('pricelist_id', '=', 108)])
     
     def get_promo_dot_df(self,df):
         
@@ -50,8 +50,9 @@ class InvPromo(models.TransientModel):
             brand_id=('brand_id', 'first'),
             original_equipment_id=('original_equipment_id', 'first'),
             tier_id=('tier_id', 'first'),
-            lot_name=('lot_name', lambda x: f"{min(x)}-{max(x)}" if len(x.unique()) > 1 else x.iloc[0]),
-            transit=('transit', 'first')
+            lot_name=('lot_name',lambda x: (f"{min(x.dropna())}-{max(x.dropna())}" if len(x.dropna().unique()) > 1 else x.dropna().iloc[0] if not x.dropna().empty else None)),
+            transit=('transit', 'first'),
+            fecha=('fecha', 'first')
         ).reset_index()
 
         return df_no_promo_grouped
@@ -146,7 +147,8 @@ class InvPromo(models.TransientModel):
         pt.tier_id,
         lot.name AS lot_name, -- Obtener el nombre del lote desde stock_lot
         SUM(sq.available) AS available, -- Mantener la suma total de disponible por lot_name
-        tr.transit AS transit
+        tr.transit AS transit,
+        tr.fecha AS fecha
     '''
         
     def _get_price_sql(self,id,name):
@@ -220,7 +222,8 @@ class InvPromo(models.TransientModel):
                 pt.original_equipment_id,
                 pt.tier_id,
                 lot.name, -- Agrupar por lot_name
-                tr.transit
+                tr.transit,
+                tr.fecha
             HAVING 
                 SUM(sq.available) > 0 -- Solo mostrar productos con cantidad disponible positiva
                 OR tr.transit > 0

@@ -1,0 +1,60 @@
+<odoo>
+  <data>
+    <!-- explicit list view definition -->
+<!--
+    <record model="ir.ui.view" id="picking_cost.list">
+      <field name="name">picking_cost list</field>
+      <field name="model">picking_cost.picking_cost</field>
+      <field name="arch" type="xml">
+        <tree>
+          <field name="name"/>
+          <field name="value"/>
+          <field name="value2"/>
+        </tree>
+      </field>
+    </record>
+-->
+
+    <!-- actions opening views on models -->
+<!--
+    <record model="ir.actions.act_window" id="picking_cost.action_window">
+      <field name="name">picking_cost window</field>
+      <field name="res_model">picking_cost.picking_cost</field>
+      <field name="view_mode">tree,form</field>
+    </record>
+-->
+
+    <!-- server action to the one above -->
+<!--
+    <record model="ir.actions.server" id="picking_cost.action_server">
+      <field name="name">picking_cost server</field>
+      <field name="model_id" ref="model_picking_cost_picking_cost"/>
+      <field name="state">code</field>
+      <field name="code">
+        action = {
+          "type": "ir.actions.act_window",
+          "view_mode": "tree,form",
+          "res_model": model._name,
+        }
+      </field>
+    </record>
+-->
+
+    <!-- Top menu item -->
+<!--
+    <menuitem name="picking_cost" id="picking_cost.menu_root"/>
+-->
+    <!-- menu categories -->
+<!--
+    <menuitem name="Menu 1" id="picking_cost.menu_1" parent="picking_cost.menu_root"/>
+    <menuitem name="Menu 2" id="picking_cost.menu_2" parent="picking_cost.menu_root"/>
+-->
+    <!-- actions -->
+<!--
+    <menuitem name="List" id="picking_cost.menu_1_list" parent="picking_cost.menu_1"
+              action="picking_cost.action_window"/>
+    <menuitem name="Server to list" id="picking_cost" parent="picking_cost.menu_2"
+              action="picking_cost.action_server"/>
+-->
+  </data>
+</odoo>

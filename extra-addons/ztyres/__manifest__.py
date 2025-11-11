@@ -41,6 +41,7 @@
         'views/account_views.xml',
         # 'security/ir.model.access.csv',
         'views/account_move.xml',
+        'views/account_payment.xml',
         'views/sale_order_report.xml',
         'views/sale_views.xml',
         'wizard/sale_order_cancel_reason.xml',

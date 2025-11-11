@@ -16,6 +16,7 @@
         <field name="model">unapplied.receivables.report</field>
         <field name="arch" type="xml">
             <tree string="Reporte de Cuentas por Cobrar No Aplicadas">
+                <field name="blocked"/> 
                 <field name="partner_id"/>
                 <field name="move_id"/>
                 <field name="move_type"/>
@@ -40,6 +41,7 @@
             <form string="Detalle de Cuenta No Aplicada">
                 <sheet>
                     <group>
+                        <field name="blocked"/>
                         <field name="partner_id"/>
                         <field name="move_id"/>
                         <field name="move_type"/>

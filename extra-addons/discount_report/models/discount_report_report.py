@@ -7,7 +7,7 @@ from odoo.exceptions import UserError
 class Report(models.TransientModel):
     _name = 'discount_report.report'
     _description = 'Reporte para descuento de usuarios'
-
+    
     partner_id = fields.Many2one('res.partner',string='Nombre del cliente',readonly=True)
     user_id = fields.Many2one('res.users',string='Vendedor')
     group = fields.Char(string='Grupo',readonly=True)
@@ -26,19 +26,17 @@ class Report(models.TransientModel):
                 rec.volume_progress = '%s %%' % int(volume_progress)
             else:
                 rec.volume_progress = '0 %'
-
-            
     
     @api.onchange('user_id')
     def onchange_user_id(self):
         self.partner_id.user_id = self.user_id 
-
+    
     def check_users(self):
         if not self.partner_id.invoice_ids:
             raise UserError('El Contacto no tiene nunguna factura creada.')
         if not (self.partner_id and  self.user_id):
             raise UserError('Debe existir un usuario y un vendedor para realizar la asignación de documentos')
-
+    
     def set_orders(self):
         for partner_id in self.partner_id.ids:
             query = """
@@ -47,7 +45,7 @@ class Report(models.TransientModel):
                 WHERE partner_id = %s
             """
             self.env.cr.execute(query, (self.user_id.id, partner_id))
-
+    
     def set_invoices(self):
         for partner_id in self.partner_id.ids:
             query = """

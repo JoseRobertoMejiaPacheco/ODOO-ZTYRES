@@ -91,7 +91,7 @@ class SaleOrder(models.Model):
             
             if record.total_deliver_qty <= 7 and record.forma_envio not in ['Paqueteria del cliente','Paqueteria interna']:
                 raise UserError('La forma de envio no es valida para esa cantidad de llantas')
-            elif record.total_deliver_qty >= 7 and record.forma_envio in ['Paqueteria del cliente','Paqueteria interna']:
+            elif record.total_deliver_qty >= 8 and record.forma_envio in ['Paqueteria del cliente','Paqueteria interna']:
                 raise UserError('La forma de envio no es valida para esa cantidad de llantas')
             elif record.forma_envio in ['Paqueteria del cliente'] and (not record.x_studio_nombre_paqueteria or not record.x_studio_guas):
                     raise UserError('Falta agregar el número de guía')

@@ -64,11 +64,11 @@ class MyModel(models.TransientModel):
         
         groupby_ciu = transformed_df.copy()
         
-        columnas_deseadas3 = ['CIU','Medida','Cara','C','Seg','Tipo','Tier','FEB','MAR','ABR','MAY','JUN','JUL','Inv','Res','Disp','Trans','BO']
+        columnas_deseadas3 = ['CIU','Medida','Cara','C','Seg','Tipo','Tier','JUN','JUL','AGO', 'SEP', 'OCT', 'NOV', 'Inv','Res','Disp','Trans','BO']
         
         groupby_ciu = groupby_ciu[columnas_deseadas3]
         
-        groupby_ciu = groupby_ciu.groupby(['CIU', 'Medida', 'Cara', 'C', 'Seg', 'Tipo', 'Tier'])[['FEB', 'MAR', 'ABR', 'MAY','JUN','JUL','Inv', 'Res', 'Disp', 'Trans', 'BO']].sum().reset_index()
+        groupby_ciu = groupby_ciu.groupby(['CIU', 'Medida', 'Cara', 'C', 'Seg', 'Tipo', 'Tier'])[['JUN','JUL','AGO', 'SEP', 'OCT', 'NOV', 'Inv', 'Res', 'Disp', 'Trans', 'BO']].sum().reset_index()
 
         
         expo_df = expo_df.drop(columns=['Mayoreo', 'Outlet'])
@@ -115,7 +115,7 @@ class MyModel(models.TransientModel):
         #Agregar datos de la lista de precios 'OUTLET'
         dataframe = reports_direccion.add_price_list(dataframe, 108, 'outlet')
         # Agregar datos de la lista de precios 'PROMOCIÓN'
-        dataframe = reports_direccion.add_price_list(dataframe, 113, 'promoción')
+        #dataframe = reports_direccion.add_price_list(dataframe, 113, 'promoción')
         
         return dataframe
 
@@ -139,18 +139,18 @@ class MyModel(models.TransientModel):
             "tier_id": "Tier",
             "product_dot_range": "DOT",
             "country_of_origin": "Origen", 
-            "'FEBRERO'": 'FEB',
-            "'MARZO'": 'MAR',
-            "'ABRIL'": 'ABR',
-            "'MAYO'": 'MAY',
             "'JUNIO'": 'JUN',
             "'JULIO'": 'JUL',
+            "'AGOSTO'": 'AGO',
+            "'SEPTIEMBRE'": 'SEP',
+            "'OCTUBRE'": 'OCT',
+            "'NOVIEMBRE'": 'NOV',
             "qty_available": "Inv",
             "qty_reserved": "Res",
             "free_qty": "Disp",
             "transito": "Trans",
             "'mayoreo'": "Mayoreo",
-            "'promoción'": "prom",
+            #"'promoción'": "prom",
             "'outlet'" : "Outlet",
             "upf": "UPF",
             "fecha_upf": "FUPF",

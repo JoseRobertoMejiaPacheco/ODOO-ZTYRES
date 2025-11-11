@@ -30,22 +30,22 @@ class DiscountProfilesLine(models.Model):
 class DiscountProfiles(models.Model):
     _name = 'discount_profiles.discount'
     _description = 'Descuentos Base'
-    _order = 'letter'
     name = fields.Char(string='Nombre', compute='_compute_rec_name', store=True)
     active = fields.Boolean(string='Activo', default=True)
     percent = fields.Integer(string='Porcentaje de Descuento')
     pricelist_ids = fields.Many2many('product.pricelist', string='Aplica en:')    
-    letter = fields.Char(string='Letra')
+    
 
 
 class PartnerFinancialDiscount(models.Model):
     _name = 'discount_profiles.financial.discount'
     _inherit = 'discount_profiles.discount'
     _description = 'Descuento Financiero'
-    _order = 'letter'
+    _order = 'id'
     active = fields.Boolean(string='Activo', default=True)
     line_ids = fields.One2many('discount_profiles.discount.line', inverse_name='profile_financial_discount_id')
     property_payment_term_id = fields.Many2one('account.payment.term', string='Términos de pago del cliente')
+    letter = fields.Char(string='Letra')
     @api.depends('percent','letter')
     def _compute_rec_name(self):
         for record in self:
@@ -56,10 +56,10 @@ class PartnerLogisticDiscount(models.Model):
     _name = 'discount_profiles.logistic.discount'
     _inherit = 'discount_profiles.discount'
     _description = 'Descuento Logístico'
-    _order = 'letter'
+    _order = 'id'
     active = fields.Boolean(string='Activo', default=True)
     line_ids = fields.One2many('discount_profiles.discount.line', inverse_name='profile_logistic_discount_id')        
-    
+    letter = fields.Char(string='Letra')
     
     @api.depends('letter')
     def _compute_rec_name(self):
@@ -70,10 +70,10 @@ class PartnerVolumeDiscount(models.Model):
     _name = 'discount_profiles.volume.discount'
     _inherit = 'discount_profiles.discount'
     _description = 'Descuento Volumen'
-    _order = 'letter'
+    _order = 'id'
     active = fields.Boolean(string='Activo', default=True)
     line_ids = fields.One2many('discount_profiles.discount.line', inverse_name='profile_volume_discount_id')        
-    
+    letter = fields.Char(string='Letra')
     
     @api.depends('letter')
     def _compute_rec_name(self):
@@ -82,9 +82,9 @@ class PartnerVolumeDiscount(models.Model):
 
 class ResPartner(models.Model):
     _inherit = 'res.partner'
-    volume_profile = fields.Many2one('discount_profiles.volume.discount', string='Perfil:  de Volumen',racking=True)
-    financial_profile = fields.Many2one('discount_profiles.financial.discount', string='Perfil:  Financiero',racking=True)
-    logistic_profile = fields.Many2one('discount_profiles.logistic.discount', string='Perfil:  Logístico',racking=True)
+    volume_profile = fields.Many2one('discount_profiles.volume.discount', string='Perfil:  de Volumen',tracking=True)
+    financial_profile = fields.Many2one('discount_profiles.financial.discount', string='Perfil:  Financiero',tracking=True)
+    logistic_profile = fields.Many2one('discount_profiles.logistic.discount', string='Perfil:  Logístico',tracking=True)
     mostrar_venta_mostrador = fields.Boolean(string="Habilitar Ventas Mostrador")
 
     @api.onchange('financial_profile')
@@ -95,7 +95,7 @@ class ResPartner(models.Model):
 class SaleOrder(models.Model):
 
     _inherit = 'sale.order'
-        
+    
     volume_profile = fields.Many2one('discount_profiles.volume.discount', string='Perfil:  de Volumen')
     financial_profile = fields.Many2one('discount_profiles.financial.discount', string='Perfil:  Financiero')
     logistic_profile = fields.Many2one('discount_profiles.logistic.discount', string='Perfil:  Logístico')
@@ -106,7 +106,6 @@ class SaleOrder(models.Model):
             self.volume_profile = self.partner_id.volume_profile
             self.financial_profile = self.partner_id.financial_profile
             self.logistic_profile = self.partner_id.logistic_profile
-
 
 class AccountMove(models.Model):
     _inherit = 'account.move'

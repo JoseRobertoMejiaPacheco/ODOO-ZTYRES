@@ -3,9 +3,8 @@ from odoo import models, fields
 
 
 class AccountInvoiceReport(models.Model):
-
     _inherit = 'account.invoice.report'
-
+    
     """
     Propiedad de llantas
     """
@@ -28,13 +27,19 @@ class AccountInvoiceReport(models.Model):
     e_mark_id = fields.Many2one('ztyres_products.e_mark', string='E-Mark')
     s_mark_id = fields.Many2one('ztyres_products.s_mark', string='S-Mark')
     ccc_id = fields.Many2one('ztyres_products.ccc', string='CCC')
-    tire = fields.Boolean(string='Es llanta?',tracking=True)
+    tire = fields.Boolean(string='Es llanta?', tracking=True)
     
-
-
-
+    # --- Campos nuevos desde picking ---
+    delivery_country_id = fields.Many2one('res.country', string='País de Entrega', readonly=True)
+    delivery_state_id = fields.Many2one('res.country.state', string='Estado de Entrega', readonly=True)
+    delivery_city = fields.Char(string='Ciudad de Entrega', readonly=True)
+    
+    # ---------------------------------------------------------------
+    # SELECT
+    # ---------------------------------------------------------------
     def _select(self):
-        x = super()._select() + """,template.tire_measure_id,
+        x = super()._select() + """,
+template.tire_measure_id,
 template.face_id,
 template.layer_id,
 template.manufacturer_id,
@@ -53,6 +58,38 @@ template.usage_id,
 template.e_mark_id,
 template.s_mark_id,
 template.ccc_id,
-template.tire"""
+template.tire,
+sp_lateral.city AS delivery_city,
+sp_lateral.state_id AS delivery_state_id,
+sp_lateral.country_id AS delivery_country_id
+"""
         print(x)
         return x
+    
+    # ---------------------------------------------------------------
+    # FROM / JOIN
+    # ---------------------------------------------------------------
+    def _from(self):
+        from_str = super()._from() + """
+LEFT JOIN sale_order_line_invoice_rel AS sol_rel
+    ON sol_rel.invoice_line_id = line.id
+LEFT JOIN sale_order_line AS sol
+    ON sol.id = sol_rel.order_line_id
+LEFT JOIN sale_order AS so
+    ON so.id = sol.order_id
+-- 🔹 LATERAL JOIN: obtener el último picking hecho del pedido
+LEFT JOIN LATERAL (
+    SELECT
+        rp.city,
+        rp.state_id,
+        rp.country_id
+    FROM stock_picking sp
+    JOIN res_partner rp ON rp.id = sp.partner_id
+    WHERE sp.sale_id = so.id
+      AND sp.state = 'done'
+    ORDER BY sp.date_done DESC
+    LIMIT 1
+) AS sp_lateral ON TRUE
+"""
+        print(from_str)
+        return from_str

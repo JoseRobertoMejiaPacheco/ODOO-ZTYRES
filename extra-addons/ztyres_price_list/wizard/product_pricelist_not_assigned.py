@@ -14,7 +14,7 @@ class NotAssigned(models.TransientModel):
     def generate_report(self):
         product_obj = self.env['product.template']
         pricelist_obj = self.env['product.pricelist']
-        active_pricelist_ids = [1, 108, 113, 122]
+        active_pricelist_ids = [1, 108]
         all_products_with_price = pricelist_obj.browse(active_pricelist_ids).mapped('item_ids').mapped('product_tmpl_id').ids
         data = []
         all_products = product_obj.search([('detailed_type','in',['product'])])

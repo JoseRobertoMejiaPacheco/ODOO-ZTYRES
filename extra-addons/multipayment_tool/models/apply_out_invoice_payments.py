@@ -64,7 +64,7 @@ class ApplyOutInvoicePaymentsLine(models.Model):
 class ApplyOutInvoicePayments(models.Model):
     _inherit = 'apply_out_invoice.payments'
     _description = 'apply_out_invoice_payments'
-    _order = 'name desc'
+    _order = 'create_date desc'
     
     move_ids = fields.Many2many('account.move', string='Facturas a pagar')
     payment_amount = fields.Monetary(related='payment_id.amount', string='Monto del Pago')

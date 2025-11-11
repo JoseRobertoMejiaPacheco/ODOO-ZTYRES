@@ -167,7 +167,7 @@ class SaleOrderLineAddProductWizard(models.TransientModel):
 
 class SaleOrderLineAddProductWizardLine(models.TransientModel):
     _name = 'sale.order.line.add.product.wizard.line'
-
+    
     # Relación con el wizard
     wizard_id = fields.Many2one('sale.order.line.add.product.wizard', string='Wizard')
     

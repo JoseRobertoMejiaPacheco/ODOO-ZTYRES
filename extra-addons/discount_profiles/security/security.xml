@@ -1,22 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <odoo>
-    <data>
+  <data noupdate="1">
+    <record id="ztyres_categories" model="ir.module.category">
+      <field name="name">ZTYRES</field>
+      <field name="description">Grupos de ZTYRES</field>
+      <field name="sequence">10</field>
+    </record>
 
-        <record model="ir.module.category" id="ztyres_categories">
-            <field name="name">ZTYRES</field>
-            <field name="description">Grupos de ZTYRES</field>
-            <field name="sequence">10</field>
-        </record>
-        <!-- Group for Read-Only Users -->
-        <record id="group_discount_readonly_user" model="res.groups">
-            <field name="name">Perfiles de Descuento Usuario</field>
-            <field name="category_id" ref="ztyres_categories"/>
-        </record>
-        
-        <!-- Group for Administrators -->
-        <record id="group_discount_admin" model="res.groups">
-            <field name="name">Perfiles de Descuento Administrador</field>
-            <field name="category_id" ref="ztyres_categories"/>
-        </record>
-    </data>
+    <record id="group_discount_readonly_user" model="res.groups">
+      <field name="name">Perfiles de Descuento Usuario</field>
+      <field name="category_id" ref="ztyres_categories"/>
+    </record>
+
+    <record id="group_discount_admin" model="res.groups">
+      <field name="name">Perfiles de Descuento Administrador</field>
+      <field name="category_id" ref="ztyres_categories"/>
+    </record>
+  </data>
 </odoo>

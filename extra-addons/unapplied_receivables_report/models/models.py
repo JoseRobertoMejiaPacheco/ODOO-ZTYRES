@@ -28,7 +28,7 @@ class UnappliedReceivablesReport(models.Model):
     ], string='Estado de la Factura', readonly=True)
     account_id = fields.Many2one('account.account', string='Cuenta', readonly=True)
     amount = fields.Monetary('Monto', readonly=True, currency_field='currency_id')
-    
+    blocked = fields.Boolean(string='Ocultar seguimiento', readonly=True)
     currency_id = fields.Many2one('res.currency', string='Moneda', readonly=True)
     
     @property
@@ -44,6 +44,7 @@ class UnappliedReceivablesReport(models.Model):
                 aml.move_id,
                 am.move_type,
                 aml.date,
+                aml.blocked,
                 aml.date_maturity,
                 aml.amount_residual_currency,
                 am.state,
@@ -118,7 +119,8 @@ class UnappliedReceivablesReport(models.Model):
                 am.invoice_date,
                 aml.date,
                 aml.date_maturity,
-                aml.currency_id
+                aml.currency_id,
+                aml.blocked
             HAVING 
                 aml.amount_residual_currency <> 0 
                 AND am.move_type IN ('entry','out_refund')

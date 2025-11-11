@@ -54,7 +54,7 @@ class MyModel(models.TransientModel):
         }
 
         # Lista de usuarios no vendedores
-        no_vendedores = [25, 31, 115]
+        no_vendedores = [25, 31, 115, 78, 130, 55]
 
         # Consulta SQL combinada
         query = """
@@ -108,7 +108,8 @@ class MyModel(models.TransientModel):
             'DIEGO GOMEZ',
             'HUMBERTO MORENO',
             'RAMIRO BARRIOS MACÍAS',
-            'JOSE AARON FONSECA RADA'
+            'JOSE AARON FONSECA RADA',
+            'CHRISTIAN GUADALUPE NORIEGA PALACIOS',
         ]
         
         df.loc[df['vendedor'].isin (ventas_lic), 'vendedor'] = 'RICARDO DE COSS'

@@ -1,0 +1,58 @@
+<odoo>
+  <data>
+  
+  
+  <!-- Añadir columna "Pedimento" al árbol de operaciones detalladas -->
+  <record id="view_move_line_detailed_tree_inherit_pedimento" model="ir.ui.view">
+    <field name="name">stock.move.line.detailed.tree.pedimento</field>
+    <field name="model">stock.move.line</field>
+    <field name="inherit_id" ref="stock.view_stock_move_line_detailed_operation_tree"/>
+    <field name="arch" type="xml">
+      <!-- Inserta al final de las columnas del tree -->
+      <xpath expr="//tree" position="inside">
+        <field name="pedimento" readonly="1" optional="show"/>
+      </xpath>
+    </field>
+  </record>
+
+    <!-- Heredamos el form de lotes para añadir el campo pedimento -->
+  <record id="view_lot_form_inherit_pedimento" model="ir.ui.view">
+    <field name="name">stock.lot.form.pedimento</field>
+    <field name="model">stock.lot</field>
+    <field name="inherit_id" ref="stock.view_production_lot_form"/>
+    <field name="arch" type="xml">
+
+      <!-- Opción A: Insertar debajo de "ref" en la primera columna -->
+      <xpath expr="//group[@name='main_group']/group[1]/field[@name='ref']" position="after">
+        <field name="pedimento" placeholder="15 22 4566 7890123 456"
+               attrs="{'readonly': [('display_complete','=', False)]}"
+               help="Número de pedimento asociado a este lote. Puedes capturarlo pegado; se formatea al guardar."/>
+      </xpath>
+
+      <!-- Opción B (alternativa): Colocar en la segunda columna (está vacía en tu snippet)
+      <xpath expr="//group[@name='main_group']/group[2]" position="inside">
+        <field name="pedimento" placeholder="15 22 4566 7890123 456"
+               attrs="{'readonly': [('display_complete','=', False)]}"
+               help="Número de pedimento asociado a este lote. Puedes capturarlo pegado; se formatea al guardar."/>
+      </xpath>
+      -->
+
+    </field>
+  </record>
+
+  <!-- (Opcional) Añadir pedimento al tree/search de lotes para consulta rápida -->
+  <record id="view_lot_tree_inherit_pedimento" model="ir.ui.view">
+    <field name="name">stock.lot.tree.pedimento</field>
+    <field name="model">stock.lot</field>
+    <field name="inherit_id" ref="stock.view_production_lot_tree"/>
+    <field name="arch" type="xml">
+      <xpath expr="//tree" position="inside">
+        <field name="pedimento"/>
+      </xpath>
+    </field>
+  </record>
+
+
+
+  </data>
+</odoo>

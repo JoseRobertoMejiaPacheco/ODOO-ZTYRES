@@ -347,8 +347,12 @@ class ZtyresVolumen(models.Model):
         for line in lines:
             domain = line.action_view_details().get('domain',False)
             domain.append(('state','in',['valid']))
-            uuids = self.env['ztyres_promo.lines'].search(domain).mapped('move_id').mapped('l10n_mx_edi_cfdi_uuid')
-            uuids_string = '01|' + ','.join(uuids)
+            uuids = self.env['ztyres_promo.lines'].search(domain).mapped('move_id').mapped('l10n_mx_edi_cfdi_uuid') or ""
+            try:
+                uuids_string = '01|' + ','.join(uuids)
+            except:
+                uuids_string = False
+                print("Error")
             generic = line.rfc == 'XAXX010101000'
             credit_note_vals = {                
                 'move_type': 'out_refund',

@@ -34,7 +34,8 @@ class SaleOrderLine(models.Model):
     
     @api.constrains("product_uom_qty")
     def _constrains_check_product_availability_dot(self):
-
+        if self.env.context.get('force_skip',False):
+            return
         for record in self:
             if record.lots_ids:
                 stock_quants = self.env["stock.quant"].search(
@@ -253,9 +254,7 @@ class SaleOrderLine(models.Model):
             return
 
     def _get_valid_pricelists(self):
-        if self.order_id.promo_onyx:
-            return [124]
-        return [1, 108, 113]
+        return [1, 108]
     
     def get_item_with_min_price_after_discount(self):
         domain = [
@@ -299,7 +298,7 @@ class SaleOrderLine(models.Model):
             ("pricelist_id", "=", 122),
             ("lot_name", "=", self.single_dot),
         ]
-
+        
         pricelist_item = self.env["product.pricelist.item"].search(
             search_domain, limit=1
         )
@@ -325,5 +324,5 @@ class SaleOrderLine(models.Model):
             self.order_id.date_order or fields.Date.today(),
             currency=self.currency_id or self.order_id.company_id.currency_id,
         )
-
+        
         return price

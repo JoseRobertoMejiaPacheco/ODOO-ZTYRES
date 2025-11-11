@@ -20,12 +20,15 @@
         </record>
 
         <template id="report_invoice_document_inherit_dot_range" inherit_id="account.report_invoice_document">
-            <xpath expr="//span[@t-field='line.name']" position="after">
-                <br />
-                    DOT:
-                    <span t-field="line.rangos_dots" />
+            <xpath expr="//table[@name='invoice_line_table']//td[@name='account_invoice_line_name']" position="replace">
+                <td name="account_invoice_line_name">
+                    <span t-field="line.name" t-options="{'widget': 'text'}"/>
+                    <t t-if="line.rangos_dots">
+                    <span>DOT: </span>
+                    <span t-field="line.rangos_dots"/><span> — </span>
+                    </t>
+                </td>
             </xpath>
-    
             
             <xpath expr="//div[@id='total']" position="before">
                 <tr class="border-black o_total">

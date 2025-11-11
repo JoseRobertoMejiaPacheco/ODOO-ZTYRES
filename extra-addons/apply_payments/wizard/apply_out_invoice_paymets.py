@@ -39,7 +39,6 @@ class ApplyOutInvoicePayments(models.Model):
     amount_pending = fields.Float(compute='_compute_amount_pending',store=True, string='Amount Pending')
     amount_applied = fields.Float(compute='_compute_amount_pending',store=True, string='Amount Applied')
     l10n_mx_edi_payment_method_id = fields.Many2one('l10n_mx_edi.payment.method', string='Forma de Pago')
-
     name = fields.Char(string='Name', copy=False, readonly=True, index=True, default=lambda self: self.env['ir.sequence'].next_by_code('apply_out_invoice.sequence'))
     state = fields.Selection(selection=[('draft', 'Sin Timbrar'), ('done', 'Timbrado')],compute='_calcular_state', store=True)
     
@@ -176,11 +175,11 @@ class AccountPartialReconcile(models.Model):
     _inherit = 'account.partial.reconcile'
     apm_id= fields.Many2one('apply_out_invoice.payments', string='Aplicación de Pago Multiple')
     
-    def unlink(self):
-    # Agregar codigo de validacion aca
-        if self.apm_id and self.apm_id.state == 'done':
-            raise UserError(_(
-                                "No se puede desaplicar el pago ya que esta relacionado a uuids de facturas específicas"
-                            ))
+    # def unlink(self):
+    # # Agregar codigo de validacion aca
+    #     if self.apm_id and self.apm_id.state == 'done':
+    #         raise UserError(_(
+    #                             "No se puede desaplicar el pago ya que esta relacionado a uuids de facturas específicas"
+    #                         ))
             
-        return super(AccountPartialReconcile, self).unlink()
+    #     return super(AccountPartialReconcile, self).unlink()

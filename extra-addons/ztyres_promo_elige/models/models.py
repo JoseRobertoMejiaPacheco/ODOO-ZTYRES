@@ -77,6 +77,8 @@ class SaleOrder(models.Model):
     @api.depends('order_line', 'order_line.product_id', 'order_line.product_uom_qty', 
                  'order_line.product_id.brand_id')
     def _compute_promo_sel(self):
+        if self.env.context.get('force_skip',False):
+            return        
         for record in self:
             promo_id = self.env['ztyres_promo_elige.ztyres_promo_elige'].search([], limit=1)
             if promo_id:

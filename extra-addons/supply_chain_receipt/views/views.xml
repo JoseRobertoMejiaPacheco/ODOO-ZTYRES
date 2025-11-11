@@ -1,0 +1,227 @@
+<odoo>
+  <data>
+
+
+    <record model="ir.ui.view" id="supply_chain_receipt.list">
+      <field name="name">supply_chain_receipt list</field>
+      <field name="model">supply_chain_receipt.receipt</field>
+      <field name="arch" type="xml">
+        <tree>
+          <field name="name" />
+          <field name="date" />
+          <field name="arrive_date" />
+          <field name="partner_id" />
+          <field name="transit_picking_ids" />
+          <field name="warehouse_picking_ids" />
+          <field name="total_transit_qty" />
+          <field name="total_warehouse_qty" />
+          <field name="remaining_warehouse_qty" />
+          <field name="total_invoiced_qty" />
+          <field name="receipt_line_ids" />        
+        </tree>
+      </field>
+    </record>
+
+<record id="supply_chain_receipt.form" model="ir.ui.view">
+  <field name="name">supply_chain_receipt form</field>
+  <field name="model">supply_chain_receipt.receipt</field>
+  <field name="arch" type="xml">
+    <form string="Recepción de Cadena de Suministro">
+      <header>
+        <button name="generate_lines" type="object" string="Generar Líneas" class="btn-primary"/>
+        <button name="create_picking" type="object" string="Ingresar" class="btn-success"/>
+        <button name="create_invoice" type="object" string="Crear Factura" class="btn-default" />
+      </header>
+      <sheet>
+        <div class="oe_button_box" name="button_box">
+                <!-- Smart button para Notas de Crédito -->
+
+                <button name="action_open_line_ids"
+                        type="object"
+                        class="oe_stat_button"
+                        icon="fa-file-text">
+                    <field name="count_invoice_ids" widget="statinfo" string="Factura(s)"/>
+                </button>
+            </div>        
+        <group>
+          <group>
+            <field name="name"/>
+            <field name="partner_id"/>
+            <field name="purchase_ids" widget="many2many_tags" domain="[('partner_id', '=', partner_id)]" options="{'no_create': True}" />
+          </group>
+
+          <group string="Configuración de Traspaso (automática)">
+            <field name="picking_type_id"/>
+            <field name="location_id"/>
+            <field name="location_dest_id"/>
+          </group>
+
+          <group>
+            <field name="date"/>
+            <field name="arrive_date"/>
+          </group>
+
+        <group string="Resumen">
+            <group string="Tránsito">
+              <field name="total_transit_qty"/>
+            </group>
+            <group string="Almacén">
+              <field name="total_warehouse_qty"/>
+              <field name="remaining_warehouse_qty"/>
+            </group>
+            <group string="Facturado">
+              <field name="total_invoiced_qty"/>
+            </group>
+          </group>
+        </group>
+
+        <notebook>
+          
+          <page string="Tránsitos en Proceso">
+            <field name="transit_picking_ids" widget="many2many_tree"
+                   domain="[('state','in',['done']),('location_dest_id.usage', '=', 'transit'), ('group_id', 'in', group_ids)]"
+                   context="{}"
+                   options="{'no_create': True}">
+              <tree>
+                <field name="name"/>
+                <field name="purchase_id"/>
+                <field name="location_dest_id" invisible="1"/>
+                <field name="state"/>
+                <field name="products_availability" invisible="1"/>
+                <field name="show_check_availability" invisible="1"/>
+              </tree>
+            </field>
+          </page>
+
+          <page string="Traspasos Internos">
+            <field name="warehouse_picking_ids" domain="[('location_dest_id.usage', '=', 'internal'), ('group_id', 'in', group_ids)]">
+              <tree>
+                <field name="name"/>
+                <field name="purchase_id"/>
+                <field name="location_dest_id" invisible="1"/>
+                <field name="state"/>
+                <field name="products_availability" invisible="1"/>
+                <field name="show_check_availability" invisible="1"/>
+              </tree>
+            </field>
+          </page>
+
+
+
+          <page string="Detalle de Productos">
+            <field name="receipt_line_ids">
+              <tree create="true" delete="true" edit="true" editable="bottom">
+                <field name="receipt_id" invisible="1"/>
+                <field name="stock_move_id" invisible="1"/>
+                <field name="product_id"/>
+                <field name="product_uom_qty"/>
+                <field name="purchase_line_id" invisible="1"/>
+                <field name="purchase_id"/>
+                <field name="quantity_done"/>
+                <field name="qty_to_move"/>
+                <field name="location_ids" widget="many2many_tags" />
+                <field name="l10n_mx_edi_pedimento_number"/>
+                <button name="open_wizard_add_location"
+                        type="object"
+                        string="Agregar ubicaciones"
+                        class="btn-primary"/>
+              </tree>
+            </field>
+          </page>
+        </notebook>
+
+        <field name="group_ids" invisible="1"/>
+      </sheet>
+    </form>
+  </field>
+</record>
+
+
+    <!-- actions opening views on models -->
+
+    <record model="ir.actions.act_window" id="supply_chain_receipt.action_window">
+      <field name="name">supply_chain_receipt window</field>
+      <field name="res_model">supply_chain_receipt.receipt</field>
+      <field name="view_mode">tree,form</field>
+    </record>
+
+
+    <!-- server action to the one above -->
+    <!--
+    <record model="ir.actions.server" id="supply_chain_receipt.action_server">
+      <field name="name">supply_chain_receipt server</field>
+      <field name="model_id" ref="model_supply_chain_receipt_supply_chain_receipt"/>
+      <field name="state">code</field>
+      <field name="code">
+        action = {
+          "type": "ir.actions.act_window",
+          "view_mode": "tree,form",
+          "res_model": model._name,
+        }
+      </field>
+    </record>
+-->
+
+<!-- actions / views del wizard -->
+<record id="action_add_location_wizard" model="ir.actions.act_window">
+  <field name="name">Agregar Ubicaciones</field>
+  <field name="res_model">supply_chain_receipt.add_location_wizard</field>
+  <field name="view_mode">form</field>
+  <field name="target">new</field>
+</record>
+
+<record id="view_add_location_wizard_form" model="ir.ui.view">
+  <field name="name">supply_chain_receipt.add_location_wizard.form</field>
+  <field name="model">supply_chain_receipt.add_location_wizard</field>
+  <field name="arch" type="xml">
+    <form string="Agregar ubicaciones">
+      <header>
+        <button name="action_confirm" type="object" string="Agregar a la línea" class="btn-primary"/>
+        <button special="cancel" string="Cancelar"/>
+      </header>
+      <sheet>
+        <group>
+          <field name="receipt_line_id" readonly="1"/>
+          <field name="product_id" readonly="1"/>
+        </group>
+        <field name="line_ids">
+          <tree editable="bottom">
+            <field name="entry_text"/>
+            <field name="location_id"/>
+            <field name="lot_id"/>
+            <field name="product_uom_qty"/>
+          </tree>
+          <form string="Captura">
+            <group>
+              <field name="entry_text"/>
+              <field name="location_id"/>
+              <field name="lot_id"/>
+              <field name="product_uom_qty"/>
+            </group>
+          </form>
+        </field>
+      </sheet>
+    </form>
+  </field>
+</record>
+
+    <!-- Top menu item -->
+
+    <menuitem name="supply_chain_receipt" id="supply_chain_receipt.menu_root" />
+
+    <!-- menu categories -->
+
+    <menuitem name="Menu 1" id="supply_chain_receipt.menu_1" parent="supply_chain_receipt.menu_root" />
+    <!-- <menuitem name="Menu 2" id="supply_chain_receipt.menu_2"
+    parent="supply_chain_receipt.menu_root"/> -->
+
+    <!-- actions -->
+
+    <menuitem name="List" id="supply_chain_receipt.menu_1_list" parent="supply_chain_receipt.menu_1"
+      action="supply_chain_receipt.action_window" />
+    <!-- <menuitem name="Server to list" id="supply_chain_receipt"
+    parent="supply_chain_receipt.menu_2"
+              action="supply_chain_receipt.action_server"/> -->
+
+  </data>
+</odoo>

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <record id="customer_statements_form_hide_blocked" model="ir.ui.view">
+    <field name="name">account_followup.customer_statements_form_view.hide_blocked</field>
+    <!-- En Odoo 16 esta vista es de res.partner -->
+    <field name="model">res.partner</field>
+    <field name="inherit_id" ref="account_followup.customer_statements_form_view"/>
+    <field name="arch" type="xml">
+
+      <!-- Ocultar la columna 'blocked' dentro del árbol de unreconciled_aml_ids -->
+      <xpath expr="//field[@name='unreconciled_aml_ids']//tree//field[@name='blocked']"
+             position="attributes">
+        <attribute name="invisible">1</attribute>
+        <!-- Opcional: evita que el usuario la pueda mostrar desde el menú de columnas -->
+        <attribute name="optional">hide</attribute>
+      </xpath>
+
+    </field>
+  </record>
+</odoo>

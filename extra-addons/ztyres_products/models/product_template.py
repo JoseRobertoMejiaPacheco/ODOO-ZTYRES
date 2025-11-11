@@ -38,6 +38,10 @@ class ProductTemplate(models.Model):
     hq_id = fields.Many2one('ztyres_products.hq', string='HQ')
     
     volume_f = fields.Float(compute='_compute_volume_f',digits=(10, 3),store=True, string='Volumen Estimado')
+    nationality_custom_number = fields.Selection(
+        string='Nacionalidad del pedimento',
+        selection=[('national', 'Nacional'), ('imported', 'Importado'), ('national/imported', 'Nacional/Importado')]
+    )
     
     @api.depends('tire_measure_id')
     def _compute_volume_f(self):
