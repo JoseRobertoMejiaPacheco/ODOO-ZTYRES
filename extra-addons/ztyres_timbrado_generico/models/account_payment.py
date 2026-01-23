@@ -21,18 +21,19 @@ class AccountPayment(models.Model):
         return res
     
     def action_send_payment_receipt(self):
-        """
-        Envía el recibo de pago automáticamente por correo electrónico sin abrir el asistente.
-        """
-        self.ensure_one()  # Asegurarse de que solo se envíe un recibo a la vez
+        if self.state == 'posted':
+            """
+            Envía el recibo de pago automáticamente por correo electrónico sin abrir el asistente.
+            """
+            self.ensure_one()  # Asegurarse de que solo se envíe un recibo a la vez
 
-        # Obtener la plantilla de correo
-        template = self.env.ref('account.mail_template_data_payment_receipt')
+            # Obtener la plantilla de correo
+            template = self.env.ref('account.mail_template_data_payment_receipt')
 
-        # Componer y enviar el mensaje de correo
-        if template:
-            template.with_context(
-                default_model='account.payment',
-                default_res_id=self.id,
-                default_partner_ids=[self.partner_id.id],
-            ).send_mail(self.id, force_send=False)
+            # Componer y enviar el mensaje de correo
+            if template:
+                template.with_context(
+                    default_model='account.payment',
+                    default_res_id=self.id,
+                    default_partner_ids=[self.partner_id.id],
+                ).send_mail(self.id, force_send=False)

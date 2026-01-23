@@ -1,0 +1,117 @@
+<odoo>
+    <data>
+
+        <record id="view_sale_order_validation_wizard" model="ir.ui.view">
+            <field name="name">sale.order.validation.wizard.form</field>
+            <field name="model">sale.order.validation.wizard</field>
+            <field name="arch" type="xml">
+
+<form string="Validación de Productos">
+
+    <field name="has_price_issue" invisible="1"/>
+    <field name="has_reserve_issue" invisible="1"/>
+
+    <!-- CONTENEDOR PRINCIPAL -->
+    <div class="oe_form_sheet" style="padding:25px;">
+
+        <!-- ENCABEZADO -->
+        <div style="margin-bottom:20px;">
+            <h2 style="font-weight:700; margin:0 0 5px 0;">
+                ⚠️ Revisión de inconsistencias en la Orden de Venta
+            </h2>
+            <div style="font-size:15px;">
+                Orden: <b><field name="order_id" readonly="1"/></b>
+            </div>
+        </div>
+
+        <!-- ============================================================= -->
+        <!-- CARD: PRODUCTOS SIN PRECIO                                   -->
+        <!-- ============================================================= -->
+        <div attrs="{'invisible': [('has_price_issue','=',False)]}"
+             style="border:1px solid #ddd; border-radius:8px; padding:18px; margin-bottom:25px; background:white;">
+
+            <div style="font-size:18px; font-weight:600; color:#C0392B; margin-bottom:5px;">
+                💰 Productos sin precio asignado
+            </div>
+
+            <div style="color:#7F8C8D; margin-bottom:15px;">
+                Los siguientes productos no tienen un precio configurado.
+            </div>
+
+            <field name="line_ids" domain="[('issue_type','=','no_price')]">
+                <tree decoration-danger="issue_type == 'no_price'" editable="false">
+                    <field name="issue_type" invisible="1"/>
+                    <field name="product" string="Producto"/>
+                    <field name="line_id" string="Línea"/>
+                </tree>
+            </field>
+
+        </div>
+
+        <!-- ============================================================= -->
+        <!-- CARD: PRODUCTOS SIN RESERVA SUFICIENTE                       -->
+        <!-- ============================================================= -->
+        <div attrs="{'invisible': [('has_reserve_issue','=',False)]}"
+             style="border:1px solid #ddd; border-radius:8px; padding:18px; margin-bottom:25px; background:white;">
+
+            <div style="font-size:18px; font-weight:600; color:#0A66C2; margin-bottom:5px;">
+                📦 Productos con cantidad disponible insuficiente
+            </div>
+
+            <div style="color:#7F8C8D; margin-bottom:15px;">
+                La cantidad solicitada excede la disponible.
+            </div>
+
+            <field name="line_ids" domain="[('issue_type','=','no_reserve')]">
+                <tree decoration-warning="issue_type == 'no_reserve'" editable="false">
+                    <field name="issue_type" invisible="1"/>
+                    <field name="product" string="Producto"/>
+                    <field name="demanded" string="Solicitado"/>
+                    <field name="reserved" string="Disponible"/>
+                    <field name="line_id" string="Línea"/>
+                </tree>
+            </field>
+
+        </div>
+
+    </div>
+
+    <!-- BOTONES EN FOOTER -->
+    <footer>
+
+        <button string="🗑️ Eliminar productos sin precio"
+                type="object"
+                name="action_remove_no_price"
+                attrs="{'invisible': [('has_price_issue','=',False)]}"
+                class="btn-danger"
+                style="margin-right:8px;"/>
+
+        <button string="📉 Usar cantidad disponible"
+                type="object"
+                name="action_reserve_available"
+                attrs="{'invisible': [('has_reserve_issue','=',False)]}"
+                class="btn-primary"
+                style="margin-right:8px;"/>
+
+        <button string="🗑️ Eliminar productos sin reserva"
+                type="object"
+                name="action_remove_not_reserved"
+                attrs="{'invisible': [('has_reserve_issue','=',False)]}"
+                class="btn-danger"
+                style="margin-right:8px;"/>
+                
+        <button string="🔍 Comprobar precios"
+                type="object"
+                name="action_recompute_prices"
+                attrs="{'invisible': [('has_price_issue','=',False)]}"
+                class="btn-primary"
+                style="margin-right:8px;"/>                
+    </footer>
+
+</form>
+
+            </field>
+        </record>
+
+    </data>
+</odoo>

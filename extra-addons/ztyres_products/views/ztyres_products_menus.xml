@@ -173,5 +173,15 @@
                         parent="menu_tire_measure_config"
                         groups="ztyres_products.products_admin"
                         sequence="23" />
+
+                                <!-- Menú (opcional pero recomendado) -->
+        <!-- <menuitem
+            id="menu_treadwear_action"
+            name="Índice Treadwear"
+            parent="menu_tire_measure_config"
+            action="ztyres_products_treadwear_action"
+            groups="ztyres_products.products_admin"
+            sequence="30"
+        /> -->
         </data>
 </odoo>

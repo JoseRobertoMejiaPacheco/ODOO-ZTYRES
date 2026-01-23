@@ -26,14 +26,18 @@ class MyModel(models.TransientModel):
             'name',
             'user_id'
         ]
-        
+
         search_domain = [
-            ('type', 'in', ['contact']),  # Filtrar por contactos
-            ('partner_share', 'in', True), # Solo aquellos que compartan como socio
-            ('active', 'in', True),
-            ('category_id', 'not in', [11, 2, 13]),
-            ('user_id', 'not in', False)
+        ('customer_rank', '>', 0)
         ]
+                
+        # search_domain = [
+        #     ('type', 'in', ['contact']),  # Filtrar por contactos
+        #     ('partner_share', 'in', True), # Solo aquellos que compartan como socio
+        #     ('active', 'in', True),
+        #     ('category_id', 'not in', [11, 2, 13]),
+        #     ('user_id', 'not in', False)
+        # ]
         records = self.env['res.partner'].search_read(search_domain, fields=desired_fields)
         result3 = [{key: value[1] if isinstance(value, tuple) else value for key, value in record.items()} for record in records]
         df30 = pd.DataFrame(result3)
@@ -54,7 +58,7 @@ class MyModel(models.TransientModel):
         }
 
         # Lista de usuarios no vendedores
-        no_vendedores = [25, 31, 115, 78, 130, 55]
+        no_vendedores = [135,16,46,133,39]
 
         # Consulta SQL combinada
         query = """
@@ -66,7 +70,7 @@ class MyModel(models.TransientModel):
                 ELSE aml.quantity
                 END) AS cantidad,
                 CASE
-                WHEN ru.id IN %s THEN 'ventas_lic'
+                WHEN ru.id NOT IN %s THEN 'ventas_lic'
                 ELSE 'ventas'
                 END AS no_c,
                 SUM(CASE
@@ -101,7 +105,14 @@ class MyModel(models.TransientModel):
             'CARMEN MIRELES',
             'ATXEL MIGUEL RAMIREZ HIDALGO',
             'JUANA PATRICIA REYES GOMES',
-            'RICARDO DE COSS'
+            'RICARDO DE COSS',
+            'SERGIO VILLEGAS',
+            'LUZ VERONICA TORRES DELGADO',
+            'JUANA PATRICIA REYES GOMES',
+            'IGNACIO FLORES GONZALEZ',
+            'DIANA KARINA ROLDÁN MENDEZ',
+            'CARMEN MIRELES'
+            
         ]
         
         vendedores_Actuales = [
@@ -175,11 +186,9 @@ class MyModel(models.TransientModel):
         df_pivoted2 = df_pivoted2.reindex(columns=orden_meses).reset_index()
         df_pivoted3 = df_pivoted3.reindex(index=orden_meses).reset_index()
         df_pivoted4 = df_pivoted4.reindex(index=orden_meses).reset_index()
-        
-
         reports_core = self.env['ztyres_ms_sql_excel_core']
         reports_core.action_insert_dataframe(df_pivoted, 'ventas_lic')
         reports_core.action_insert_dataframe(df_pivoted2, 'ventas_vendedores')
         reports_core.action_insert_dataframe(df_pivoted3, 'ventas_totales')
         reports_core.action_insert_dataframe(df_pivoted4, 'ventas_totales_cantidad')
-        return 
+        return

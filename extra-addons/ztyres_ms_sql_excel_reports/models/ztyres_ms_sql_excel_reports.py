@@ -30,7 +30,7 @@ class MyModel(models.TransientModel):
         transformed_df['CPFac'] = transformed_df['CPFac'].round(2)
         transformed_df['CFinalP'] = transformed_df['CFinalP'].round(2)
         
-        archivados_df = transformed_df.copy()
+        #archivados_df = transformed_df.copy()
         transformed_df = transformed_df.loc[transformed_df['active'] == 1]
         transformed_df = transformed_df.drop(columns=['active'])
         
@@ -63,14 +63,20 @@ class MyModel(models.TransientModel):
         expo_df = expo_df[columnas_deseadas2]
         
         groupby_ciu = transformed_df.copy()
-        
-        columnas_deseadas3 = ['CIU','Medida','Cara','C','Seg','Tipo','Tier','JUN','JUL','AGO', 'SEP', 'OCT', 'NOV', 'Inv','Res','Disp','Trans','BO']
-        
+        columnas_deseadas3 = ['CIU','Medida','Cara','C','Seg','Tipo','Tier', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC', 'ENE', 'Inv', 'Res', 'Disp', 'Trans', 'BO']
         groupby_ciu = groupby_ciu[columnas_deseadas3]
-        
-        groupby_ciu = groupby_ciu.groupby(['CIU', 'Medida', 'Cara', 'C', 'Seg', 'Tipo', 'Tier'])[['JUN','JUL','AGO', 'SEP', 'OCT', 'NOV', 'Inv', 'Res', 'Disp', 'Trans', 'BO']].sum().reset_index()
+        groupby_ciu = groupby_ciu.groupby(['CIU', 'Medida', 'Cara', 'C', 'Seg', 'Tipo', 'Tier'])[['AGO', 'SEP', 'OCT', 'NOV', 'DIC', 'ENE', 'Inv', 'Res', 'Disp', 'Trans', 'BO']].sum().reset_index()
+        groupby_ciu['Prom'] = groupby_ciu[['AGO', 'SEP', 'OCT', 'NOV', 'DIC']].mean(axis=1).round(2)
+        groupby_ciu['Rotacion'] = (groupby_ciu['Inv'] / groupby_ciu['Prom']).replace([np.inf, -np.inf], np.nan).round(2)
 
-        
+
+        groupby_marca = transformed_df.copy()
+        rotacion = ['Marca', 'Tier', 'AGO', 'SEP', 'OCT', 'NOV',  'DIC', 'ENE', 'Inv']
+        groupby_marca = groupby_marca[rotacion]
+        groupby_marca = groupby_marca.groupby(['Marca', 'Tier'])[['AGO', 'SEP', 'OCT', 'NOV',  'DIC', 'ENE', 'Inv']].sum().reset_index()
+        groupby_marca['Prom'] = groupby_marca[['AGO', 'SEP', 'OCT', 'NOV', 'DIC']].mean(axis=1).round(2)
+        groupby_marca['Rotacion'] = (groupby_marca['Inv'] / groupby_marca['Prom']).replace([np.inf, -np.inf], np.nan).round(2)
+
         expo_df = expo_df.drop(columns=['Mayoreo', 'Outlet'])
         nacional_df = nacional_df.drop(columns=['fecha_upf_expo', 'upf_expo'])
         importado_df = importado_df.drop(columns=['fecha_upf_expo', 'upf_expo'])
@@ -82,12 +88,13 @@ class MyModel(models.TransientModel):
         # Insertar el DataFrame en la base de datos
         reports_core = self.env['ztyres_ms_sql_excel_core']
         reports_core.action_insert_dataframe(transformed_df, 'reporte_direccion')
-        reports_core.action_insert_dataframe(archivados_df, 'reporte_direccion_archivados')
+        #reports_core.action_insert_dataframe(archivados_df, 'reporte_direccion_archivados')
         reports_core.action_insert_dataframe(fob_cif, 'reporte_fob_cif')
         reports_core.action_insert_dataframe(nacional_df, 'reporte_nacional')
         reports_core.action_insert_dataframe(importado_df, 'reporte_importado')
         reports_core.action_insert_dataframe(expo_df, 'reporte_expo')
         reports_core.action_insert_dataframe(groupby_ciu, 'stock_por_tier')
+        reports_core.action_insert_dataframe(groupby_marca, 'ventas_6_meses')
 
     def transform_data(self, product_df, last_six_months):
         reports_direccion = self.env['ztyres_ms_sql_excel_reports_direccion']
@@ -114,8 +121,6 @@ class MyModel(models.TransientModel):
         dataframe = reports_direccion.add_price_list(dataframe, 1, 'mayoreo')
         #Agregar datos de la lista de precios 'OUTLET'
         dataframe = reports_direccion.add_price_list(dataframe, 108, 'outlet')
-        # Agregar datos de la lista de precios 'PROMOCIÓN'
-        #dataframe = reports_direccion.add_price_list(dataframe, 113, 'promoción')
         
         return dataframe
 
@@ -138,13 +143,13 @@ class MyModel(models.TransientModel):
             "type_id": "Tipo",
             "tier_id": "Tier",
             "product_dot_range": "DOT",
-            "country_of_origin": "Origen", 
-            "'JUNIO'": 'JUN',
-            "'JULIO'": 'JUL',
+            "country_of_origin": "Origen",
             "'AGOSTO'": 'AGO',
             "'SEPTIEMBRE'": 'SEP',
             "'OCTUBRE'": 'OCT',
             "'NOVIEMBRE'": 'NOV',
+            "'DICIEMBRE'": 'DIC',
+            "'ENERO'": 'ENE',
             "qty_available": "Inv",
             "qty_reserved": "Res",
             "free_qty": "Disp",

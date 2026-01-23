@@ -1,58 +1,457 @@
+<?xml version="1.0" encoding="utf-8"?>
 <odoo>
   <data>
 
-
     <!-- Invoice report customization -->
-    <template id="report_invoice_document_inherit_payment_discount_text" inherit_id="account.report_invoice_document">
+    <template id="report_invoice_document_inherit_payment_discount_text3" inherit_id="account.report_invoice_document">
     
-        <xpath expr="//t[@t-if='print_with_payments']" position="attributes">
-            <attribute name="t-if">False</attribute>
-        </xpath>
         <xpath expr="//div[@class='clearfix mb-4']" position="after">
             <div class="page-break1">
                 <style>
                     .page-break1 {
                         page-break-before: always;
                     }
-                </style>                               
-                    <!-- <div t-if="o.logistic_nc_text" t-raw="o.logistic_nc_text"></div>                                                                                   
-                                   -->
+                </style>
+
                 <div t-if="o.payment_discount_text" t-raw="o.payment_discount_text"></div>
+
+                <!-- TRANSLATABLE PARAGRAPHS (ACCOUNT.MOVE) -->
                 <div>
-                    <p>No se aceptan pagos en efectivo y cheques que no sean nominativos a la empresa. Por lo tanto, ningún empleado de la empresa puede aceptar dinero en efectivo o cheques a su nombre.</p>
-                    <p>Devoluciones por errores de Ztyres serán aceptadas sin cargo, siempre y cuando se hagan dentro del mes de facturación con previa notificación. Las devoluciones por motivos atribuibles al cliente causarán una penalización del 5% sobre lo facturado, más gastos de envío.</p>
-                    <p>No se permiten devoluciones de ningún tipo en pedidos de códigos participantes de promociones y/o paquetes especiales, salvo en casos atribuibles a ZTyres.</p>
-                    <p>Por favor, revise que su pedido no presente ningún daño o alteración ocasionados por la paquetería. De ser así, no lo reciba, anótelo en la boleta y repórtelo de inmediato a su asesor.</p>
+                    <p>
+                        Cash payments and checks not made payable to the company are not accepted. Therefore, no employee of the company may accept cash or checks in their name.
+                    </p>
+
+                    <p>
+                        Returns due to Ztyres errors will be accepted free of charge, provided they are made within the billing month with prior notice. Returns due to customer-related reasons will incur a 5% fee on the invoiced amount, plus shipping costs.
+                    </p>
+
+                    <p>
+                        No returns of any kind are allowed for orders containing promotional code items and/or special packages, except in cases attributable to ZTyres.
+                    </p>
+
+                    <p>
+                        Please verify that your order shows no damage or alteration caused by shipping. If it does, do not receive it, note it on the delivery slip, and report it immediately to your advisor.
+                    </p>
                 </div>
             </div>
         </xpath>
     </template>
 
-    <!-- Sale order report customization -->
-    <record id="view_sale_report_saleorder_document_inherited" model="ir.ui.view">
-        <field name="name">sale.report_saleorder_document.inherited</field>
-        <field name="inherit_id" ref="sale.report_saleorder_document"/>
-        <field name="arch" type="xml">
-            <xpath expr="/t/t/div/div[3]" position="after">
-                <style>
-                    .page-break1 {
-                        page-break-before: always;
-                    }
-                </style>
-                <div>
-                    <!-- <div t-if="doc.logistic_nc_text" t-raw="doc.logistic_nc_text"></div>                                                                                    -->
-                    <div t-if="doc.payment_discount_text" t-raw="doc.payment_discount_text"></div>
-                    <div>
-                        <p>No se aceptan pagos en efectivo y cheques que no sean nominativos a la empresa. Por lo tanto, ningún empleado de la empresa puede aceptar dinero en efectivo o cheques a su nombre.</p>
-                        <p>Devoluciones por errores de Ztyres serán aceptadas sin cargo, siempre y cuando se hagan dentro del mes de facturación con previa notificación. Las devoluciones por motivos atribuibles al cliente causarán una penalización del 5% sobre lo facturado, más gastos de envío.</p>
-                        <p>No se permiten devoluciones de ningún tipo en pedidos de códigos participantes de promociones y/o paquetes especiales, salvo en casos atribuibles a ZTyres.</p>
-                        <p>Por favor, revise que su pedido no presente ningún daño o alteración ocasionados por la paquetería. De ser así, no lo reciba, anótelo en la boleta y repórtelo de inmediato a su asesor.</p>
+    <!-- NUEVO LAYOUT PERSONALIZADO PARA COTIZACIONES -->
+    <template id="external_layout_striped_quotation">
+        <!-- HEADER PERSONALIZADO -->
+    <div t-attf-class="o_company_#{company.id}_layout header" t-att-style="report_header_style">
+        <div class="o_background_header"
+            style="padding:10px 8px; border-bottom:2px solid #ffffffff;">
+
+            <div class="row align-items-center">
+
+                <!-- LOGO -->
+                <div class="col-3 text-start">
+                    <img t-if="company.logo"
+                        t-att-src="image_data_uri(company.logo)"
+                        style="max-height:90px;"
+                        alt="Logo"/>
+                </div>
+
+                <!-- CUADRO CENTRAL: COTIZACIÓN -->
+                <div class="col-5 text-center">
+                    <div style="
+                        border:1px solid #ffffffff;
+                        padding:12px 10px;
+                        font-size:26px;
+                        font-weight:700;
+                        text-transform:uppercase;
+                        letter-spacing:1px;">
+                        COTIZACIÓN
                     </div>
                 </div>
-            </xpath>
-        </field>
-    </record>
 
+                <!-- CUADRO DERECHO: ESTÁTICO -->
+                <div class="col-4">
+                    <table style="
+                        width:100%;
+                        border-collapse:collapse;
+                        font-size:15px;">
+                        <tr>
+                            <td style="border:1px solid #ffffffff; padding:4px;">
+                                <strong>CÓDIGO:</strong>
+                            </td>
+                            <td style="border:1px solid #ffffffff; padding:4px;">
+                                VTA-FO-04
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="border:1px solid #ffffffff; padding:4px;">
+                                <strong>VERSIÓN:</strong>
+                            </td>
+                            <td style="border:1px solid #ffffffff; padding:4px;">
+                                01
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="border:1px solid #ffffffff; padding:4px;">
+                                <strong>FECHA DE EMISIÓN:</strong>
+                            </td>
+                            <td style="border:1px solid #ffffffff; padding:4px;">
+                                17/12/2025
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+        <!-- BODY (mantener igual que striped original) -->
+        <div t-attf-class="o_company_#{company.id}_layout article o_report_layout_striped {{  'o_report_layout_background' if company.layout_background in ['Geometric', 'Custom']  else  '' }}" 
+             t-attf-style="background-image: url({{ 'data:image/png;base64,%s' % company.layout_background_image.decode('utf-8') if company.layout_background_image and company.layout_background == 'Custom' else '/base/static/img/bg_background_template.jpg' if company.layout_background == 'Geometric' else ''}});" 
+             t-att-data-oe-model="o and o._name" 
+             t-att-data-oe-id="o and o.id" 
+             t-att-data-oe-lang="o and o.env.context.get('lang')">
+            <t t-call="web.address_layout"/>
+            <t t-out="0"/>
+        </div>
+
+        <!-- FOOTER (mantener igual que striped original) -->
+        <div t-attf-class="o_company_#{company.id}_layout footer o_background_footer">
+            <div class="text-center">
+                <ul class="list-inline">
+                    <div t-field="company.report_footer"/>
+                </ul>
+                <div t-if="report_type == 'pdf'" class="text-muted">
+                    Page: <span class="page"/> of <span class="topage"/>
+                </div>
+                <div t-if="report_type == 'pdf' and display_name_in_footer" class="text-muted">
+                    <span t-field="o.name"/>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <!-- APLICAR EL NUEVO LAYOUT A LAS COTIZACIONES -->
+<template id="report_saleorder_document_custom_header" inherit_id="sale.report_saleorder_document">
+        <xpath expr="//t[@t-call='web.external_layout']" position="replace">
+            <!-- Configurar las variables necesarias -->
+            <t t-if="not o" t-set="o" t-value="doc"/>
+            <t t-if="not company">
+                <t t-if="company_id">
+                    <t t-set="company" t-value="company_id"/>
+                </t>
+                <t t-elif="o and 'company_id' in o and o.company_id.sudo()">
+                    <t t-set="company" t-value="o.company_id.sudo()"/>
+                </t>
+                <t t-else="">
+                    <t t-set="company" t-value="res_company"/>
+                </t>
+            </t>
+            
+            <!-- Llamar al nuevo layout personalizado -->
+            <t t-call="discount_profiles.external_layout_striped_quotation">
+                <t t-set="doc" t-value="doc.with_context(lang=doc.partner_id.lang)"/>
+                <t t-set="forced_vat" t-value="doc.fiscal_position_id.foreign_vat"/>
+                
+                <!-- CONTENIDO DEL DOCUMENTO -->
+                <div class="page">
+                    <div class="oe_structure"/>
+
+                    <!-- SECCIÓN DE RECEPTOR Y EMISOR -->
+<div class="row mt-1 mb-2" style="border: 1px solid #ffffff; padding: 2px; background-color: #ffffff;">
+    <!-- EMISOR -->
+    <div class="col-4">
+        <h5 style="font-weight:bold; margin-bottom:4px;">SENDER</h5>
+        <div style="font-size:15px; line-height:1.3;">
+            <strong><span t-field="company.name"/></strong><br/>
+            <span t-field="company.street"/><br/>
+            <span t-if="company.street2" t-field="company.street2"/><br/>
+            <span t-field="company.city"/> 
+            <span t-field="company.state_id.name"/> 
+            <span t-field="company.zip"/><br/>
+            <span t-if="company.vat">RFC: <span t-field="company.vat"/></span>
+        </div>
+    </div>
+    <!-- RECEPTOR -->
+    <div class="col-4">
+        <h5 style="font-weight:bold; margin-bottom:4px;">CLIENTE</h5>
+        <div style="font-size:15px; line-height:1.3;">
+            <div t-field="doc.partner_id"
+                 t-options='{"widget":"contact","fields":["address","name"],"no_marker":True}'/>
+            <span t-if="doc.partner_id.vat">
+                RFC: <span t-field="doc.partner_id.vat"/>
+            </span>
+        </div>
+    </div>
+
+    <!-- DIRECCIÓN DE ENTREGA -->
+    <div class="col-4">
+        <h5 style="font-weight:bold; margin-bottom:4px;">DELIVERY ADDRESS</h5>
+        <div style="font-size:15px; line-height:1.3;">
+            <div t-field="doc.partner_shipping_id"
+                 t-options='{"widget":"contact","fields":["address","name","phone"],"no_marker":True}'/>
+        </div>
+    </div>
+
+
+
+</div>
+
+                    <h2 class="mt-4">
+                        <span t-if="env.context.get('proforma', False) or is_pro_forma">Pro-Forma Invoice # </span>
+                        <span t-elif="doc.state in ['draft','sent']">Quotation # </span>
+                        <span t-else="">Order # </span>
+                        <span t-field="doc.name"/>
+                    </h2>
+
+                    <div class="row mt-4 mb-4" id="informations">
+                        <div t-if="doc.client_order_ref" class="col-auto col-3 mw-100 mb-2" name="informations_reference">
+                            <strong>Your Reference:</strong>
+                            <p class="m-0" t-field="doc.client_order_ref"/>
+                        </div>
+                        <div t-if="doc.date_order" class="col-auto col-3 mw-100 mb-2" name="informations_date">
+                            <strong t-if="doc.state in ['draft', 'sent']">Quotation Date:</strong>
+                            <strong t-else="">Order Date:</strong>
+                            <p class="m-0" t-field="doc.date_order" t-options='{"widget": "date"}'/>
+                        </div>
+                        <div t-if="doc.validity_date and doc.state in ['draft', 'sent']" class="col-auto col-3 mw-100 mb-2" name="expiration_date">
+                            <strong>Expiration:</strong>
+                            <p class="m-0" t-field="doc.validity_date"/>
+                        </div>
+                        <div t-if="doc.user_id.name" class="col-auto col-3 mw-100 mb-2">
+                            <strong t-translate="true">Salesperson:</strong>
+                            <p class="m-0" t-field="doc.user_id"/>
+                        </div>
+                    </div>
+
+                    <!-- Tabla de productos OPTIMIZADA -->
+                    <t t-set="lines_to_report" t-value="doc._get_order_lines_to_report()"/>
+                    <t t-set="display_discount" t-value="any(l.discount for l in lines_to_report)"/>
+
+<table class="table table-sm o_main_table mt-4" style="font-size: 20px;">
+    <thead style="display: table-row-group; background-color: #f0f0f0;">
+        <tr>
+            <th name="th_description" class="text-start" style="width: 48%; padding: 6px;">
+                Description
+            </th>
+
+            <th name="th_quantity" class="text-end" style="width: 10%; padding: 6px; white-space: nowrap;">
+                Quantity
+            </th>
+
+            <th name="th_priceunit" class="text-end" style="width: 12%; padding: 6px; white-space: nowrap;">
+                Unit Price
+            </th>
+
+            <th name="th_discount" t-if="display_discount" class="text-end" style="width: 8%; padding: 6px; white-space: nowrap;">
+                <span>Disc.%</span>
+            </th>
+
+            <th name="th_taxes" class="text-end" style="width: 15%; padding: 6px;">
+                Taxes
+            </th>
+
+            <th name="th_subtotal" class="text-end" style="width: 15%; padding: 6px; white-space: nowrap;">
+                <span t-translate="true" groups="account.group_show_line_subtotals_tax_excluded">Amount</span>
+                <span t-translate="true" groups="account.group_show_line_subtotals_tax_included">Total Price</span>
+            </th>
+        </tr>
+    </thead>
+
+    <tbody class="sale_tbody">
+        <t t-set="current_subtotal" t-value="0"/>
+
+        <t t-foreach="lines_to_report" t-as="line">
+            <tr t-att-class="                 'bg-200 fw-bold o_line_section' if line.display_type == 'line_section'                 else 'fst-italic o_line_note' if line.display_type == 'line_note'                 else ''             " style="border-bottom: 1px solid #e0e0e0;">
+
+                <!-- LÍNEA NORMAL -->
+                <t t-if="not line.display_type">
+
+                    <!-- DESCRIPCIÓN + DOT -->
+                    <td name="td_name" style="padding: 5px; vertical-align: top;">
+                        <span style="word-wrap: break-word; overflow-wrap: break-word;">
+                            <span t-field="line.name"/>
+                            <t t-if="line.rangos_dots">
+                                <strong style="font-weight:600;"> DOT </strong>
+                                <span t-field="line.rangos_dots"/>
+                            </t>
+                        </span>
+                    </td>
+
+                    <!-- CANTIDAD -->
+                    <td class="text-end" style="padding: 5px; white-space: nowrap;">
+                        <span t-field="line.product_uom_qty"/>
+                        <span t-field="line.product_uom"/>
+                    </td>
+
+                    <!-- PRECIO UNITARIO -->
+                    <td class="text-end" style="padding: 5px; white-space: nowrap;">
+                        <span t-field="line.price_unit"/>
+                    </td>
+
+                    <!-- DESCUENTO -->
+                    <td t-if="display_discount" class="text-end" style="padding: 5px; white-space: nowrap;">
+                        <span t-field="line.discount"/>
+                    </td>
+
+                    <!-- IMPUESTOS -->
+                    <td class="text-end" style="padding: 5px;">
+                        <span t-out="', '.join(map(lambda x: (x.description or x.name), line.tax_id))"/>
+                    </td>
+
+                    <!-- SUBTOTAL -->
+                    <td class="text-end o_price_total" style="padding: 5px; white-space: nowrap; font-weight:600;">
+                        <span t-field="line.price_subtotal" groups="account.group_show_line_subtotals_tax_excluded"/>
+                        <span t-field="line.price_total" groups="account.group_show_line_subtotals_tax_included"/>
+                    </td>
+
+                </t>
+
+                <!-- SECCIÓN -->
+                <t t-elif="line.display_type == 'line_section'">
+                    <td colspan="99" style="padding: 8px 5px; background-color: #f5f5f5;">
+                        <span t-field="line.name" style="font-weight:bold;"/>
+                    </td>
+                </t>
+
+                <!-- NOTA -->
+                <t t-elif="line.display_type == 'line_note'">
+                    <td colspan="99" style="padding: 5px; font-style: italic; color: #666;">
+                        <span t-field="line.name"/>
+                    </td>
+                </t>
+
+            </tr>
+        </t>
+    </tbody>
+</table>
+
+                    <table class="table table-sm table-borderless">
+                        <!-- Totales fiscales -->
+                        <t t-set="tax_totals" t-value="doc.tax_totals"/>
+                        <t t-call="account.document_tax_totals"/>
+                        <!-- TOTAL DE PIEZAS -->
+                        <tr class="border-black o_total">
+                            <td class="text-start">
+                                <strong>Total de Piezas</strong>
+                            </td>
+                            <td class="text-end">
+                                <strong>
+                                    <t t-esc="sum(l.product_uom_qty for l in doc.order_line if not l.display_type)"/>
+                                </strong>
+                            </td>
+                        </tr>                        
+                    </table>
+
+                    <!-- Firma -->
+                    <div t-if="doc.signature" class="mt-4 ml64 mr4" name="signature">
+                        <div class="offset-8">
+                            <strong>Signature</strong>
+                        </div>
+                        <div class="offset-8">
+                            <img t-att-src="image_data_uri(doc.signature)" style="max-height: 4cm; max-width: 8cm;"/>
+                        </div>
+                        <div class="offset-8 text-center">
+                            <p t-field="doc.signed_by"/>
+                        </div>
+                    </div>
+
+                    <!-- Notas -->
+                    <div>
+                        <p t-field="doc.note" name="order_note"/>
+                        <p t-if="not is_html_empty(doc.payment_term_id.note)">
+                            <span t-field="doc.payment_term_id.note"/>
+                        </p>
+                        <p t-if="doc.fiscal_position_id and not is_html_empty(doc.fiscal_position_id.sudo().note)" id="fiscal_position_remark">
+                            <strong>Fiscal Position Remark:</strong>
+                            <span t-field="doc.fiscal_position_id.sudo().note"/>
+                        </p>
+                    </div>
+
+                    <!-- SECCIÓN DE TÉRMINOS Y CONDICIONES AL FINAL -->
+                    <div class="mt-4" style="border-top: 2px solid #333; padding-top: 20px;">
+                        
+                        <!-- Tabla de descuentos financieros (si existe) -->
+                        <div t-if="doc.payment_discount_text" style="margin-bottom: 20px;">
+                            <h5 style="font-weight: bold; margin-bottom: 10px; color: #333;">Descuentos por Pronto Pago / Early Payment Discounts:</h5>
+                            <style>
+                                /* Estilos para optimizar la tabla de descuentos */
+                                .page-break1.table {
+                                    font-size: 15px !important;
+                                    margin-bottom: 15px;
+                                    border-collapse: collapse;
+                                }
+                                .page-break1.table th {
+                                    background-color: #ffffff;
+                                    color: #000000;
+                                    padding: 8px 10px;
+                                    font-weight: 600;
+                                    text-align: center;
+                                    white-space: nowrap;
+                                    border: 1px solid #000000;
+                                }
+                                .page-break1.table td {
+                                    padding: 6px 10px;
+                                    text-align: center;
+                                    border: 1px solid #000000;
+                                    vertical-align: middle;
+                                    white-space: nowrap;
+                                    color: #000000;
+                                    background-color: #ffffff;
+                                }
+                                .page-break1.table tr:nth-child(even) td {
+                                    background-color: #ffffff;
+                                }
+                                .page-break1.table tr:hover td {
+                                    background-color: #ffffff;
+                                }
+                                /* Columnas específicas */
+                                .page-break1.table td:first-child {
+                                    font-weight: 600;
+                                }
+                                .page-break1.table td:last-child {
+                                    font-weight: 700;
+                                    font-size: 11px;
+                                }
+                            </style>
+                            <div t-raw="doc.payment_discount_text"></div>
+                        </div>
+                        
+                        <!-- BILINGUAL TERMS AND CONDITIONS -->
+                <div style="font-size: 18px; color: #333; line-height: 1.5;">
+                    <h5 style="font-weight: bold; margin-bottom: 10px; font-size: 18px;">
+                        Términos y Condiciones / Terms and Conditions:
+                    </h5>
+
+                    <!-- TEXTO NUEVO -->
+                    <p style="margin-bottom: 8px;">
+                        <strong>
+                            1. Precios sujetos a cambios sin previo aviso. Para temas de entregas y pagos, favor de revisar las reglas de negocio.
+                            / Prices are subject to change without prior notice. For delivery and payment matters, please review the business rules.
+                        </strong>
+                    </p>
+
+                    <p style="margin-bottom: 6px;">
+                        <strong>2. Pagos / Payments:</strong> No se aceptan pagos en efectivo ni cheques que no sean nominativos a la empresa. Por lo tanto, ningún empleado de la empresa puede aceptar dinero en efectivo o cheques a su nombre. / Cash payments and checks not made payable to the company are not accepted. Therefore, no employee of the company may accept cash or checks in their name.
+                    </p>
+
+                    <p style="margin-bottom: 6px;">
+                        <strong>3. Devoluciones / Returns:</strong> Las devoluciones por errores de ZTyres serán aceptadas sin cargo, siempre que se hagan dentro del mes de facturación con previa notificación. Las devoluciones por motivos atribuibles al cliente causarán una penalización del 5% sobre lo facturado, más los gastos de envío. / Returns due to Ztyres errors will be accepted free of charge, provided they are made within the billing month with prior notice. Returns due to customer-related reasons will incur a 5% fee on the invoiced amount, plus shipping costs.
+                    </p>
+
+                    <p style="margin-bottom: 6px;">
+                        <strong>4. Promociones / Promotions:</strong> No se permiten devoluciones de ningún tipo en pedidos que contengan códigos promocionales y/o paquetes especiales, salvo en casos atribuibles a ZTyres. / No returns of any kind are allowed for orders containing promotional code items and/or special packages, except in cases attributable to ZTyres.
+                    </p>
+
+                    <p style="margin-bottom: 6px;">
+                        <strong>5. Inspección de Envío / Shipping Inspection:</strong> Por favor, revise que su pedido no presente daños o alteraciones causadas por la paquetería. Si es así, no lo reciba, anótelo en la boleta y repórtelo de inmediato a su asesor. / Please verify that your order shows no damage or alteration caused by shipping. If it does, do not receive it, note it on the delivery slip, and report it immediately to your advisor.
+                    </p>
+                </div>
+                    </div>
+                </div>
+            </t>
+        </xpath>
+    </template> 
+      
     <!-- Form view for financial discounts -->
     <record id="view_financial_discount_form" model="ir.ui.view">
         <field name="name">financial.discount.form</field>
@@ -63,20 +462,21 @@
                     <group>
                         <group>
                             <field name="name" readonly="1"/>
-                            <field name="property_payment_term_id"/>
-                        </group>                        
+                            <field name="property_payment_term_id" string="Payment Terms"/>
+                        </group>
                         <group>
-                            <field name="pricelist_ids" widget="many2many_tags"/>
-                            <field name="letter"/>                        
-                        </group> 
+                            <field name="pricelist_ids" widget="many2many_tags" string="Applies To"/>
+                            <field name="letter" string="Letter"/>
+                        </group>
                     </group>
+
                     <field name="line_ids">
                         <tree editable="bottom">
-                            <field name="lower_limit" string="De (Días)"/>
-                            <field name="upper_limit" string="A (Días)"/>
-                            <field name="discount" string="Porcentaje de Descuento"/>
+                            <field name="lower_limit" string="From (Days)"/>
+                            <field name="upper_limit" string="To (Days)"/>
+                            <field name="discount" string="Discount (%)"/>
                         </tree>
-                    </field>   
+                    </field>
                 </sheet>
             </form>
         </field>
@@ -92,19 +492,20 @@
                     <group>
                         <group>
                             <field name="name" readonly="1"/>
-                        </group>                        
+                        </group>
                         <group>
-                            <field name="pricelist_ids" widget="many2many_tags"/>
-                            <field name="letter"/>                        
-                        </group>                        
-                    </group>                    
+                            <field name="pricelist_ids" widget="many2many_tags" string="Applies To"/>
+                            <field name="letter" string="Letter"/>
+                        </group>
+                    </group>
+
                     <field name="line_ids">
                         <tree editable="bottom">
-                            <field name="lower_limit" string="De (Llantas)"/>
-                            <field name="upper_limit" string="A (Llantas)"/>
-                            <field name="discount" string="Porcentaje de Descuento"/>
+                            <field name="lower_limit" string="From (Tires)"/>
+                            <field name="upper_limit" string="To (Tires)"/>
+                            <field name="discount" string="Discount (%)"/>
                         </tree>
-                    </field>   
+                    </field>
                 </sheet>
             </form>
         </field>
@@ -120,16 +521,16 @@
                     <group>
                         <group>
                             <field name="name" readonly="1"/>
-                            <field name="percent"/>                        
-                        </group>                        
+                            <field name="percent" string="Discount (%)"/>
+                        </group>
                         <group>
-                            <field name="pricelist_ids" widget="many2many_tags"/>
-                            <field name="letter"/>                        
-                        </group> 
+                            <field name="pricelist_ids" widget="many2many_tags" string="Applies To"/>
+                            <field name="letter" string="Letter"/>
+                        </group>
                         <group>
                             <field name="active" invisible="1"/>
-                        </group>                        
-                    </group>                 
+                        </group>
+                    </group>
                 </sheet>
             </form>
         </field>
@@ -142,56 +543,59 @@
         <field name="inherit_id" ref="base.view_partner_form"/>
         <field name="arch" type="xml">
             <xpath expr="//form/sheet/group" position="before">
-                <group string="Perfil de Cliente (Editor)" groups="discount_profiles.group_discount_admin">
+                <group string="Customer Profile (Editor)" groups="discount_profiles.group_discount_admin">
                     <group>
-                        <field name="mostrar_venta_mostrador"/>
-                        <field name="volume_profile"/>
-                        <field name="logistic_profile"/>                        
-                    </group> 
+                        <field name="mostrar_venta_mostrador" string="Enable Counter Sales"/>
+                        <field name="volume_profile" string="Volume Profile"/>
+                        <field name="logistic_profile" string="Logistic Profile"/>
+                    </group>
                     <group>
-                        <field name="financial_profile"/>
-                        <field name="credit_limit"/> 
-                        <field name="property_payment_term_id" options='{"no_open": True}'/>
+                        <field name="financial_profile" string="Financial Profile"/>
+                        <field name="credit_limit" string="Credit Limit"/>
+                        <field name="property_payment_term_id" options='{"no_open": True}' string="Payment Terms"/>
                     </group>
                 </group>
-                <group string="Perfil de Cliente (Solo lectura)" groups="!discount_profiles.group_discount_admin">
+
+                <group string="Customer Profile (Read Only)" groups="!discount_profiles.group_discount_admin">
                     <group>
-                        <field name="mostrar_venta_mostrador"/>
-                        <field name="volume_profile" readonly="1"/>
-                        <field name="logistic_profile" readonly="1"/>
-                    </group> 
+                        <field name="mostrar_venta_mostrador" string="Enable Counter Sales"/>
+                        <field name="volume_profile" readonly="1" string="Volume Profile"/>
+                        <field name="logistic_profile" readonly="1" string="Logistic Profile"/>
+                    </group>
                     <group>
-                        <field name="financial_profile" readonly="1"/>
-                        <field name="credit_limit" readonly="1"/> 
-                        <field name="property_payment_term_id" options='{"no_open": True}' readonly="1"/>
+                        <field name="financial_profile" readonly="1" string="Financial Profile"/>
+                        <field name="credit_limit" readonly="1" string="Credit Limit"/>
+                        <field name="property_payment_term_id" options='{"no_open": True}' readonly="1" string="Payment Terms"/>
                     </group>
                 </group>
             </xpath>
         </field>
     </record>
 
-    <!-- Actions for discount profiles -->
+    <!-- Actions -->
     <record id="action_discount_profiles_financial" model="ir.actions.act_window">
-        <field name="name">Financiero</field>
+        <field name="name">Financial</field>
         <field name="res_model">discount_profiles.financial.discount</field>
         <field name="view_mode">tree,form</field>
-    </record>        
+    </record>
+
     <record id="action_discount_profiles_logistic" model="ir.actions.act_window">
-        <field name="name">Logístico</field>    
+        <field name="name">Logistic</field>
         <field name="res_model">discount_profiles.logistic.discount</field>
         <field name="view_mode">tree,form</field>
-    </record>        
+    </record>
+
     <record id="action_discount_profiles_volume" model="ir.actions.act_window">
-        <field name="name">Volumen</field>    
+        <field name="name">Volume</field>
         <field name="res_model">discount_profiles.volume.discount</field>
         <field name="view_mode">tree,form</field>
-    </record>        
+    </record>
 
-    <!-- Menu structure for discount profiles -->
-    <menuitem id="menu_discount_profiles_root" name="Perfiles de Cliente" sequence="10" groups="discount_profiles.group_discount_admin"/>
-    <menuitem id="menu_discount_profiles_financial" name="Financiero" parent="menu_discount_profiles_root" action="action_discount_profiles_financial" sequence="1"/>
-    <menuitem id="menu_discount_profiles_logistic" name="Logístico" parent="menu_discount_profiles_root" action="action_discount_profiles_logistic" sequence="2"/>
-    <menuitem id="menu_discount_profiles_volume" name="Volumen" parent="menu_discount_profiles_root" action="action_discount_profiles_volume" sequence="3"/>
+    <!-- Menus -->
+    <menuitem id="menu_discount_profiles_root" name="Customer Profiles" sequence="10" groups="discount_profiles.group_discount_admin"/>
+    <menuitem id="menu_discount_profiles_financial" name="Financial" parent="menu_discount_profiles_root" action="action_discount_profiles_financial" sequence="1"/>
+    <menuitem id="menu_discount_profiles_logistic" name="Logistic" parent="menu_discount_profiles_root" action="action_discount_profiles_logistic" sequence="2"/>
+    <menuitem id="menu_discount_profiles_volume" name="Volume" parent="menu_discount_profiles_root" action="action_discount_profiles_volume" sequence="3"/>
 
   </data>
 </odoo>

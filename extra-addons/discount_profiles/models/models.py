@@ -120,7 +120,7 @@ class AccountMove(models.Model):
     @api.depends('amount_total', 'partner_id','invoice_date')
     def _compute_payment_discount_text(self):
         for record in self:
-            if record.invoice_date and record.invoice_date.year == 2025:
+            if record.invoice_date and record.invoice_date.year in [2025,2026]:
                 # Llamamos al método del mixin pasando 'record' como parámetro
                 record.payment_discount_text = self.env['payment.discount.mixin'].compute_payment_discount_text(record)
 
@@ -128,7 +128,7 @@ class AccountMove(models.Model):
     def _compute_nc_amount(self):
         for record in self:
             # Aseguramos que la fecha sea 2025
-            if record.invoice_date and record.invoice_date.year == 2025:
+            if record.invoice_date and record.invoice_date.year in [2025,2026]:
                 # Calculamos el monto de NC BS y Logístico en cascada
                 bs_nc_amount = self.env['payment.discount.mixin'].compute_nc_amount_bs(record)
                 logistic_nc_amount = self.env['payment.discount.mixin']._get_logistic_amount(record,bs_nc_amount)
@@ -178,7 +178,7 @@ class AccountMove(models.Model):
                     "x_studio_tipo": "Bonificación",
                     "generic_edi":self.generic_edi,
                     "invoice_date": fields.date.today().strftime(DEFAULT_SERVER_DATE_FORMAT),
-                    "journal_id": 24,
+                    "journal_id": 148,
                     "l10n_mx_edi_payment_method_id": 11, #Condonacion
                     "l10n_mx_edi_usage": "G02",# Devoluciones y Bonificaciones
                     "currency_id": self.env.company.currency_id.id,
@@ -210,11 +210,13 @@ class SaleOrder2(models.Model):
     bs_nc_text = fields.Html(compute='_compute_nc_text', string='Bridgestone')
     logistic_nc_text = fields.Html(compute='_compute_nc_text', string='Logístico')
     promo_onyx = fields.Boolean(string='Promoción Onyx 500 llantas')
+    
+    
     @api.depends('amount_total', 'partner_id')
     def _compute_nc_amount(self):
         for record in self:
             # Aseguramos que la fecha sea 2025
-            if record.date_order and record.date_order.year == 2025:
+            if record.date_order and record.date_order.year in [2025,2026]:
                 # Calculamos el monto de NC BS y Logístico en cascada
                 bs_nc_amount = self.env['payment.discount.mixin'].compute_nc_amount_bs(record)
                 logistic_nc_amount = self.env['payment.discount.mixin']._get_logistic_amount(record,bs_nc_amount)
@@ -233,7 +235,7 @@ class SaleOrder2(models.Model):
     def _compute_nc_text(self):
         for record in self:
             # Generamos el HTML con la tabla que contiene ambos montos
-            if record.bs_nc_amount or record.logistic_nc_amount and record.date_order.year == 2025:
+            if record.bs_nc_amount or record.logistic_nc_amount and record.date_order.year in [2025,2026]:
                 record.bs_nc_text = False
                 record.logistic_nc_text = self.env['payment.discount.mixin']._generate_html_table(record.bs_nc_amount*1.16, record.logistic_nc_amount*1.16)
             else:
@@ -243,7 +245,7 @@ class SaleOrder2(models.Model):
     @api.depends('amount_total', 'partner_id')
     def _compute_payment_discount_text(self):
         for record in self:
-            if record.date_order and record.date_order.year == 2025:
+            if record.date_order and record.date_order.year in [2025,2026]:
                 # Llamamos al método del mixin para obtener el texto de pago y descuento
                 record.payment_discount_text = self.env['payment.discount.mixin'].compute_payment_discount_text(record)
             else:

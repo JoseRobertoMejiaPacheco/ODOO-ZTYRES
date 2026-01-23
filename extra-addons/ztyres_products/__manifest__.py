@@ -44,13 +44,14 @@
         'views/ztyres_products_tire_measure.xml',
         'views/ztyres_products_type.xml',
         'views/ztyres_products_floor_depth.xml',
-        'views/product_template_views.xml',
         'views/ztyres_products_profile.xml',
         'views/ztyres_products_rim.xml',
         'views/ztyres_products_separator.xml',
         'views/ztyres_products_width.xml',        
         'views/ztyres_products_usage.xml',
         'views/ztyres_products_hq.xml',
+        'views/ztyres_products_treadwear.xml',
+        'views/product_template_views.xml',        
         'views/ztyres_products_menus.xml',
         
         

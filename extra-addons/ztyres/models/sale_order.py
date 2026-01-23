@@ -95,23 +95,132 @@ class SaleOrder(models.Model):
     def _onchange_check_customer_invoices(self):
         if float(self.partner_id.total_overdue_3_days) >= 1:
             raise UserError(_('Este cliente tiene facturas vencidas. $ %s Por favor, verifica su situación antes de proceder con el pedido de venta.'%(str(self.partner_id.total_overdue))))
-
-
+    
     def cancel_old_quotation_picking(self):
-        today = fields.Date.today()
-        five_days_ago = today - timedelta(days=5)
-        # Encuentra los pedidos que están en estado 'cotización' y tienen más de 5 días desde su creación
-        old_quotations = self.search([
-            ('state', 'in', ['draft']),('keep', '!=',True),
-            ('create_date', '<=', five_days_ago)
+        now = fields.Datetime.now()
+        seven_days_ago = now - timedelta(days=7)
+
+        orders = self.search([
+            ('keep', '!=', True),
+            ('create_date', '<=', seven_days_ago),
         ])
-        for order in old_quotations:
-            # Cancela los documentos relacionados de stock.picking
-            try:
-                order.picking_ids.action_cancel()
-                order.with_context(tracking_disable=True)._action_cancel()
-            except:
-                print('Error')
+
+        cancelled = []
+        unreserved = []
+
+        for order in orders:
+
+            product_lines = order.order_line.filtered(
+                lambda l: l.product_id.type == 'product'
+            )
+            if not product_lines:
+                continue
+
+            ordered = sum(product_lines.mapped('product_uom_qty'))
+            delivered = sum(product_lines.mapped('qty_delivered'))
+            invoiced = sum(product_lines.mapped('qty_invoiced'))
+
+            nothing_delivered = delivered == 0
+            nothing_invoiced = invoiced == 0
+            partially_delivered = 0 < delivered < ordered
+            partially_invoiced = 0 < invoiced < ordered
+            fully_delivered = delivered >= ordered
+            fully_invoiced = invoiced >= ordered
+
+            # 🟢 No tocar
+            if fully_delivered or fully_invoiced:
+                continue
+
+            # 🔴 Cancelar todo
+            if nothing_delivered and nothing_invoiced:
+                pickings = order.picking_ids.filtered(
+                    lambda p: p.state not in ('done', 'cancel')
+                )
+
+                details = []
+                for p in pickings:
+                    for m in p.move_ids:
+                        details.append({
+                            'product': m.product_id.display_name,
+                            'qty': m.product_uom_qty,
+                            'location': m.location_id.display_name,
+                        })
+
+                if pickings:
+                    pickings.action_cancel()
+
+                order.action_cancel()
+
+                cancelled.append({
+                    'order': order.name,
+                    'partner': order.partner_id.display_name,
+                    'details': details,
+                })
+                continue
+
+            # 🟡 Liberar reserva
+            if partially_delivered or partially_invoiced:
+                moves = order.picking_ids.move_ids.filtered(
+                    lambda m: m.state in ('assigned', 'confirmed')
+                    and m.reserved_availability > 0
+                )
+
+                details = []
+                for m in moves:
+                    details.append({
+                        'product': m.product_id.display_name,
+                        'qty': m.reserved_availability,
+                        'location': m.location_id.display_name,
+                    })
+
+                if moves:
+                    moves._do_unreserve()
+                    moves.write({'procure_method': 'make_to_order'})
+
+                    unreserved.append({
+                        'order': order.name,
+                        'partner': order.partner_id.display_name,
+                        'details': details,
+                    })
+
+        # 📧 Enviar correo si hubo cambios
+        if cancelled or unreserved:
+            self._send_cancel_unreserve_email(cancelled, unreserved)
+
+    def _send_cancel_unreserve_email(self, cancelled, unreserved):
+        body = "<h3>Resumen de pedidos afectados</h3>"
+
+        if cancelled:
+            body += "<h4>🔴 Pedidos cancelados</h4><ul>"
+            for c in cancelled:
+                body += f"<li><b>{c['order']}</b> — {c['partner']}<ul>"
+                for d in c['details']:
+                    body += (
+                        f"<li>{d['product']} | Qty: {d['qty']} | "
+                        f"Ubicación: {d['location']}</li>"
+                    )
+                body += "</ul></li>"
+            body += "</ul>"
+
+        if unreserved:
+            body += "<h4>🟡 Reservas liberadas</h4><ul>"
+            for u in unreserved:
+                body += f"<li><b>{u['order']}</b> — {u['partner']}<ul>"
+                for d in u['details']:
+                    body += (
+                        f"<li>{d['product']} | Qty: {d['qty']} | "
+                        f"Ubicación: {d['location']}</li>"
+                    )
+                body += "</ul></li>"
+            body += "</ul>"
+
+        mail_values = {
+            'subject': 'Odoo — Cancelación y liberación de reservas (Cotizaciones vencidas)',
+            'body_html': body,
+            'email_to': 'isscjrmpacheco@gmail.com, rene.banuelos@ztyres.com'#, @tuempresa.com',
+        }
+
+        self.env['mail.mail'].create(mail_values).send()
 
     def sale_approve_state_draft(self):
         for record in self:

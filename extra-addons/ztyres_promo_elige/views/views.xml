@@ -11,6 +11,7 @@
               <field name="promo_sel" 
               readonly="1"
               widget="many2many_tags"
+              context="{'active_test': False}"
               />
           </xpath>
       </field>
@@ -33,49 +34,93 @@
               </field>
           </record>
   
-          <!-- Vista formulario -->
-            <record id="view_ztyres_promo_elige_form" model="ir.ui.view">
-                <field name="name">ztyres.promo.elige.form</field>
-                <field name="model">ztyres_promo_elige.ztyres_promo_elige</field>
-                <field name="arch" type="xml">
-                    <form>
-                        <header>
-                            <field name="status" widget="statusbar" 
-                                statusbar_visible="draft,approve_p,done,cancel" 
-                                statusbar_colors='{"approve_p":"blue","done":"green","cancel":"red"}'/>
-                        </header>
-                        <sheet>
+
+        <!-- VISTA FORM PRINCIPAL -->
+        <record id="view_ztyres_promo_elige_form" model="ir.ui.view">
+            <field name="name">ztyres.promo.elige.form</field>
+            <field name="model">ztyres_promo_elige.ztyres_promo_elige</field>
+            <field name="priority">1</field> <!-- ESTO ASEGURA QUE ESTA VISTA SE USE -->
+            <field name="arch" type="xml">
+
+                <form string="Promoción Eligé">
+<header>
+
+    <!-- Statusbar -->
+    <field name="status" widget="statusbar"
+           statusbar_visible="draft,approve_p,done,cancel"
+           statusbar_colors='{"approve_p":"blue","done":"green","cancel":"red"}'/>
+
+    <!-- PROBAR (draft) -->
+    <button name="action_approve_p"
+            type="object"
+            string="Aprobar"
+            class="btn-primary"
+            attrs="{'invisible': [('status', '!=', 'draft')]}"/>
+
+    <!-- CONFIRMAR (approve_p) -->
+    <button name="action_done"
+            type="object"
+            string="Confirmar"
+            class="btn-success"
+            attrs="{'invisible': [('status', '!=', 'approve_p')]}"/>
+
+    <!-- CANCELAR (visible en draft, approve_p, done) -->
+    <button name="action_cancel"
+            type="object"
+            string="Cancelar"
+            class="btn-danger"
+            attrs="{'invisible': [('status', '=', 'cancel')]}"/>
+
+    <!-- VOLVER A BORRADOR (cancel) -->
+    <button name="action_reset_to_draft"
+            type="object"
+            string="Volver a Borrador"
+            class="btn-secondary"
+            attrs="{'invisible': [('status', '!=', 'cancel')]}"/>
+
+</header>
+
+                    <sheet>
+
+                        <group>
+                            <field name="active" invisible="1"/>
+                            <field name="nombre"/>
+                            <field name="start_date"/>
+                            <field name="end_date"/>
+                            <field name="min_qty"/>
+                            <field name="brand_ids" widget="many2many_tags"/>
+                        </group>
+
+                        <!-- PROMOCIÓN 1 -->
+                        <group string="Promoción 1">
                             <group>
-                                <field name="active" 
-                                invisible="1"
-                                />
-                                <field name="nombre"/>
-                                <field name="start_date"/>
-                                <field name="end_date"/>
-                                <field name="min_qty"/>
-                                <field name="brand_ids" widget="many2many_tags"/>
+                                <field name="property_payment_term_id_1"/>
+                                <field name="percent_1"/>
                             </group>
-                            <group string="Promoción 1">
-                                <group>
-                                    <field name="property_payment_term_id_1"/>
-                                    <field name="percent_1"/>
-                                </group>
+                        </group>
+
+                        <!-- PROMOCIÓN 2 -->
+                        <group string="Promoción 2">
+                            <group>
+                                <field name="property_payment_term_id_2"/>
+                                <field name="percent_2"/>
                             </group>
-                            <group string="Promoción 2">
-                                <group>
-                                    <field name="property_payment_term_id_2"/>
-                                    <field name="percent_2"/>
-                                </group>
-                            </group>
-                            <button name="action_view_applied_invoices"
-        type="object"
-        string="Ver Facturas  Con Promoción"
-        class="btn-primary"/>
-                            <field name="invoice_ids"/>
-                        </sheet>
-                    </form>
-                </field>
-            </record>
+                        </group>
+
+                        <button name="action_view_applied_invoices"
+                                type="object"
+                                string="Ver Facturas Con Promoción"
+                                class="btn-primary"/>
+
+                        <field name="invoice_ids"/>
+
+                    </sheet>
+
+                </form>
+
+            </field>
+        </record>
+
   
           <!-- Vista búsqueda -->
           <record id="view_ztyres_promo_elige_search" model="ir.ui.view">

@@ -1,9 +1,11 @@
-# -*- coding: utf-8 -*-
-from odoo import models, fields,api
+from odoo import _, api, fields, models
+import re
 import datetime
-class Product(models.Model):
+class ProductProduct(models.Model):
     _inherit = 'product.product'
-    
+    """
+    Propiedad de llantas
+    """
     dot_range = fields.Char(compute='_compute_dot_range', string='DOT')
     
     def obtener_anos(self,numero):
@@ -27,12 +29,11 @@ class Product(models.Model):
                 record.dot_range = ''
             elif record.qty_available >0:
                 lots = []
-                if record.estado_conteo_dot == 'done':
-                    x = self.env['stock.quant'].search([('product_id', 'in', record.ids), 
-                                            ('quantity', '>', 0), 
-                                            ('location_id.usage', '=', 'internal')])
-                    print(x)
-                    lots = self.env['stock.quant'].search([('product_id', 'in', record.ids), 
+                x = self.env['stock.quant'].search([('product_id', 'in', record.ids), 
+                                        ('quantity', '>', 0), 
+                                        ('location_id.usage', '=', 'internal')])
+                print(x)
+                lots = self.env['stock.quant'].search([('product_id', 'in', record.ids), 
                                             ('quantity', '>', 0), 
                                             ('location_id.usage', '=', 'internal')]).mapped('lot_id.name')  
                 
@@ -78,4 +79,3 @@ class Product(models.Model):
                         record.dot_range = 'N/A'
                 else:
                     record.dot_range = res_1
-

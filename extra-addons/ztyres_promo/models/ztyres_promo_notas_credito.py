@@ -6,6 +6,7 @@ import pandas as pd
 import zipfile
 import base64
 import io
+import json
 import logging
 from odoo import models, api
 from odoo.exceptions import UserError
@@ -36,7 +37,10 @@ class ZtyresVolumen(models.Model):
         string='Tipo de Política',
         selection=[('quantity', 'Cantidad'), ('amount', 'Monto')]
     )
-    
+    apply_volume = fields.Selection(
+        string='Aplica por cantidad global y descuento especifico?',
+        selection=[('si', 'Si'), ('no', 'No')]
+    )    
     brand_ids = fields.Many2many('ztyres_products.brand','product_brand_rel','product_id','brand_id',string='Marcas')
     tier_ids = fields.Many2many('ztyres_products.tier','product_tier_rel','product_id','tier_id',string='Tiers')
     measure_ids = fields.Many2many('ztyres_products.tire_measure','product_measure_rel','product_id','measure_id',string='Medidas')
@@ -60,7 +64,32 @@ class ZtyresVolumen(models.Model):
         string="Count Detalle",
         compute="_compute_count_detailed_line_ids"
     )
+    excluded_invoice_ids = fields.Many2many(
+        'account.move',
+        string='Facturas Excluidas'
+    )
+    excluded_invoice_ids_domain = fields.Char(
+        compute="_compute_excluded_invoice_ids_domain",
+        readonly=True,
+        store=False
+    )
+    
+    @api.depends('start_date', 'end_date')
+    def _compute_excluded_invoice_ids_domain(self):
+        for record in self:
+            domain = [
+                ('move_type', 'in', ['out_invoice', 'out_refund']),
+                ('state', '=', 'posted')
+            ]
 
+            if record.start_date:
+                domain.append(('invoice_date', '>=', record.start_date))
+            if record.end_date:
+                domain.append(('invoice_date', '<=', record.end_date))
+
+            # 🔴 CLAVE: siempre un string válido
+            record.excluded_invoice_ids_domain = str(domain or [])
+    
     @api.depends('line_ids')
     def _compute_count_line_ids(self):
         for record in self:
@@ -125,7 +154,30 @@ class ZtyresVolumen(models.Model):
                 result.append((group_id, quantity_sum))
         
         return result
-    
+
+    def get_grouped_data_volume(self):
+        lines_grouped = self.env['ztyres_promo.lines'].read_group(
+            domain=[('id','in',self.detailed_line_ids.ids)],
+            fields=['group_id', 'quantity:sum'],
+            groupby=['group_id'],
+            orderby='group_id'
+        )
+        
+        result = []
+        for data in lines_grouped:
+            # 'group_id' es una tupla (id, nombre), por eso data['group_id'][0] es el ID del grupo
+            group_id_data = data.get('group_id')
+            if isinstance(group_id_data, (list, tuple)) and len(group_id_data) > 0:
+                group_id = group_id_data[0]  # Accede de forma segura al primer elemento
+            else:
+                group_id = False            
+            quantity_sum = data['quantity']
+            if group_id:
+                # Agrega una tupla (group_id, quantity_sum) a la lista
+                result.append((group_id, quantity_sum))
+        
+        return result
+
     def action_calcular_nc(self):
         detailed_data = []
         self.line_ids.search([('definitive_nc_id', 'in', self.ids)]).unlink()
@@ -139,7 +191,12 @@ class ZtyresVolumen(models.Model):
         res_2 = self._set_nc_lines()
         self.line_ids = res_2
         
-        if self.apply_on_groups == 'si':
+        if self.apply_volume == 'si' and self.apply_on_groups == 'si':
+            for group_id,quantity_sum in self.get_grouped_data_volume():
+                group_discount = self.line_ids._get_discount_percent(self.policy_line_qty_ids,quantity_sum)
+                self.line_ids.filtered(lambda line: line.group_id.id == group_id).write({'reward_percent': group_discount})            
+        
+        elif self.apply_on_groups == 'si':
             for group_id,quantity_sum in self.get_grouped_data():
                 group_discount = self.line_ids._get_discount_percent(self.policy_line_qty_ids,quantity_sum)
                 self.line_ids.filtered(lambda line: line.group_id.id == group_id).write({'reward_percent': group_discount})
@@ -147,8 +204,13 @@ class ZtyresVolumen(models.Model):
         self._set_nc_amount()
 
     def _get_partner_ids(self):
-        return self.env['account.move.line'].search([('move_id.invoice_date','>=',self.start_date),
-            ('move_id.invoice_date','<=',self.end_date),]).mapped('partner_id')
+        lines = self.env['account.move.line'].search([
+            ('move_id.invoice_date', '>=', self.start_date),
+            ('move_id.invoice_date', '<=', self.end_date),
+            ('move_id.move_type', 'in', ['out_invoice', 'out_refund']),
+            ('partner_id', '!=', False),
+        ])
+        return lines.mapped('partner_id')
     
     def _get_invalid_domain(self,records,partner_id,start_date,end_date):
         # --- Condiciones obligatorias (AND) ---
@@ -229,6 +291,10 @@ class ZtyresVolumen(models.Model):
                 vals.update({
                     'state': 'invalid'
                 })
+            if line.move_id.id in self.excluded_invoice_ids.ids:
+                vals.update({
+                    'state': 'invalid'
+                })                
             data.append((0,0,vals))
         
         # Linhas "invalid"
@@ -265,18 +331,16 @@ class ZtyresVolumen(models.Model):
             )
             edi_vat_generic = self.detailed_line_ids.filtered(
                 lambda l: l.partner_id.id == partner_id.id and l.state == 'valid' and l.rfc == 'XAXX010101000'
-            )
-            total_qty =  sum(edi_vat.mapped('quantity')) + sum(edi_vat_generic.mapped('quantity'))
+            )            
             total_amount =  sum(edi_vat.mapped('price_subtotal')) + sum(edi_vat_generic.mapped('price_subtotal'))
-            
-    # promo_type = fields.Selection(
-    #     string='Tipo de Política',
-    #     selection=[('quantity', 'Cantidad'), ('amount', 'Monto'),('product', 'Especie')]
-    # )
-
-    # policy_line_qty_ids = fields.One2many(comodel_name='ztyres_promo.current_policy_qty', inverse_name='notas_credito_id')
-    # policy_line_amount_ids = fields.One2many(comodel_name='ztyres_promo.current_policy_amount', inverse_name='notas_credito_id')
-    # product_reward_id = fields.Many2one(comodel_name='ztyres_promo.product_reward', string='Premio en Especie')
+            if self.apply_volume == 'no':
+                total_qty =  sum(edi_vat.mapped('quantity')) + sum(edi_vat_generic.mapped('quantity'))
+            if self.apply_volume == 'si':
+                total_qty =  sum(              
+                self.detailed_line_ids.filtered(
+                lambda l: l.partner_id.id == partner_id.id
+            ).mapped('quantity'))
+            print(total_qty)
             discount = 0
             if self.promo_type == 'quantity':
                 discount = self.line_ids._get_discount_percent(self.policy_line_qty_ids, total_qty)
@@ -359,7 +423,7 @@ class ZtyresVolumen(models.Model):
                 "x_studio_tipo": "Bonificación",
                 "generic_edi": generic,
                 "invoice_date": fields.Date.today().strftime(DEFAULT_SERVER_DATE_FORMAT),
-                "journal_id": 24,
+                "journal_id": 148,
                 "l10n_mx_edi_payment_method_id": 11,  # Condonacion
                 "l10n_mx_edi_usage": "G02",  # Devoluciones y Bonificaciones
                 "currency_id": self.env.company.currency_id.id,

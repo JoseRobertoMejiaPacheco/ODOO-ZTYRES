@@ -129,18 +129,33 @@ class SaleOrderLine(models.Model):
             # Asignamos los lotes encontrados al campo lots_ids
             record.lots_ids = lots.ids
 
-class StockPicking(models.Model):
-    _inherit = 'stock.picking'
-    
-    forma_envio = fields.Selection(
-        selection=[
-            ('Se envia', 'Se envia'),
-            ('Paqueteria del cliente', 'Paqueteria del cliente'),
-            ('Paqueteria interna', 'Paqueteria interna'),
-            ('Cliente Recoge', 'Cliente Recoge'),
-            ('Vendedor Lleva', 'Vendedor Lleva')
-        ],
-        store=True,  # Necesario para poder hacer 'group_by' en la vista
-        related='sale_id.forma_envio',  # Relación con el campo 'forma_envio' de la orden de venta
-        string='Forma de Envío'
-    )
+    class StockPicking(models.Model):
+        _inherit = 'stock.picking'
+        
+        forma_envio = fields.Selection(
+            selection=[
+                ('Se envia', 'Se envia'),
+                ('Paqueteria del cliente', 'Paqueteria del cliente'),
+                ('Paqueteria interna', 'Paqueteria interna'),
+                ('Cliente Recoge', 'Cliente Recoge'),
+                ('Vendedor Lleva', 'Vendedor Lleva')
+            ],
+            store=True,
+            compute='_compute_forma_envio',
+            inverse='_inverse_forma_envio',
+            readonly=False,
+            string='Forma de Envío'
+        )
+        
+        @api.depends('sale_id.forma_envio')
+        def _compute_forma_envio(self):
+            for record in self:
+                if record.sale_id:
+                    record.forma_envio = record.sale_id.forma_envio
+                else:
+                    record.forma_envio = False
+        
+        def _inverse_forma_envio(self):
+            for record in self:
+                if record.sale_id:
+                    record.sale_id.forma_envio = record.forma_envio

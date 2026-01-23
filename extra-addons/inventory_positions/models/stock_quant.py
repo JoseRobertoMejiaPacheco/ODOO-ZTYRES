@@ -99,31 +99,27 @@ class StockQuant(models.Model):
     def _get_removal_strategy_order(self, removal_strategy):
         #README Cambiado tempralmente
         if removal_strategy == 'fifo':
-            return 'distance ASC, dot_year ASC'
+            return 'dot_year ASC,distance ASC'
         elif removal_strategy == 'lifo':
             return 'in_date DESC, id DESC'
         elif removal_strategy == 'closest':
-            return 'distance DESC'
+            return 'dot_year ASC,distance ASC'
+        else:
+            return 'dot_year ASC,distance ASC'
         raise UserError(_('Removal strategy %s not implemented.') % (removal_strategy,))
 
     def _gather(self, product_id, location_id, lot_id=None, package_id=None, owner_id=None, strict=False):
         removal_strategy = self._get_removal_strategy(product_id, location_id)
         removal_strategy_order = self._get_removal_strategy_order(removal_strategy)
-        ########################################################################################################
 
+        ########################################################################################################
         # Obtener 'lots_ids' del contexto de manera segura
         lots_ids = self._context.get('lots_ids', [])
-
-        # Si 'lots_ids' no está vacío, procesamos los lotes
-        if lots_ids:
-            # Buscamos los lotes con los ids proporcionados
-            lots = self.env['stock.lot'].browse(lots_ids)
-        else:
-            # Si 'lots_ids' está vacío o no está presente, manejar el caso
-            lots = lot_id
-        
+        lots = self.env['stock.lot'].browse(lots_ids) if lots_ids else lot_id
         ########################################################################################################
+
         domain = self._get_gather_domain(product_id, location_id, lots, package_id, owner_id, strict)
+
         quants_cache = self.env.context.get('quants_cache')
         if quants_cache is not None and strict:
             res = self.env['stock.quant']
@@ -137,7 +133,13 @@ class StockQuant(models.Model):
                 package_id and package_id.id or False,
                 owner_id and owner_id.id or False]
         else:
-            res = self.search(domain, order=removal_strategy_order).sorted(lambda q: not q.lot_id)
-            sorted_ids = sorted(res.ids, key=lambda id: self.env['stock.quant'].browse(id).location_id.distance)
-            res = self.env['stock.quant'].browse(sorted_ids)
+            # 🚀 El ordenamiento ya respeta FIFO DOT + distancia
+            # Le agrego "id ASC" para estabilidad
+            final_order = f"{removal_strategy_order}, id ASC"
+
+            res = self.search(domain, order=final_order)
+
+            # Opcional: mover quants sin lote al final
+            res = res.sorted(lambda q: not q.lot_id)
+
         return res

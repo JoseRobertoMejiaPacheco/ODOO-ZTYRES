@@ -345,6 +345,7 @@ class OdooVsSatReconcilieCDP(models.Model):
             df_diferencia_cambiaria.to_excel(writer, sheet_name='DIFERENCIA CAMBIARIA', index=False)
             df_incorrecto.to_excel(writer, sheet_name='INCORRECTO', index=False)
             df_one_facture.to_excel(writer, sheet_name='CFDIS', index=False)
+            df_bancos.to_excel(writer, sheet_name='BANCOS', index=False)
         
         fp.seek(0)
         attachment_data = base64.b64encode(fp.read()).decode('utf-8')

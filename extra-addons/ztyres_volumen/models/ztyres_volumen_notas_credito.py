@@ -86,15 +86,20 @@ class ZtyresVolumen(models.Model):
         for record in self:
             domain = [('definitive_nc_id', 'in', self.ids)]
             record.count_line_ids = len(self.env['ztyres_volumen.notas_credito_lines'].search(domain))
-
+    
     @api.depends('detailed_line_ids')
     def _compute_count_detailed_line_ids(self):
         for record in self:
             record.count_detailed_line_ids = len(record.detailed_line_ids)
     
     def _get_partner_ids(self):
-        return self.env['account.move.line'].search([('move_id.invoice_date','>=',self.start_date),
-            ('move_id.invoice_date','<=',self.end_date),]).mapped('partner_id')
+        lines = self.env['account.move.line'].search([
+            ('move_id.invoice_date', '>=', self.start_date),
+            ('move_id.invoice_date', '<=', self.end_date),
+            ('move_id.move_type', 'in', ['out_invoice', 'out_refund']),
+            ('partner_id', '!=', False),
+        ])
+        return lines.mapped('partner_id')
     
     def apply_group_policy(self):
         pass
@@ -147,7 +152,7 @@ class ZtyresVolumen(models.Model):
                 "x_studio_tipo": "Bonificación",
                 "generic_edi": generic,
                 "invoice_date": fields.Date.today().strftime(DEFAULT_SERVER_DATE_FORMAT),
-                "journal_id": 24,
+                "journal_id": 148,
                 "l10n_mx_edi_payment_method_id": 11,  # Condonacion
                 "l10n_mx_edi_usage": "G02",  # Devoluciones y Bonificaciones
                 "currency_id": self.env.company.currency_id.id,

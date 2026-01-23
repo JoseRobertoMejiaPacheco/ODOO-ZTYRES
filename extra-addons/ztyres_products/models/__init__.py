@@ -23,3 +23,5 @@ from . import ztyres_products_width
 from . import ztyres_products_rim
 from . import ztyres_products_usage
 from. import ztyres_products_hq
+from. import ztyres_products_treadwear
+from. import product_product

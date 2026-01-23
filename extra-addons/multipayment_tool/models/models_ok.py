@@ -288,13 +288,14 @@ class payments(models.Model):
                 else:
                     price_unit = record.amount_to_apply
                 print(round(price_unit,2))
+                # if invoice.move_id.journal_id.id in []
                 credit_note_vals = {                
                     'l10n_mx_edi_origin': f'01|{invoice.move_id.l10n_mx_edi_cfdi_uuid or ""}',
                     'move_type': 'out_refund',
                     "x_studio_tipo": "Bonificación",
                     "generic_edi": generic,
                     "invoice_date": fields.Date.today().strftime(DEFAULT_SERVER_DATE_FORMAT),
-                    "journal_id": 24,
+                    "journal_id": invoice.move_id.journal_id.id,
                     "l10n_mx_edi_payment_method_id": 11,  # Condonacion
                     "l10n_mx_edi_usage": "G02",  # Devoluciones y Bonificaciones
                     "currency_id": invoice.move_id.currency_id.id,

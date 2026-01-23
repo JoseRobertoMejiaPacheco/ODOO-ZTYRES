@@ -85,16 +85,16 @@ class AccountMove(models.Model):
     @api.depends('move_type', 'invoice_date_due', 'invoice_date', 'invoice_payment_term_id', 'invoice_payment_term_id.line_ids')
     def _compute_l10n_mx_edi_payment_policy(self):
         for move in self:
-            if move.move_type == 'out_invoice' and not move.journal_id.id in [144,145,147]:
+            if move.move_type == 'out_invoice' and not move.journal_id.id in [144,145,147,161,149]:
                 if sum(move.invoice_payment_term_id.line_ids.mapped('days')) > 0:
                     move.l10n_mx_edi_payment_policy = 'PPD'
                     move.l10n_mx_edi_payment_method_id = 22
                 else:
                     move.l10n_mx_edi_payment_policy = 'PPD'
                     move.l10n_mx_edi_payment_method_id = 2
-            if move.move_type == 'out_invoice' and move.journal_id.id in [144,145,147]:
+            if move.move_type == 'out_invoice' and move.journal_id.id in [144,145,147,161,149]:
                 move.l10n_mx_edi_payment_policy = 'PUE'
-                if move.journal_id.id in [145,144]:
+                if move.journal_id.id in [145,144,161,149]:
                     move.l10n_mx_edi_payment_method_id = 3
                 if move.journal_id.id in [147]:
                     move.l10n_mx_edi_payment_method_id = 1                

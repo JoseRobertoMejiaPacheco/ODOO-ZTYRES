@@ -14,12 +14,12 @@ class Sale(models.TransientModel):
             local = pytz.timezone(user_tz)
             display_date_result = datetime.strftime(pytz.utc.localize(datetime.now()).astimezone(local),"%m/%d/%Y, %H:%M:%S") 
             sale.with_context(tracking_disable=True)._action_cancel()
+            sale.with_context(tracking_disable=True).action_cancel()
             body = """<div class="alert alert-danger" role="alert">
   Cancelado en %s.<br><br/> Motivo de cancelación %s
 </div>"""%(display_date_result,self.cancel_reason.name)
             sale.message_post(body=body)
             sale.sale_reason_cancel_id=[(6,0,self.cancel_reason.ids)]
             sale._action_cancel_delete_picking_ids()
-            #sale.approve_state=False
 
 

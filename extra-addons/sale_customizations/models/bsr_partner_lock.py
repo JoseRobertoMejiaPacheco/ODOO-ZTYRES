@@ -9,7 +9,6 @@ locked_names = [
                 'DANIEL VITAL OCHOA',
                 'DIAZ RIZO JUAN CARLOS',
                 'DIMAS FERNANDEZ ARIADNA',
-                'DISTRIBUIDORA TBM',
                 'ECONOLLANTAS SERVICIOS Y ACCESORIOS SA DE CV',
                 'EDUARDO GARCIA BLANCO',
                 'EMMANUEL CARBAJAL ZEPEDA',

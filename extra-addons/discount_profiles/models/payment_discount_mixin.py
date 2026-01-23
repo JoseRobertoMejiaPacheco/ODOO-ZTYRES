@@ -1,5 +1,5 @@
 from datetime import timedelta
-from odoo import models, fields, api
+from odoo import models, fields, api, _
 import calendar
 from datetime import datetime
 
@@ -42,7 +42,12 @@ class PaymentDiscountMixin(models.AbstractModel):
         """
         Calcula el texto HTML para mostrar el descuento o monto a pagar en la factura/orden.
         """
-        headers = ('Descuento', 'Dias de Pago', 'Fecha máxima', 'Cantidad a pagar')
+        headers = (
+            _("Discount(%)"),
+            _("Payment Days"),
+            _("Maximum Date"),
+            _("Amount to Pay")
+        )
         meses_espanol = self._get_months_in_spanish()
         rows = self.get_row_values_descuento(record)
         html = self._generate_html_financial_table(headers, rows, meses_espanol)
@@ -50,12 +55,21 @@ class PaymentDiscountMixin(models.AbstractModel):
 
     def _get_months_in_spanish(self):
         """
-        Devuelve un diccionario de los meses del año en inglés a español.
+        Devuelve un diccionario de meses traducible.
         """
         return {
-            'January': 'enero', 'February': 'febrero', 'March': 'marzo', 'April': 'abril',
-            'May': 'mayo', 'June': 'junio', 'July': 'julio', 'August': 'agosto',
-            'September': 'septiembre', 'October': 'octubre', 'November': 'noviembre', 'December': 'diciembre'
+            'January': _('January'), 
+            'February': _('February'), 
+            'March': _('March'),
+            'April': _('April'), 
+            'May': _('May'), 
+            'June': _('June'),
+            'July': _('July'), 
+            'August': _('August'), 
+            'September': _('September'),
+            'October': _('October'), 
+            'November': _('November'), 
+            'December': _('December')
         }
     
     def _generate_html_financial_table(self, headers, rows, meses_espanol):
@@ -72,18 +86,19 @@ class PaymentDiscountMixin(models.AbstractModel):
         """
         Genera el encabezado de la tabla HTML.
         """
-        return ''.join([f'<th>{header}</th>' for header in headers])
+        return '<thead><tr>' + ''.join([f'<th>{header}</th>' for header in headers]) + '</tr></thead>'
     
     def _generate_table_rows(self, rows, headers, meses_espanol):
         """
         Genera las filas de la tabla HTML con el formato adecuado.
         """
-        html = ''
+        html = '<tbody>'
         for row in rows:
             html += '<tr>'
             for idx, cell in enumerate(row):
                 html += f'<td>{self._format_cell(cell, idx, headers, meses_espanol)}</td>'
             html += '</tr>'
+        html += '</tbody>'
         return html
 
     def _format_cell(self, cell, cell_idx, headers, meses_espanol):
@@ -91,17 +106,18 @@ class PaymentDiscountMixin(models.AbstractModel):
         Formatea una celda según su tipo de dato.
         """
         if isinstance(cell, datetime):
-            # Formatear fechas como "12 de abril de 2024"
-            mes = meses_espanol[calendar.month_name[cell.month]]
-            return f'{cell.day} de {mes} de {cell.year}'
+            # Formatear fechas como "12 de abril de 2026"
+            mes = meses_espanol.get(calendar.month_name[cell.month], calendar.month_name[cell.month])
+            # Traducir "de" si es necesario
+            return f'{cell.day} {_("de")} {mes} {_("del")} {cell.year}'
         elif isinstance(cell, float):
             # Formatear como monto en formato moneda
             return f'${cell:,.2f}'
         elif isinstance(cell, int):
             # Formatear según el encabezado de la columna
-            if headers[cell_idx] == 'Dias de Pago':
-                return f'{cell} Días'
-            return f'{cell}%'
+            if headers[cell_idx] in [_('Payment Days'), 'Payment Days']:
+                return f'{cell} {_("Days")}'
+            return f'{cell}'
         return cell
     # endregion
     
@@ -125,7 +141,7 @@ class PaymentDiscountMixin(models.AbstractModel):
             
             filtered_lines = record.invoice_line_ids.filtered(
             lambda line: (
-                line.sale_line_ids.list_origin in ['MAYOREO','PROMOCIÓN','PROMOCIÓN DOT', 'LISTA PROMO DOT']
+                line.sale_line_ids.list_origin in ['MAYOREO','PROMOCIÓN','PROMOCIÓN DOT', 'LISTA PROMO DOT','OUTLET']
                 and line.product_id.id not in [50959]
             )
         )
@@ -133,7 +149,7 @@ class PaymentDiscountMixin(models.AbstractModel):
         else:
             filtered_lines = record.order_line.filtered(
             lambda line: (
-                line.list_origin in ['MAYOREO','PROMOCIÓN','PROMOCIÓN DOT', 'LISTA PROMO DOT']
+                line.list_origin in ['MAYOREO','PROMOCIÓN','PROMOCIÓN DOT', 'LISTA PROMO DOT','OUTLET']
                 and line.product_id.id not in [50959]
             )
         )
@@ -170,45 +186,46 @@ class PaymentDiscountMixin(models.AbstractModel):
         return sum(subtotal_lines) + iva_amount
     
     def _generate_html_table(self, bs_nc_amount, logistic_nc_amount):
-        """Genera una tabla HTML para mostrar los montos calculados con formato de moneda solo si son mayores a 0."""
-        
-        # Formatear los montos con formato de moneda si son floats
+        # Formateo final traducible
         if isinstance(bs_nc_amount, float):
-            bs_nc_amount = f'${bs_nc_amount:,.2f}'  # Formateamos como moneda, 2 decimales
+            bs_nc_amount = _("$%(amount).2f") % {'amount': bs_nc_amount}
+
         if isinstance(logistic_nc_amount, float):
-            logistic_nc_amount = f'${logistic_nc_amount:,.2f}'  # Formateamos como moneda, 2 decimales
-        
-        # Iniciar la tabla HTML
+            logistic_nc_amount = _("$%(amount).2f") % {'amount': logistic_nc_amount}
+
         html_content = """
         <table class="table">
             <thead>
                 <tr>
-                    <th>Descripción</th>
-                    <th>Monto</th>
+                    <th>%s</th>
+                    <th>%s</th>
                 </tr>
             </thead>
-            <tbody>"""
-        
-        # Solo agregar el renglón para Bridgestone si el monto es mayor a 0
-        if isinstance(bs_nc_amount, str) and float(bs_nc_amount.strip('$').replace(',', '')) > 0:
-            html_content += f"""
-            <tr>
-                <td>Bridgestone</td>
-                <td>{bs_nc_amount}</td>
-            </tr>"""
-        
-        # Solo agregar el renglón para Logístico si el monto es mayor a 0
-        if isinstance(logistic_nc_amount, str) and float(logistic_nc_amount.strip('$').replace(',', '')) > 0:
-            html_content += f"""
-            <tr>
-                <td>Logístico</td>
-                <td>{logistic_nc_amount}</td>
-            </tr>"""
-        
-        # Cerrar la tabla HTML
+            <tbody>
+        """ % (_("Descripción"), _("Monto"))
+
+        # BRIDGESTONE
+        if isinstance(bs_nc_amount, str) and float(bs_nc_amount.replace('$', '').replace(',', '')) > 0:
+            html_content += """
+                <tr>
+                    <td>%s</td>
+                    <td>%s</td>
+                </tr>
+            """ % (_("Bridgestone"), bs_nc_amount)
+
+        # LOGÍSTICO
+        if isinstance(logistic_nc_amount, str) and float(logistic_nc_amount.replace('$', '').replace(',', '')) > 0:
+            html_content += """
+                <tr>
+                    <td>%s</td>
+                    <td>%s</td>
+                </tr>
+            """ % (_("Logístico"), logistic_nc_amount)
+
         html_content += """
             </tbody>
-        </table>"""
+        </table>
+        """
         
         return html_content
 

@@ -1,5 +1,25 @@
 from odoo import models, fields, api
 from odoo.exceptions import ValidationError
+
+ALLOW_STATES = [1413,507,516,489,485,496,499,498,502]
+
+class SaleOrder(models.Model):
+    _inherit = 'sale.order'
+    def quotation_action_confirm(self):
+        # 🔒 Garantiza datos actualizados
+        self.flush()
+        self.order_line.flush()
+        for order in self:
+            partner_state = order.partner_id.state_id.id
+            for line in order.order_line:
+                brand_id = line.product_id.brand_id
+                if brand_id.id == 7 and partner_state not in ALLOW_STATES:
+                    raise ValidationError(
+                        f'Solo se puede vender {brand_id.name} en Guanajuato, Querétaro, Zacatecas, Colima, Aguascalientes, Jalisco, Nayarit and Michoacán de Ocampo'
+                    )
+        # Si todo está bien, ahora sí confirmamos
+        return super().quotation_action_confirm()
+
 class SaleOrderLineAddProductWizard(models.TransientModel):
     _name = 'sale.order.line.add.product.wizard'
     _description = 'Wizard para agregar productos a sale.order.line'
@@ -8,9 +28,21 @@ class SaleOrderLineAddProductWizard(models.TransientModel):
     
     # Relación One2many con las líneas del wizard
     lines = fields.One2many('sale.order.line.add.product.wizard.line', 'wizard_id', string='Líneas de productos')
-
     total_qty = fields.Float(string='Total De llantas', compute='_compute_total', readonly=True)
+    is_expo = fields.Boolean(
+        string="Es Expo",
+        compute="_compute_is_expo",
+        store=False
+    )
     
+    def _compute_is_expo(self):
+        """
+        Permite leer is_expo del contexto cuando se abre el wizard.
+        Si no existe, usa False.
+        """
+        ctx_is_expo = self.env.context.get('is_expo', False)
+        for rec in self:
+            rec.is_expo = ctx_is_expo
     
     @api.depends('lines.qty')
     def _compute_total(self):
@@ -37,8 +69,6 @@ class SaleOrderLineAddProductWizard(models.TransientModel):
         lot_info = {}
         if pricelist_item:
             # Si hay elementos en la lista de precios, agrupar por 'lot_name'
-            
-
             for quant in stock_quants:
                 lot_name = quant.lot_id.name if quant.lot_id else 'Sin lote'
                 
@@ -142,9 +172,14 @@ class SaleOrderLineAddProductWizard(models.TransientModel):
         if not order_line_id:
             return
         order_id = self.env['sale.order'].browse(order_line_id)
+        can_sale = True
+        if order_id.partner_shipping_id.state_id.id not in ALLOW_STATES:
+            can_sale = False
         # Crear las líneas de pedido de venta para los productos seleccionados
         for line in self.lines:
             product = self.product_id
+            if product.brand_id.id == 7 and not can_sale:
+                raise ValidationError( f'Solo se puede vender {product.brand_id.name} en Guanajuato, Querétaro, Zacatecas, Colima, Aguascalientes, Jalisco, Nayarit y Michoacán de Ocampo, en México.' )
             if product and line.qty>0 or product.id in [50959,58209]:                
                 # Creación de la línea de pedido
                 vals = {
@@ -189,6 +224,3 @@ class SaleOrderLineAddProductWizardLine(models.TransientModel):
         if not (self.qty>0 and self.qty <= self.qty_available) and not is_expo:
             self.qty = 0
             raise ValidationError('No se pueden agregar más llantas de las disponibles')
-                
-            
-    

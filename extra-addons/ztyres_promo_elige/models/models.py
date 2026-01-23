@@ -64,7 +64,25 @@ class ZtyresPromoElige(models.Model):
             'domain': [('id', 'in', self.invoice_ids.ids)],
             'context': {'create': False},
         }
-    
+    # BOTÓN 1 → APROBAR PROMOCIÓN
+    def action_approve_p(self):
+        for rec in self:
+            rec.status = 'approve_p'
+
+    # BOTÓN 2 → CONFIRMAR
+    def action_done(self):
+        for rec in self:
+            rec.status = 'done'
+
+    # BOTÓN 3 → CANCELAR
+    def action_cancel(self):
+        for rec in self:
+            rec.status = 'cancel'
+
+    # BOTÓN 4 → (OPCIONAL) Revertir a borrador
+    def action_reset_to_draft(self):
+        for rec in self:
+            rec.status = 'draft'
 class AccountMove(models.Model):
     _inherit = 'account.move'
     promo_sel  = fields.Many2many('ztyres_promo_elige.ztyres_promo_elige')
@@ -80,13 +98,14 @@ class SaleOrder(models.Model):
         if self.env.context.get('force_skip',False):
             return        
         for record in self:
-            promo_id = self.env['ztyres_promo_elige.ztyres_promo_elige'].search([], limit=1)
+            domain = [ ('active', '=', True), 
+                    ('status', '=', 'done'), 
+                    ('start_date', '<=', fields.Date.today()), 
+                    ('end_date', '>=', fields.Date.today())]
+            promo_id = self.env['ztyres_promo_elige.ztyres_promo_elige'].search(domain, limit=1)
             if promo_id:
                 # Filtrar líneas válidas (marcas incluidas en la promoción)
-                valid_lines = record.order_line.filtered(
-                    lambda l: l.product_id.brand_id.id in promo_id.brand_ids.ids
-                )
-                
+                valid_lines = record.order_line.filtered(lambda l: l.product_id.brand_id.id in promo_id.brand_ids.ids)
                 # Calcular cantidades
                 valid_qty = sum(valid_lines.mapped('product_uom_qty'))
                 total_qty = sum(record.order_line.mapped('product_uom_qty'))
@@ -95,7 +114,7 @@ class SaleOrder(models.Model):
                 if valid_qty >= promo_id.min_qty:
                     if valid_qty == total_qty:
                         record.promo_sel = promo_id
-                        record.payment_term_id = promo_id.property_payment_term_id_2
+                        record.payment_term_id = promo_id.property_payment_term_id_1
                         print(record.payment_term_id)
                     else:
                         raise UserError(
@@ -116,7 +135,6 @@ class SaleOrder(models.Model):
             **invoice_vals,
             'promo_sel': self.promo_sel,  # o 'valor_personalizado' si es fijo
         }
-
 # class SaleAdvancePaymentInv(models.TransientModel):
 #     _inherit = 'sale.advance.payment.inv'
     
