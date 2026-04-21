@@ -173,6 +173,18 @@ class ZtyresMsSqlExcelReports(http.Controller):
         data = {"Mensaje": "Reporte actualizado correctamente"}
         return Response(json.dumps(data), content_type='application/json;charset=utf-8', status=200)
     
+    @http.route('/plan_comercial', auth='public', methods=['GET'], website=True)
+    def reporte_plan_comercial(self):
+        request.env['reporte_plan_comercial'].sudo().get_report()
+        data = {"Mensaje": "Reporte actualizado correctamente"}
+        return Response(json.dumps(data), content_type='application/json;charset=utf-8', status=200)
+    
+    @http.route('/reporte_ventas_direccion', auth='public', methods=['GET'], website=True)
+    def reporte_ventas_direccion(self):
+        request.env['reporte_ventas_direccion'].sudo().get_report()
+        data = {"Mensaje": "Reporte actualizado correctamente"}
+        return Response(json.dumps(data), content_type='application/json;charset=utf-8', status=200)
+    
     @http.route('/ventas/<string:vendedor_id>', auth='user', methods=['GET'], website=True)
     def ventas_por_vendedor_individual(self, vendedor_id):
         vendedor_id = int(vendedor_id)   
@@ -311,6 +323,42 @@ class ZtyresMsSqlExcelReports(http.Controller):
             excel_file,
             headers={
                 'Content-Disposition': 'attachment; filename="ventas_del_mes.xlsx"',
+                'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            }
+        )
+        
+    @http.route('/reportes_cxc/<string:mes>/<int:anio>', auth='user', methods=['GET'], website=True)
+    def reportes_cxc(self, mes, anio):
+        # Llamar a la función get_report para obtener los datos del reporte
+        report_data = request.env['reportes_cobranza'].sudo()
+        lista = report_data.get_report(mes, anio)
+        # Generar el archivo Excel
+        report_generator  = request.env['excel_ventas_por_vendedor'].sudo()
+        excel_file = report_generator.generate_excel_report(lista)
+        
+        # Preparar la respuesta para descargar el archivo
+        return Response(
+            excel_file,
+            headers={
+                'Content-Disposition': 'attachment; filename="reportes_cxc.xlsx"',
+                'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            }
+        )
+        
+    @http.route('/comportamiento', auth='user', methods=['GET'], website=True)
+    def comportamiento_clientes(self):
+        # Llamar a la función get_report para obtener los datos del reporte
+        report_data = request.env['comportamiento_clientes'].sudo()
+        lista = report_data.get_report()
+        # Generar el archivo Excel
+        report_generator  = request.env['excel_ventas_por_vendedor'].sudo()
+        excel_file = report_generator.generate_excel_report(lista)
+        
+        # Preparar la respuesta para descargar el archivo
+        return Response(
+            excel_file,
+            headers={
+                'Content-Disposition': 'attachment; filename="comportamiento.xlsx"',
                 'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
             }
         )

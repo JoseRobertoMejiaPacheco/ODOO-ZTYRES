@@ -19,67 +19,57 @@ import base64
 import io
 from datetime import date
 
-codes=[
-    22067, 22568, 22569, 22075, 22419, 59744, 22079, 22356, 51533, 22305, 22085, 22086, 22549, 49042, 22097, 22125, 22106, 22589, 22118, 22114, 58465, 
-    22113, 22682, 22518, 49875, 63175, 22129, 57249, 22133, 22524, 22717, 51129, 48697, 62897, 22684, 22711, 51715, 62898, 22140, 22683, 22712, 22786, 
-    51666, 63168, 51851, 49072, 22603, 22822, 22804, 22605, 22785, 58459, 48877, 22155, 48878, 22816, 22158, 22161, 50300, 22628, 58933, 22162, 22823, 
-    22814, 49876, 49652, 50301, 22824, 22260, 57693, 22547, 61072, 59251, 59745, 58485, 61073, 48930, 48951, 62652, 22637, 63176, 61076, 59252, 48952, 
-    62899, 48953, 22604, 59243, 22858, 51659, 22625, 22422, 22474, 59253, 59242, 62900, 51270, 22170, 62901, 22652, 22811, 61074, 59254, 22633, 62903, 
-    62902, 61075, 51858, 22777, 48954, 51859, 59270, 22817, 22196, 22630, 61086, 59260, 22288, 62408, 22284, 58466, 22295, 59867, 22677, 61088, 62653, 
-    61077, 62906, 58828, 58462, 22689, 22860, 61071, 60952, 59271, 59868, 61087, 59869, 62404, 22829, 57251, 62407, 59256, 22833, 59746, 22852, 59257, 
-    59747, 51130, 59748, 22516, 22281, 62907, 62406, 22758, 62411, 22826, 59870, 22790, 59258, 62654, 62405, 22778, 62409, 62908, 62655, 22799, 49622, 
-    58464, 51857, 22827, 61080, 57226, 61084, 59259, 59871, 59749, 22752, 61085, 22759, 62410, 62909, 22074, 59267, 22661, 51579, 61070, 22820, 59865, 
-    62904, 49654, 62905, 59255, 61081, 51856, 22351, 22355, 22741, 22726, 61082, 22301
-    ]
-
-codes2=[
-    (22067, 75.83), (22568, 73.56), (22569, 70.63), (22075, 80.66), (22419, 81.04), (59744, 84.9), (22079, 67.28), (22356, 76.25), (51533, 94.89), (22305, 74.53), 
-    (22085, 66.34), (22086, 81.52), (22549, 79.6), (49042, 82.3), (22097, 85.41), (22125, 124.43), (22106, 82.28), (22589, 90.33), (22118, 84.05), (22114, 75.54), 
-    (58465, 88.25), (22113, 75.54), (22682, 127.76), (22518, 120.76), (49875, 86.66), (63175, 218.48), (22129, 96.3), (57249, 91.04), (22133, 80.89), (22524, 82.78), 
-    (22717, 85.16), (51129, 80.89), (48697, 85.16), (62897, 72.8), (22684, 92.61), (22711, 90.08), (51715, 92.61), (62898, 173.71), (22140, 88.92), (22683, 91.93), 
-    (22712, 103.04), (22786, 108.22), (51666, 91.93), (63168, 78.14), (51851, 91.93), (49072, 103.04), (22603, 131.94), (22822, 134.48), (22804, 141.95), (22605, 130.91), 
-    (22785, 128.51), (58459, 241.94), (48877, 245.57), (22155, 106.96), (48878, 103.33), (22816, 106.99), (22158, 84.36), (22161, 110.53), (50300, 99.54), 
-    (22628, 103.12), (58933, 103.51), (22162, 114.11), (22823, 100.87), (22814, 96.57), (49876, 97.1), (49652, 87.27), (50301, 192.62), (22824, 120.94), 
-    (22260, 121.73), (57693, 215.91), (22547, 116.55), (61072, 193.7), (59251, 253.76), (59745, 253.76), (58485, 92.41), (61073, 159.98), (48930, 193.54), 
-    (48951, 231.16), (62652, 171.56), (22637, 300.23), (63176, 181.62), (61076, 205.43), (59252, 220.65), (48952, 192.38), (62899, 221.23), (48953, 157.14), 
-    (22604, 136.41), (59243, 131.97), (22858, 179.23), (51659, 175.17), (22625, 101.2), (22422, 107.89), (22474, 153.98), (59253, 124.3), (59242, 127.42), 
-    (62900, 98.47), (51270, 143.66), (22170, 109.25), (62901, 87.99), (22652, 162.36), (22811, 152.84), (61074, 183.6), (59254, 260.62), (22633, 132.61), (62903, 153.16), 
-    (62902, 102.48), (61075, 192.78), (51858, 417.33), (22777, 172.87), (48954, 103.71), (51859, 241.09), (59270, 169.26), (22817, 194.35), (22196, 172.62), (22630, 146.12), 
-    (61086, 178.43), (59260, 136.12), (22288, 161.84), (62408, 180.19), (22284, 159.89), (58466, 98.11), (22295, 149.76), (59867, 180.09), (22677, 188.6), (61088, 172.26), 
-    (62653, 197.95), (61077, 200.74), (62906, 223.1), (58828, 202.36), (58462, 680.74), (22689, 379.69), (22860, 204.69), (61071, 310.11), (60952, 199.31), (59271, 165.3), 
-    (59868, 149.85), (61087, 151.85), (59869, 208.09), (62404, 240.94), (22829, 220.3), (57251, 220.3), (62407, 257.32), (59256, 255.04), (22833, 263.91), (59746, 205.81), 
-    (22852, 239.01), (59257, 306.36), (59747, 240.98), (51130, 269.05), (59748, 213.89), (22516, 134.6), (22281, 152.46), (62907, 231.14), (62406, 253.28), (22758, 311.57), 
-    (62411, 297.68), (22826, 172.35), (59870, 177.67), (22790, 175.49), (59258, 198.36), (62654, 183.32), (62405, 209.08), (22778, 174), (62409, 260.68), (62908, 236.94), 
-    (62655, 158.43), (22799, 175.11), (49622, 393.52), (58464, 388.88), (51857, 335.39), (22827, 151.56), (61080, 215.67), (57226, 187.61), (61084, 231.04), (59259, 265.28), 
-    (59871, 390.49), (59749, 238.11), (22752, 247.57), (61085, 242.05), (22759, 314.12), (62410, 407.06), (62909, 143.03), (22074, 80.66), (59267, 105.55), (22661, 124.43), 
-    (51579, 212.04), (61070, 150.53), (22820, 211.32), (59865, 174), (62904, 177.52), (49654, 168.39), (62905, 193.33), (59255, 201.44), (61081, 192.47), (51856, 242.33), 
-    (22351, 198.6), (22355, 147.78), (22741, 254.16), (22726, 79.98), (61082, 176.14), (22301, 158.43)
-]
-
-codes3=[]
-
 codes_pirelli = [
-    (48836, "5%"), (48995, "5%"), (51521, "5%"), (57231, "3%"), (48712, "3%"), (51900, "3%"), (53019, "3%"), (60986, "3%"), (57252, "3%"), (28800, "3%"), 
-    (48713, "3%"), (61691, "3%"), (61692, "3%"), (29838, "3%"), (29837, "3%"), (60988, "3%"), (60997, "3%"), (48626, "3%"), (61001, "3%"), (29415, "3%"), 
-    (60995, "3%"), (29435, "3%"), (60987, "3%"), (51336, "3%"), (60991, "3%"), (49087, "3%"), (51904, "3%"), (49015, "3%"), (62643, "3%"), (62910, "3%"), 
-    (29901, "3%"), (29349, "3%"), (49018, "3%"), (49637, "3%")
+#(51521, "3%"), (48712, "3%"), (28800, "2%"), (48713, "3%"), (61691, "2%"), (49637, "2%")
 ]
 
-codes_goodyear = [ 
-    (19595, "3%"), (50202, "5%"), (19580, "3%"), (9810, "3%"), (50389, "5%"), (19576, "3%"), (50139, "5%"), (61007, "3%"), (57684, "5%"), (58934, "3%"), 
-    (61009, "5%"), (57522, "3%"), (63169, "5%"), (48980, "5%"), (50147, "5%"), (58473, "5%"), (57246, "5%"), (59098, "3%"), (59265, "5%"), (58488, "3%")
+codes_goodyear = [
+    
 ]
 
 codes_kumho = [
-    (59762, "3%"), (63372, "3%"), (59742, "3%"), (51449, "3%"), (51451, "3%"), (62397, "4%")
+#    (62397, "3%")
 ]
 
-tupla10= [  
-
-]
-
-tupla5= [(22075, 80.66), (22419, 81.04), (22356, 76.25), (22086, 81.52), (22549, 79.6), (22106, 82.28), (22118, 84.05), (22114, 75.54), (22683, 91.93),
-         (49072, 103.04), (22295, 149.76), (59868, 149.85), (22516, 134.6)
+#(ID, PMS, APLICA_CUPON (5%), APLICA_BONO_TARJETA(4%, 5%, 6%))
+codes_bridgestone_promo = [
+    (22569, 1217.77, "NO", "SI"), (22075, 1390.76, "SI", "SI"), (22419, 1397.26, "SI", "SI"), (59744, 1463.8, "NO", "SI"), 
+    (22079, 1159.99, "NO", "SI"), (22356, 1314.64, "SI", "SI"), (51533, 1636.1, "NO", "SI"), (22305, 1285, "NO", "SI"), 
+    (22085, 1143.87, "NO", "SI"), (22086, 1405.43, "SI", "SI"), (22549, 1372.41, "NO", "SI"), (66200, 1418.9, "NO", "SI"), 
+    (49042, 1418.9, "NO", "SI"), (22106, 1418.67, "SI", "SI"), (22589, 1557.48, "NO", "SI"), (22118, 1449.06, "SI", "SI"), 
+    (22114, 1302.49, "NO", "SI"), (22518, 2082.02, "NO", "SI"), (63175, 3766.88, "NO", "SI"), (57249, 1569.69, "NO", "SI"), 
+    (22133, 1394.7, "NO", "SI"), (22524, 1427.21, "NO", "SI"), (22717, 1468.24, "NO", "SI"), (51129, 1394.7, "NO", "SI"), 
+    (48697, 1468.24, "NO", "SI"), (62897, 1255.23, "NO", "SI"), (22711, 1553.16, "NO", "SI"), (51715, 1596.79, "NO", "SI"), 
+    (62898, 2995.03, "NO", "SI"), (22140, 1533.19, "NO", "SI"), (22683, 1584.92, "SI", "SI"), (51666, 1584.92, "NO", "SI"), 
+    (63168, 1347.18, "NO", "SI"), (49072, 1776.63, "SI", "SI"), (22822, 2318.68, "NO", "SI"), (22804, 2447.43, "NO", "SI"), 
+    (22605, 2257.06, "NO", "SI"), (22785, 2215.69, "NO", "SI"), (48877, 4234.03, "NO", "SI"), (22155, 1844.18, "NO", "SI"), 
+    (66046, 1738.85, "NO", "SI"), (48878, 1781.48, "NO", "SI"), (22161, 1905.71, "NO", "SI"), (22628, 1777.85, "NO", "SI"), 
+    (58933, 1784.6, "NO", "SI"), (22162, 1967.47, "NO", "SI"), (22823, 1739.18, "NO", "SI"), (22814, 1664.95, "NO", "SI"), 
+    (49876, 1674.2, "NO", "SI"), (50301, 3321.05, "NO", "SI"), (22260, 2098.8, "NO", "SI"), (57693, 3722.66, "NO", "SI"), 
+    (22547, 2009.51, "NO", "SI"), (59745, 4375.17, "NO", "SI"), (58485, 1593.32, "NO", "SI"), (61073, 2758.36, "NO", "SI"), 
+    (48930, 3336.83, "NO", "SI"), (48951, 3985.49, "NO", "SI"), (62652, 2957.85, "NO", "SI"), (22637, 5176.36, "NO", "SI"), 
+    (63176, 3131.41, "NO", "SI"), (61076, 3541.98, "NO", "SI"), (59252, 3804.33, "NO", "SI"), (48952, 3316.86, "NO", "SI"), 
+    (62899, 3814.39, "NO", "SI"), (22604, 2351.85, "NO", "SI"), (22625, 1744.74, "NO", "SI"), (22422, 1860.2, "NO", "SI"), 
+    (59253, 2143.13, "NO", "SI"), (59242, 2196.94, "NO", "SI"), (62900, 1697.8, "NO", "SI"), (22170, 1883.56, "NO", "SI"), 
+    (62901, 1517.13, "NO", "SI"), (61074, 3165.59, "NO", "SI"), (59254, 4493.46, "NO", "SI"), (22633, 2286.37, "NO", "SI"), 
+    (62903, 2640.76, "NO", "SI"), (62902, 1766.91, "NO", "SI"), (61075, 3323.87, "NO", "SI"), (22777, 2980.47, "NO", "SI"), 
+    (48954, 1788.18, "NO", "SI"), (22817, 3350.79, "NO", "SI"), (22630, 2519.33, "NO", "SI"), (61086, 3076.4, "NO", "SI"), 
+    (22288, 2790.38, "NO", "SI"), (62408, 3106.81, "NO", "SI"), (22284, 2756.76, "NO", "SI"), (58466, 1691.61, "NO", "SI"), 
+    (22295, 2582.07, "SI", "SI"), (59867, 3105.05, "NO", "SI"), (22677, 3251.78, "NO", "SI"), (61088, 2970.08, "NO", "SI"), 
+    (62653, 3412.9, "NO", "SI"), (61077, 3461.04, "NO", "SI"), (58828, 3488.91, "NO", "SI"), (61071, 5346.78, "NO", "SI"), 
+    (60952, 3436.44, "NO", "SI"), (59271, 2850.04, "NO", "SI"), (59868, 2583.64, "SI", "SI"), (61087, 2618.03, "NO", "SI"), 
+    (59869, 3587.71, "NO", "SI"), (62404, 4154.2, "NO", "SI"), (66236, 4097.85, "NO", "SI"), (57251, 3798.26, "NO", "SI"), 
+    (62407, 4436.62, "NO", "SI"), (59256, 4397.32, "NO", "SI"), (59746, 3548.43, "NO", "SI"), (59257, 5282.04, "NO", "SI"), 
+    (59747, 4154.84, "NO", "SI"), (59748, 3687.78, "NO", "SI"), (22516, 2320.62, "SI", "SI"), (22281, 2628.64, "NO", "SI"), 
+    (62907, 3985.16, "NO", "SI"), (62406, 4366.88, "NO", "SI"), (22758, 5371.88, "NO", "SI"), (65016, 5907.72, "NO", "SI"), 
+    (22826, 2971.52, "NO", "SI"), (59870, 3063.24, "NO", "SI"), (59258, 3419.96, "NO", "SI"), (62654, 3160.61, "NO", "SI"), 
+    (62405, 3604.85, "NO", "SI"), (22778, 2999.98, "NO", "SI"), (66045, 3332.29, "NO", "SI"), (62409, 4494.49, "NO", "SI"), 
+    (62908, 4085.25, "NO", "SI"), (62655, 2731.48, "NO", "SI"), (51857, 5782.62, "NO", "SI"), (22827, 2613.16, "NO", "SI"), 
+    (61080, 3718.46, "NO", "SI"), (57226, 3234.69, "NO", "SI"), (61084, 3983.4, "NO", "SI"), (59871, 6732.55, "NO", "SI"), 
+    (22752, 4268.42, "NO", "SI"), (61085, 4173.34, "NO", "SI"), (62410, 7018.3, "NO", "SI"), (62909, 2466, "NO", "SI"), 
+    (61070, 2595.42, "NO", "SI"), (62905, 3333.33, "NO", "SI"), (59255, 3473.17, "NO", "SI"), (61081, 3318.41, "NO", "SI"), 
+    (51856, 4178.08, "NO", "SI"), (22355, 2547.86, "NO", "SI"), (22726, 1379.03, "NO", "SI"), (22301, 2731.48, "NO", "SI")
+    
 ]
 
 WHITE = 'FFFFFF'
@@ -108,9 +98,11 @@ class ListaDePrecios(models.TransientModel):
             #FIXME update variable name financial = partner_id.get_row_values_volumen() to financial = partner_id.get_row_values_volumen()
             financial = partner_id.get_row_values_volumen()
             logistic = partner_id.get_row_values_logistico()
+            vendedor = partner_id.user_id.name
         else:
             financial = self.partner_id.get_row_values_volumen(self.volume_profile)
-            logistic = self.partner_id.get_row_values_logistico(self.logistic_profile)    
+            logistic = self.partner_id.get_row_values_logistico(self.logistic_profile)   
+            vendedor = self.partner_id.user_id.name
         
         # Convertir valores numéricos a cadenas de porcentaje y agregar '0%'
         
@@ -124,8 +116,9 @@ class ListaDePrecios(models.TransientModel):
         # Ordenar las listas de porcentajes
         financial_percentages.sort()
         logistic_percentages.sort()
-        
-        return financial_percentages, logistic_percentages
+
+        #return financial_percentages, logistic_percentages
+        return vendedor
 ########################################################################## Efervecente #########################################################################################################################################################################################
     def _get_metadata(self,res_partner):
         data = ''
@@ -161,34 +154,48 @@ class ListaDePrecios(models.TransientModel):
             return  # No hay datos o encabezados, salir sin crear la tabla
 
         for col_idx, header in enumerate(headers, start=1):
-            cell = sheet.cell(row=14, column=col_idx)
+            cell = sheet.cell(row=13, column=col_idx)
             cell.value = header
             cell.font = Font(bold=True)
 
-        for row_idx, row_data in enumerate(table_data, start=15):
+        for row_idx, row_data in enumerate(table_data, start=14):
             for col_idx, header in enumerate(headers, start=1):
                 if header == "Precio Regular":
                     sheet.cell(row=row_idx, column=col_idx).value = f'=MIN(P{row_idx}:R{row_idx})'     
                     #=IF(IF(MIN(Q{row_idx}:T{row_idx}) > 0, MIN(Q{row_idx}:T{row_idx}), "") = S{row_idx}, S{row_idx}, IF(MIN(Q{row_idx}:T{row_idx}) > 0, MIN(Q{row_idx}:T{row_idx}), "") * (1-IF(ISNUMBER($U$13), $U$13, 0)))
                 elif header == "PRECIO CON DESCUENTOS":
                     sheet.cell(row=row_idx, column=col_idx).value = f'''=S{row_idx} - 
-                                                                        (IF(OR($A$7=1,$A$7=150,$A$7=350,$A$7=600), ((S{row_idx}*$D$7) + (S{row_idx}*$E$7) + (S{row_idx}*$F$7)), 0)) - 
-                                                                        (S{row_idx} * IF(ISNUMBER(IFERROR(FIND(F{row_idx}, UPPER($I$6)), "")), $I$8, 0)) - 
-                                                                        (S{row_idx} * IF(ISNUMBER(IFERROR(FIND(F{row_idx}, UPPER($J$6)), "")), $J$8, 0)) - 
-                                                                        (S{row_idx} * IF(ISNUMBER(IFERROR(FIND(F{row_idx}, UPPER($K$6)), "")), $K$8, 0)) - 
-                                                                        (S{row_idx} * IF(ISNUMBER(IFERROR(FIND(F{row_idx}, UPPER($L$6)), "")), $L$8, 0)) - 
-                                                                        IF(V{row_idx} <> "", (S{row_idx}*V{row_idx}), 0)'''
+                                                                        (IF(OR($A$8=1,$A$8=150,$A$8=350,$A$8=600), ((S{row_idx}*$D$8) + (S{row_idx}*$E$8) + (S{row_idx}*$F$8)), 0)) - 
+                                                                        (S{row_idx} * IF(ISNUMBER(IFERROR(FIND(F{row_idx}, UPPER($N$7)), "")), $S$7, 0)) - 
+                                                                        (S{row_idx} * IF(ISNUMBER(IFERROR(FIND(F{row_idx}, UPPER($N$9)), "")), $S$9, 0))
+                                                                        '''
+                                                                        
+                # f'''=S{row_idx} - 
+                #     (IF(OR($A$8=1,$A$8=150,$A$8=350,$A$8=600), ((S{row_idx}*$D$8) + (S{row_idx}*$E$8) + (S{row_idx}*$F$8)), 0)) - 
+                #     IF(Q{row_idx} = S{row_idx}, S{row_idx}*$L$9, 0) -
+                #     IF(AND(V{row_idx} <> "", $A$8 >= 150), (S{row_idx}*V{row_idx}), 0) -
+                #     (S{row_idx} * IF(ISNUMBER(IFERROR(FIND(F{row_idx}, UPPER($N$7)), "")), $S$7, 0)) - 
+                #     (S{row_idx} * IF(ISNUMBER(IFERROR(FIND(F{row_idx}, UPPER($N$9)), "")), $S$9, 0)) '''                                                        
+                                                                                                    
+                # f'''=S{row_idx} - 
+                #     (IF(OR($A$13=1,$A$13=150,$A$13=350,$A$13=600), ((S{row_idx}*$D$13) + (S{row_idx}*$E$13) + (S{row_idx}*$F$13)), 0)) - 
+                #     (S{row_idx} * IF(ISNUMBER(IFERROR(FIND(F{row_idx}, UPPER($I$12)), "")), $I$14, 0)) - 
+                #     (S{row_idx} * IF(ISNUMBER(IFERROR(FIND(F{row_idx}, UPPER($J$12)), "")), $J$14, 0)) - 
+                #     (S{row_idx} * IF(ISNUMBER(IFERROR(FIND(F{row_idx}, UPPER($K$12)), "")), $K$14, 0)) - 
+                #     (S{row_idx} * IF(ISNUMBER(IFERROR(FIND(F{row_idx}, UPPER($L$12)), "")), $L$14, 0)) - 
+                #     IF(V{row_idx} <> "", (S{row_idx}*V{row_idx}), 0)'''                                                        
+                                                                    
                 else:
                      sheet.cell(row=row_idx, column=col_idx).value = row_data.get(header, "")
 
         end_col_letter = get_column_letter(len(headers))
-        table_ref = f"A14:{end_col_letter}{num_rows + 14}"
+        table_ref = f"A13:{end_col_letter}{num_rows + 13}"
         table = Table(displayName=table_name, ref=table_ref)
         style = TableStyleInfo(name="TableStyleMedium9", showFirstColumn=False,
                                showLastColumn=False, showRowStripes=True, showColumnStripes=True)
         table.tableStyleInfo = style
         sheet.add_table(table)
-        return num_rows + 14, len(headers)  # Retorna el número de filas y columnas
+        return num_rows + 13, len(headers)  # Retorna el número de filas y columnas
 ####################################################################################################
     def insert_table_sheet3(self, sheet, table_data, table_name):
         headers = list(table_data[0].keys()) if table_data else []
@@ -197,31 +204,33 @@ class ListaDePrecios(models.TransientModel):
             return  # No hay datos o encabezados, salir sin crear la tabla
 
         for col_idx, header in enumerate(headers, start=1):
-            cell = sheet.cell(row=14, column=col_idx)
+            cell = sheet.cell(row=13, column=col_idx)
             cell.value = header
             cell.font = Font(bold=True)
 
-        for row_idx, row_data in enumerate(table_data, start=15):
+        for row_idx, row_data in enumerate(table_data, start=14):
             for col_idx, header in enumerate(headers, start=1):
                 if header == "Precio Regular":
-                    sheet.cell(row=row_idx, column=col_idx).value = f'=IF(Q{row_idx} = "", R{row_idx}, MIN((Q{row_idx}*0.9), R{row_idx}))'
+                    sheet.cell(row=row_idx, column=col_idx).value = f'=IF(N{row_idx} = "", O{row_idx}, MIN((N{row_idx}*0.9), O{row_idx}))'
                 elif header == "PRECIO CON DESCUENTOS":
-                    sheet.cell(row=row_idx, column=col_idx).value = f'''=V{row_idx} - (IF(OR($A$7=1,$A$7=150,$A$7=350,$A$7=600), ((Q{row_idx}*$D$7) + (Q{row_idx}*$E$7) + (Q{row_idx}*$F$7)), 0)) - T{row_idx}- U{row_idx}'''
-                #elif header == "PROMO BS":
-                #    sheet.cell(row=row_idx, column=col_idx).value = f'''=IF(P{row_idx} = "SI", (Q{row_idx}*$K$8), 0)'''
+                    sheet.cell(row=row_idx, column=col_idx).value = f'''=P{row_idx} - (IF(OR($A$8=1,$A$8=150,$A$8=350,$A$8=600), (IF(N{row_idx} <> "", ((N{row_idx}*$D$8) + (N{row_idx}*$E$8) + (N{row_idx}*$F$8)), ((O{row_idx}*$D$8) + (O{row_idx}*$E$8) + (O{row_idx}*$F$8)))), 0)) - Q{row_idx}'''
+                elif header == "Precio Potencial":
+                    sheet.cell(row=row_idx, column=col_idx).value = f'''=R{row_idx} - S{row_idx}'''
+                elif header == "Bono Tarjeta":
+                    sheet.cell(row=row_idx, column=col_idx).value = f'''=IF(V{row_idx} <> "", IF($K$8 = "Sin bono", 0, IF($K$8 = "Por cada 50 mil pesos por mes", V{row_idx}, IF($K$8 = "Por cada 100 mil pesos por mes", W{row_idx}, IF($K$8 = "Por cada 200 mil pesos por mes", X{row_idx}, 0)))), 0)'''
                 elif header == "FACTURACIÓN":
-                    sheet.cell(row=row_idx, column=col_idx).value = f'=IF(X{row_idx} = "", "", X{row_idx}*T{row_idx})'   
+                    sheet.cell(row=row_idx, column=col_idx).value = f'=IF(Z{row_idx} = "", "", Z{row_idx}*U{row_idx})'   
                 else:
                      sheet.cell(row=row_idx, column=col_idx).value = row_data.get(header, "")
 
         end_col_letter = get_column_letter(len(headers))
-        table_ref = f"A14:{end_col_letter}{num_rows + 14}"
+        table_ref = f"A13:{end_col_letter}{num_rows + 13}"
         table = Table(displayName=table_name, ref=table_ref)
         style = TableStyleInfo(name="TableStyleMedium9", showFirstColumn=False,
                                showLastColumn=False, showRowStripes=True, showColumnStripes=True)
         table.tableStyleInfo = style
         sheet.add_table(table)
-        return num_rows + 14, len(headers)  # Retorna el número de filas y columnas
+        return num_rows + 13, len(headers)  # Retorna el número de filas y columnas
 ####################################################################################################
     def insert_table_sheet5(self, sheet, table_data, table_name):
         headers = list(table_data[0].keys()) if table_data else []
@@ -296,7 +305,7 @@ class ListaDePrecios(models.TransientModel):
             num_format = '#,##0'
         elif data_type == 'string':
             num_format = None  # No specific format
-        for row in sheet.iter_rows(min_col=col_idx, max_col=col_idx, min_row=15):
+        for row in sheet.iter_rows(min_col=col_idx, max_col=col_idx, min_row=14):
             for cell in row:
                 if cell.value == 0:
                     cell.value = None  # Set cell value to None to leave it empty
@@ -416,7 +425,7 @@ class ListaDePrecios(models.TransientModel):
         # start_column3 = 'A'
         # end_column3 = 'B'
         
-        for row in sheet.iter_rows(min_row=15):  # Start from row 2 to skip header
+        for row in sheet.iter_rows(min_row=14):  # Start from row 2 to skip header
             outlet_cell = row[outlet_col_idx - 1]  # Adjust index to zero-based
             t4_cell = row[t4_col_idx - 1]
             tier4_cell = row[tier4_col_idx - 1]
@@ -426,25 +435,13 @@ class ListaDePrecios(models.TransientModel):
                     cell = row[col_idx]
                     cell.fill = PatternFill(start_color='EBEBEB', end_color='EBEBEB', fill_type='solid')
                 outlet_cell.fill = PatternFill(start_color='EBEBEB', end_color='EBEBEB', fill_type='solid')
-                
-            # if tier4_cell.value in ['APTANY', 'DOUBLESTAR']:
-            #     t4_cell.fill = PatternFill(start_color='DDE5F2', end_color='DDE5F2', fill_type='solid')
                     
-        # for row in sheet.iter_rows(min_row=15):
-        #     milestar_cell = row[milestar_col_idx - 1]
-        #     for col in range(ord(start_column), ord(end_column) + 1):
-        #         if milestar_cell.value in ['ONYX']:
-        #             cell = row[col - ord(start_column)]
-        #             cell.fill = PatternFill(start_color='EBF1DE', end_color='EBF1DE', fill_type='solid')
-        #         elif milestar_cell.value in ['DRIVEFORCE']:
-        #             cell = row[col - ord(start_column)]
-        #             cell.fill = PatternFill(start_color='92CDDC', end_color='92CDDC', fill_type='solid')
-                    
-        for row in sheet.iter_rows(min_row=15):
+        for row in sheet.iter_rows(min_row=14):
             cupon_cell = row[column_index_from_string(id_col_idx) - 1]
             desc_pirelli = {t[0]: t[1] for t in codes_pirelli}
             desc_kumho = {t[0]: t[1] for t in codes_kumho}
             desc_goodyear = {t[0]: t[1] for t in codes_goodyear}
+            
             if cupon_cell.value in desc_pirelli:
                 for col_idx in range(column_index_from_string(start_column) - 1, column_index_from_string(end_column)):
                     cell = row[col_idx]
@@ -458,7 +455,6 @@ class ListaDePrecios(models.TransientModel):
                     cell = row[col_idx]
                     cell.fill = PatternFill(start_color='FDE9D9', end_color='FDE9D9', fill_type='solid')
 
-                    
         #for row in sheet.iter_rows(min_row=15):
         #    milestar_cell = row[milestar_col_idx - 1]
             #measure_cell = row[measure_col_idx - 1]
@@ -488,14 +484,26 @@ class ListaDePrecios(models.TransientModel):
     def color_cells_based_on_condition_sheet3(self, sheet):
         ids_in_codes_brig = 'A'
         codes_brige = 'B'
-        start_column = 'S'
-        end_column = 'U'
-        cupones = 'W'
-        outlet_col_idx = column_index_from_string('R')
-        outlet_start_column = 'V'
-        outlet_end_column = 'X'
+        start_column = 'P'
+        end_column = 'Q'
+        outlet_col_idx = column_index_from_string('O')
+        outlet_start_column = 'O'
+        outlet_end_column = 'P'
+        column_bonus_cards = 'S'
+        column_end_bonus_cards = 'T'
+        cupones = 'R'
         
-        for row in sheet.iter_rows(min_row=15):  # Start from row 2 to skip header
+        
+        for row in sheet.iter_rows(min_row=14):
+            cupon_cell = row[column_index_from_string(ids_in_codes_brig) - 1]
+            bonus_cards = {t[0]: t[3] for t in codes_bridgestone_promo if t[3] == "SI"}
+            
+            if cupon_cell.value in bonus_cards:
+                for col_idx in range(column_index_from_string(column_bonus_cards) - 1, column_index_from_string(column_end_bonus_cards)):
+                    cell = row[col_idx]
+                    cell.fill = PatternFill(start_color='F2DCDB', end_color='F2DCDB', fill_type='solid')
+        
+        for row in sheet.iter_rows(min_row=14):  # Start from row 2 to skip header
             outlet_cell = row[outlet_col_idx - 1]  # Adjust index to zero-based
             # Example condition: Color 'Outlet' column yellow if cell value is not empty
             if isinstance(outlet_cell.value, (int, float)) and outlet_cell.value > 0:
@@ -504,9 +512,10 @@ class ListaDePrecios(models.TransientModel):
                     cell.fill = PatternFill(start_color='EBEBEB', end_color='EBEBEB', fill_type='solid')
                 outlet_cell.fill = PatternFill(start_color='EBEBEB', end_color='EBEBEB', fill_type='solid')
                 
-        for row in sheet.iter_rows(min_row=15):
+        for row in sheet.iter_rows(min_row=14):
             cupon_cell = row[column_index_from_string(ids_in_codes_brig) - 1]
-            if cupon_cell.value in codes:
+            cupon_codes = {t[0]: t[2] for t in codes_bridgestone_promo if t[2] == "SI"}
+            if cupon_cell.value in cupon_codes:
                 for col_idx in range(column_index_from_string(start_column) - 1, column_index_from_string(end_column)):
                     cell = row[col_idx]
                     cell.fill = PatternFill(start_color='FDE9D9', end_color='FDE9D9', fill_type='solid')
@@ -514,7 +523,7 @@ class ListaDePrecios(models.TransientModel):
                     cell = row[col_idx]
                     cell.fill = PatternFill(start_color='FDE9D9', end_color='FDE9D9', fill_type='solid')
                     
-        for row in sheet.iter_rows(min_row=15):
+        for row in sheet.iter_rows(min_row=14):
             id_cell = row[column_index_from_string(cupones) - 1]
             if id_cell.value not in ["", None]:
                 id_cell.fill = PatternFill(start_color='D9D9D9', end_color='D9D9D9', fill_type='solid')
@@ -548,8 +557,6 @@ class ListaDePrecios(models.TransientModel):
             
             ids = [row[0] for row in result]
         if sheet_name == 'Transitos':
-            # Convertir la lista de códigos en una tupla para SQL
-            codes_tuple = tuple(codes)
             # Obtener los IDs de los objetos y convertirlos en una tupla para SQL
             ids_tuple = tuple(objects.ids)
             
@@ -590,9 +597,6 @@ class ListaDePrecios(models.TransientModel):
                 data_list.append(data_dict)
             return data_list
         if sheet_name == 'P. BRIDGESTONE':
-            # Convertir la lista de códigos en una tupla para SQL
-            codes_tuple = tuple(codes)
-            
             # Obtener los IDs de los objetos y convertirlos en una tupla para SQL
             ids_tuple = tuple(objects.ids)
             
@@ -614,16 +618,16 @@ class ListaDePrecios(models.TransientModel):
                 data_dict = {                
                     'id': obj.product_id.id,            
                     'Código': obj.default_code,
-                    'Tier': obj.tier_id.name if obj.tier_id else None,
+                    #'Tier': obj.tier_id.name if obj.tier_id else None,
                     'Medida': obj.tire_measure_id.name if obj.tire_measure_id else None,
                     'Modelo': obj.model_id.name if obj.model_id else None,
                     'Marca': obj.brand_id.name if obj.brand_id else None,
                 }
                 
-                resultado = None
-                if obj.tire_measure_id.name and "R" in obj.tire_measure_id.name:
-                    resultado = obj.tire_measure_id.name.split("R", 1)[1].strip()
-                    data_dict.update({'Rin': float(resultado)})
+                # resultado = None
+                # if obj.tire_measure_id.name and "R" in obj.tire_measure_id.name:
+                #     resultado = obj.tire_measure_id.name.split("R", 1)[1].strip()
+                #     data_dict.update({'Rin': float(resultado)})
                       
                 data_dict.update({  
                     'Equipo Original': obj.original_equipment_id.name if obj.original_equipment_id else None,
@@ -637,47 +641,63 @@ class ListaDePrecios(models.TransientModel):
                     #'Cantidad Disponible': obj.available,
                     #'Trans.': (obj.transito_str + obj.backorder_str) or None,
                     #'Arribo': obj.fecha_aprox or None,
-                    })
-                if self.partner_id:
-                    if obj.product_id.id in codes:
-                        data_dict.update({'PARTICIPA': 'SI'})
-                    else:
-                        data_dict.update({'PARTICIPA': 'NO'})
-                else:
-                    if obj.product_id.id in codes:
-                        data_dict.update({'PARTICIPA': 'SI'})
-                    else:
-                        data_dict.update({'PARTICIPA': 'NO'})      
+                    })  
+                
                 data_list.append(data_dict)            
                 data_dict.update({
                     'Mayoreo': (obj.volumen * 1.16),
                     'Outlet': obj.outlet * 1.16,
-                    'Promo Dot': obj.promo_dot * 1.16,
+                    #'Promo Dot': obj.promo_dot * 1.16,
                     #'PROMO BS': ""
                     })
                 
-                if self.partner_id:
-                    promo_mayoreo = {t[0]: t[1] for t in codes2}
-                    cupones_dict5 = {t[0]: t[1] for t in tupla5}
-                    cupones_dict10 = {t[0]: t[1] for t in tupla10}
-                    
-                    if obj.product_id.id in promo_mayoreo:
-                        data_dict.update({'PROMO BS': promo_mayoreo[obj.product_id.id]})
-                    else:
-                        data_dict.update({'PROMO BS': ''})
+                # if self.partner_id:
+                #     promo_mayoreo = {t[0]: t[1] for t in codes2}
+                #     if obj.product_id.id in promo_mayoreo:
+                #         data_dict.update({'PROMO BS': promo_mayoreo[obj.product_id.id] * 1.16})
+                #     else:
+                #         data_dict.update({'PROMO BS': ''})
                         
-                    if obj.product_id.id in cupones_dict5:
-                        data_dict.update({'Cupones': cupones_dict5[obj.product_id.id]})
-                    elif obj.product_id.id in cupones_dict10:
-                        data_dict.update({'Cupones': cupones_dict10[obj.product_id.id]})
-                    else:
-                        data_dict.update({'Cupones': ''})
                 data_dict.update({
                     'Precio Regular': "",
+                })
+                
+                if self.partner_id:
+                    cupones_dict5 = {t[0]: t[1] for t in codes_bridgestone_promo if t[2] == "SI"}
+                    if obj.product_id.id in cupones_dict5:
+                        data_dict.update({'Cupones': ((cupones_dict5[obj.product_id.id] * .05) * 1.16).__round__(2)})
+                    else:
+                        data_dict.update({'Cupones': ''})
+
+                data_dict.update({
                     'PRECIO CON DESCUENTOS': "",
+                })
+                        
+                data_dict.update({  
+                    'Bono Tarjeta': "",
+                    'Precio Potencial': "",
                     'PIEZAS': "",
-                    'FACTURACIÓN': ""
+                    #'FACTURACIÓN': ""
                     })
+                if self.partner_id:
+                    bonus_cards = {t[0]: t[1] for t in codes_bridgestone_promo if t[3] == "SI"}
+                    if obj.product_id.id in bonus_cards:
+                        data_dict.update({'4%': ((bonus_cards[obj.product_id.id] * .04) * 1.16).__round__(2)})
+                        data_dict.update({'5%': ((bonus_cards[obj.product_id.id] * .05) * 1.16).__round__(2)})
+                        data_dict.update({'6%': ((bonus_cards[obj.product_id.id] * .06) * 1.16).__round__(2)})
+                    else:
+                        data_dict.update({'4%': ''})
+                        data_dict.update({'5%': ''})
+                        data_dict.update({'6%': ''})
+                else:
+                    if obj.product_id.id in bonus_cards:
+                        data_dict.update({'4%': ((bonus_cards[obj.product_id.id] * .04) * 1.16).__round__(2)})
+                        data_dict.update({'5%': ((bonus_cards[obj.product_id.id] * .05) * 1.16).__round__(2)})
+                        data_dict.update({'6%': ((bonus_cards[obj.product_id.id] * .06) * 1.16).__round__(2)})
+                    else:
+                        data_dict.update({'4%': ''})
+                        data_dict.update({'5%': ''})
+                        data_dict.update({'6%': ''})  
                 
                 # if obj.volumen > 0:
                 #     data_dict.update({
@@ -753,25 +773,25 @@ class ListaDePrecios(models.TransientModel):
         return data_list
 
     def set_frames(self, sheet):        
-        img_path = "/mnt/extra-addons/inv_promo/wizard/models/Encabezado.png"    
+        img_path = "/mnt/extra-addons/inv_promo/wizard/models/Logo.png"    
         img = Image(img_path)
-        img.height = 58.5  # Establece la altura en píxeles calculados
-        img.width = 1100   # Establece el ancho en píxeles calculados                       
+        img.height = 65  # Establece la altura en píxeles calculados
+        img.width = 355   # Establece el ancho en píxeles calculados                       
         # Insertar la imagen en la hoja
         sheet.add_image(img, 'A1')
         # Crear un comentario
         comentario = Comment("Aplica por entrega en una misma dirección", "Ztyres")
         # Asignar el comentario a la celda
-        sheet["C6"].comment = comentario
+        sheet["E8"].comment = comentario
         
     def set_brief(self, sheet):        
-        #img_path = "/mnt/extra-addons/inv_promo/wizard/models/Encabezado.png"
+        img_path = "/mnt/extra-addons/inv_promo/wizard/models/Encabezado.png"
         img_path = "/mnt/extra-addons/inv_promo/wizard/models/Brief.jpg"
         img = Image(img_path)
-        #img.height = 708  # Establece la altura en píxeles calculados
-        #img.width = 1196   # Establece el ancho en píxeles calculados                       
-        # Insertar la imagen en la hoja
+        img.height = 708  # Establece la altura en píxeles calculados
+        img.width = 1196   # Establece el ancho en píxeles calculados         
         sheet.add_image(img, 'A1')
+        # return
 
     def get_xlsx_report(self, partner_id, return_base_64=False):
         include_promo = True
@@ -787,11 +807,22 @@ class ListaDePrecios(models.TransientModel):
         sheet1.title = "Precios Con Iva"
 
         #financial,logistic = self.get_profile_data(partner_id)
+        vendedor = self.get_profile_data(partner_id)
+                
         llantas_x_mes = ['1', '150', '350', '600']
         
         #volume_percent = ['0%','2%','3%']
         logistic_percent = ['0%','2%','4%']
         financial_percent = ['0%','2%','3%']
+        
+        des_x_factura = ['0%', '3%']
+        
+        bonus_cards = [
+            'Sin bono',
+            'Por cada 50 mil pesos por mes', 
+            'Por cada 100 mil pesos por mes', 
+            'Por cada 200 mil pesos por mes'
+            ]
         
         #bs_percentR14 = ['0%', '5%', '8%']
         #bs_percentR18 = ['0%', '8%']
@@ -800,18 +831,21 @@ class ListaDePrecios(models.TransientModel):
          
         combo_data_sheet1 = [
             #{'cell_ref': 'D7', 'values': volume_percent},
-            {'cell_ref': 'E7', 'values': logistic_percent},
-            {'cell_ref': 'F7', 'values': financial_percent},
+            {'cell_ref': 'E8', 'values': logistic_percent},
+            {'cell_ref': 'F8', 'values': financial_percent},
+            {'cell_ref': 'A8', 'values': llantas_x_mes},
             
-            {'cell_ref': 'A7', 'values': llantas_x_mes},
+            {'cell_ref': 'S7', 'values': des_x_factura},
+            {'cell_ref': 'S9', 'values': des_x_factura},
         ]
         
         combo_data_sheet3 = [
-            {'cell_ref': 'E7', 'values': logistic_percent},
-            {'cell_ref': 'F7', 'values': financial_percent},
+            {'cell_ref': 'E8', 'values': logistic_percent},
+            {'cell_ref': 'F8', 'values': financial_percent},
             
-            {'cell_ref': 'A7', 'values': llantas_x_mes},
+            {'cell_ref': 'A8', 'values': llantas_x_mes},
             
+            {'cell_ref': 'K8', 'values': bonus_cards},
             #{'cell_ref': 'I8', 'values': bs_percentR14},
             #{'cell_ref': 'M8', 'values': bs_percentR18}
         ]
@@ -846,78 +880,106 @@ class ListaDePrecios(models.TransientModel):
         
          # Definir los datos para las celdas
         data_for_sheet1 = [
-            {'cell_ref': 'A5:C6', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': False, 'fill_color': BLACK, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': "LLANTAS AL MES", 'data_type': 'string'},
-            {'cell_ref': 'D5:F5', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': False, 'fill_color': RED, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': "DESCUENTOS  SEGÚN POLÍTICA COMERCIAL", 'data_type': 'string'},
-            {'cell_ref': 'D6', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': False, 'fill_color': '595959', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': "Volumen", 'data_type': 'string'},
-            {'cell_ref': 'E6', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': 'EBEBEB', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': "Logístico", 'data_type': 'string'},
-            {'cell_ref': 'F6', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': False, 'fill_color': '595959', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': "Financiero", 'data_type': 'string'},
+            {'cell_ref': 'A6:C7', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': False, 'fill_color': BLACK, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': "LLANTAS AL MES", 'data_type': 'string'},
+            {'cell_ref': 'D6:F6', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': False, 'fill_color': RED, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': "DESCUENTOS  SEGÚN POLÍTICA COMERCIAL", 'data_type': 'string'},
+            {'cell_ref': 'D7', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': False, 'fill_color': '595959', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': "Volumen", 'data_type': 'string'},
+            {'cell_ref': 'E7', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': 'EBEBEB', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': "Logístico", 'data_type': 'string'},
+            {'cell_ref': 'F7', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': False, 'fill_color': '595959', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': "Financiero", 'data_type': 'string'},
             
-            {'cell_ref': 'A7:C7', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': 1},
-            {'cell_ref': 'D7', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '0%', 'value': f"""=IF(A7=1,0%,IF(A7=150,1%,IF(A7=350,2%,IF(A7=600,3%, 0%))))"""},
-            {'cell_ref': 'E7', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '0%', 'value': "0%"},
-            {'cell_ref': 'F7', 'font_name': 'Calibri', 'font_size': 11, 'font_color': '00B050', 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '0%', 'value': "0%"},
+            {'cell_ref': 'A8:C8', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': 1},
+            {'cell_ref': 'D8', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '0%', 'value': f"""=IF(A8=1,0%,IF(A8=150,1%,IF(A8=350,2%,IF(A8=600,3%, 0%))))"""},
+            {'cell_ref': 'E8', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '0%', 'value': "0%"},
+            {'cell_ref': 'F8', 'font_name': 'Calibri', 'font_size': 11, 'font_color': '00B050', 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '0%', 'value': "0%"},
             
-            {'cell_ref': 'A8:C8', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': False, 'fill_color': BLACK, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': "TOTAL LLANTAS", 'data_type': 'string'},
-            {'cell_ref': 'A9:C10', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': f"""=SUM(U15:U{num_rows_1})+SUM('P. BRIDGESTONE'!X15:X{num_rows_1})"""},
+            {'cell_ref': 'A9:C9', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': False, 'fill_color': BLACK, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': "TOTAL LLANTAS", 'data_type': 'string'},
+            {'cell_ref': 'A10:C11', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': f"""=SUM(U14:U{num_rows_1})+SUM('P. BRIDGESTONE'!X14:X{num_rows_1})"""},
             
-            {'cell_ref': 'D8:F8', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': f"""=IF(E7=0%, "Sin descuento de 1 a 99 llantas por envío", IF(E7=2%,"Descuento Logístico: Mín. 100 llantas x envío", IF(E7=4%, "Descuento Logístico: Mín. 300 llantas x envío", "Sin descuento de 1 a 99 llantas por envío")))"""},
-            {'cell_ref': 'D9:F9', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': 'EBEBEB', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': "Códigos con Super descuento", 'data_type': 'string'},
-            {'cell_ref': 'D10:F10', 'font_name': 'Calibri', 'font_size': 11, 'font_color': '00B050', 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': "Financiero aplica pagando en tiempo sus facturas", 'data_type': 'string'},
+            {'cell_ref': 'D9:F9', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': f"""=IF(E8=0%, "Sin descuento de 1 a 99 llantas por envío", IF(E8=2%,"Descuento Logístico: Mín. 100 llantas x envío", IF(E8=4%, "Descuento Logístico: Mín. 300 llantas x envío", "Sin descuento de 1 a 99 llantas por envío")))"""},
+            {'cell_ref': 'D10:F10', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': 'EBEBEB', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': "Códigos con Super descuento", 'data_type': 'string'},
+            {'cell_ref': 'D11:F11', 'font_name': 'Calibri', 'font_size': 11, 'font_color': '00B050', 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': "Financiero aplica pagando en tiempo sus facturas", 'data_type': 'string'},
             
-            {'cell_ref': 'I5:U5', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': False, 'fill_color': RED, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': "DESCUENTO REFLEJADO EN LA COLUMNA PRECIO CON DESCUENTOS", 'data_type': 'string'},
-            {'cell_ref': 'I6:I7', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "Milestar / Venom", 'data_type': 'string'},
+            ########################################################################################################################################################################################################################################################################################################################################
+            # {'cell_ref': 'I6:L6', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': False, 'fill_color': RED, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': "DESCUENTO REFLEJADO EN LA COLUMNA PRECIO CON DESCUENTOS", 'data_type': 'string'},
             
-            #{'cell_ref': 'J6:J7', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': YELLOW, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "Pirelli", 'data_type': 'string'},
-            #{'cell_ref': 'K6:K7', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "Onyx", 'data_type': 'string'},
+            # {'cell_ref': 'I12:I13', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "Milestar / Venom", 'data_type': 'string'},
+            # {'cell_ref': 'J12:J13', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "Federal", 'data_type': 'string'},
+            # {'cell_ref': 'K12:K13', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "Driveforce", 'data_type': 'string'},
+            # {'cell_ref': 'L12:M13', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "Aptany/Delinte/ DoubleStar/Firemax", 'data_type': 'string'},
+            # {'cell_ref': 'N12:Q13', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "PIRELLI / FEDERAL / DUNLOP / ONYX", 'data_type': 'string'},
+            # {'cell_ref': 'I7:J8', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': 'FDE9D9', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "KUMHO", 'data_type': 'string'},
+            # {'cell_ref': 'K7:L8', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': YELLOW, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "PIRELLI", 'data_type': 'string'},
+            #{'cell_ref': 'K7:K8', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': 'DCE6F1', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "GOODYEAR", 'data_type': 'string'},
+            #{'cell_ref': 'L7:L8', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': 'EBEBEB', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "Lista Outlet ", 'data_type': 'string'},
             
-            {'cell_ref': 'J6:J7', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "Federal", 'data_type': 'string'},
-            {'cell_ref': 'K6:K7', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "Driveforce", 'data_type': 'string'},
+            # {'cell_ref': 'I14:I15', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '0%', 'value': f"""=IF(A13 = 1, 0%, IF(A13 = 150, 3%, IF(A13 = 350, 5%, IF(A13 = 600, 5%, 0%))))"""},
+            # {'cell_ref': 'J14:J15', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '0%', 'value': f"""=IF(A13 = 1, 0%, IF(A13 = 150, 3%, IF(A13 = 350, 5%, IF(A13 = 600, 5%, 0%))))"""},
+            # {'cell_ref': 'K14:K15', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '0%', 'value': f"""=IF(A13 = 1, 0%, IF(A13 = 150, 3%, IF(A13 = 350, 4%, IF(A13 = 600, 4%, 0%))))"""},
+            # {'cell_ref': 'L14:M15', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '0%', 'value': f"""=IF(A13 = 1, 0%, IF(A13 = 150, 3%, IF(A13 = 350, 3%, IF(A13 = 600, 4%, 0%))))"""},
+            # {'cell_ref': 'N14:Q15', 'font_name': 'Calibri', 'font_size': 8, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '0%', 'value': "En un solo pedido con 2% financiero/capturar solo de una marca"},
+            # {'cell_ref': 'I9:L10', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "Consulta códigos y descuentos", 'data_type': 'string'},
+            # {'cell_ref': 'L9:L10', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '0%', 'value': f"""=IF(A8 = 1, 0%, IF(A8 = 150, 4%, IF(A8 = 350, 4%, IF(A8 = 600, 4%, 0%))))"""},
+
+            ########################################################################################################################################################################################################################################################################################################################################
+            {'cell_ref': 'N6:S6', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': False, 'fill_color': RED, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': "PROMOCIONES DE MARCA POR MES", 'data_type': 'string'},
+            {'cell_ref': 'T6', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': False, 'fill_color': BLACK, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': "TOTAL LLANTAS", 'data_type': 'string'},
             
-            {'cell_ref': 'L6:M7', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "Aptany/Delinte/ DoubleStar/Firemax", 'data_type': 'string'},
-            {'cell_ref': 'N6:Q7', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "PIRELLI / FEDERAL / DUNLOP / ONYX", 'data_type': 'string'},
+            {'cell_ref': 'N7:N8', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "DUNLOP", 'data_type': 'string'},
+            {'cell_ref': 'N9:N10', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "ONYX", 'data_type': 'string'},
+            {'cell_ref': 'N11:N12', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "MILESTAR/VENOM", 'data_type': 'string'},
             
-            {'cell_ref': 'R6:S7', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': 'FDE9D9', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "KUMHO", 'data_type': 'string'},
-            {'cell_ref': 'T6:T7', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': YELLOW, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "PIRELLI", 'data_type': 'string'},
-            {'cell_ref': 'U6:U7', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': 'DCE6F1', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "GOODYEAR", 'data_type': 'string'},
+            {'cell_ref': 'O7:R8', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': f"""=IF(S7=3%, "Mínimo 200 llantas Dunlop x mes", "No aplica")"""},
+            {'cell_ref': 'O9:R10', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': f"""=IF(S9=3%, "Mínimo 200 llantas Onyx x mes", "No aplica")"""},
+            {'cell_ref': 'O11:S12', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "$4,000 netos x cada 100 llantas x mes", 'data_type': 'string'},
             
-            {'cell_ref': 'I8:I9', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '0%', 'value': f"""=IF(A7 = 1, 0%, IF(A7 = 150, 3%, IF(A7 = 350, 5%, IF(A7 = 600, 5%, 0%))))"""},
+            {'cell_ref': 'S7:S8', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '0%',  'value': "0%", 'data_type': 'string'},
+            {'cell_ref': 'S9:S10', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '0%',  'value': "0%", 'data_type': 'string'},
             
-            #{'cell_ref': 'J8:J9', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '0%', 'value': f"""=IF(A7 = 1, 0%, IF(A7 = 150, 3%, IF(A7 = 350, 3%, IF( A7 = 600, 3%, 0%))))"""},
-            #{'cell_ref': 'K8:K9', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '0%', 'value': f"""=IF(A7 = 1, 12%, IF(A7 = 150, 12%, IF(A7 = 350, 12%, IF(A7 = 600, 12%, 0%))))"""},
+            {'cell_ref': 'T7:T8', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': f"""=SUMIF(F14:F{num_rows_1}, N7, U14:U{num_rows_1})"""},
+            {'cell_ref': 'T9:T10', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': f"""=SUMIF(F14:F{num_rows_1}, N9, U14:U{num_rows_1})"""},
+            {'cell_ref': 'T11:T12', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': f"""=SUMIF(F14:F{num_rows_1}, "MILESTAR", U14:U{num_rows_1}) + SUMIF(F14:F{num_rows_1}, "VENOM", U14:U{num_rows_1})"""},
             
-            {'cell_ref': 'J8:J9', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '0%', 'value': f"""=IF(A7 = 1, 0%, IF(A7 = 150, 3%, IF(A7 = 350, 5%, IF(A7 = 600, 5%, 0%))))"""},
-            {'cell_ref': 'K8:K9', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '0%', 'value': f"""=IF(A7 = 1, 0%, IF(A7 = 150, 3%, IF(A7 = 350, 4%, IF(A7 = 600, 4%, 0%))))"""},
+            ########################################################################################################################################################################################################################################################################################################################################
+            {'cell_ref': 'A2:D2', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': True, 'fill_color': WHITE, 'border': None, 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "CÓDIGO:", 'data_type': 'string'},   
+            {'cell_ref': 'E2', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': None, 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "VTA-FO-03", 'data_type': 'string'},   
+            {'cell_ref': 'J2', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': True, 'fill_color': WHITE, 'border': None, 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "VERSIÓN:", 'data_type': 'string'},   
+            {'cell_ref': 'K2', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': None, 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "01", 'data_type': 'string'},
+            {'cell_ref': 'O2:S2', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': True, 'fill_color': WHITE, 'border': None, 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "FECHA DE EMISIÓN:", 'data_type': 'string'},   
+            {'cell_ref': 'T2', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': None, 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': 'DD/MM/YYYY', 'value': "17/12/2025", 'data_type': 'string'},   
             
-            {'cell_ref': 'L8:M9', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '0%', 'value': f"""=IF(A7 = 1, 0%, IF(A7 = 150, 3%, IF(A7 = 350, 3%, IF(A7 = 600, 4%, 0%))))"""},
-            {'cell_ref': 'N8:Q9', 'font_name': 'Calibri', 'font_size': 8, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '0%', 'value': "En un solo pedido con 2% financiero/capturar solo de una marca"},
-            {'cell_ref': 'R8:U9', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "Consulta códigos y descuentos", 'data_type': 'string'},
+            {'cell_ref': 'A3:U3', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': BLACK, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'data_type': 'string'},   
             
-            {'cell_ref': 'P3', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': True, 'fill_color': WHITE, 'border': None, 'align': 'right', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0.00', 'value': "** Goodyear / Kumho / Pirelli - Consulte Códigos Participantes.", 'data_type': 'string'},
-                
-            {'cell_ref': 'K1:O2', 'font_name': 'Calibri', 'font_size': 18, 'font_color': WHITE, 'bold': True, 'fill_color': BLACK, 'border': None, 'align': 'right', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0.00', 'value': "INVENTARIO Y PRECIOS VIGENTES", 'data_type': 'string'},
-            {'cell_ref': 'O3', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': True, 'fill_color': WHITE, 'border': None, 'align': 'right', 'top_align': 'center', 'wrap_text': True, 'num_format': 'DD/MM/YYYY', 'value': date.today(), 'data_type': 'string'},
+            {'cell_ref': 'A4:E4', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'right', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "ASESOR: ", 'data_type': 'string'},   
+            {'cell_ref': 'F4:J4', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'left', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': vendedor, 'data_type': 'string'},   
             
-            {'cell_ref': 'A14', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': DARK_GRAY, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0.00', 'data_type': 'string'},
-            {'cell_ref': 'B14', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': DARK_GRAY, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0.00', 'data_type': 'string'},
-            {'cell_ref': 'C14', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': DARK_GRAY, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0.00', 'data_type': 'string'},
-            {'cell_ref': 'D14', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': DARK_GRAY, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0.00', 'data_type': 'string'},
-            {'cell_ref': 'E14', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': DARK_GRAY, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0.00', 'data_type': 'string'},
-            {'cell_ref': 'F14', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': DARK_GRAY, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0.00', 'data_type': 'string'},
-            {'cell_ref': 'G14', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': DARK_GRAY, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0.00', 'data_type': 'string'},
-            {'cell_ref': 'H14', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': DARK_GRAY, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0.00', 'data_type': 'string'},
-            {'cell_ref': 'I14', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': DARK_GRAY, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0.00', 'data_type': 'string'},
-            {'cell_ref': 'J14', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': DARK_GRAY, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0.00', 'data_type': 'string'},
-            {'cell_ref': 'K14', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': DARK_GRAY, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0.00', 'data_type': 'string'},
-            {'cell_ref': 'L14', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': DARK_GRAY, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0.00', 'data_type': 'string'},
-            {'cell_ref': 'M14', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': DARK_GRAY, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0.00', 'data_type': 'string'},
-            {'cell_ref': 'N14', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': DARK_GRAY, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0.00', 'data_type': 'string'},
-            {'cell_ref': 'O14', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': DARK_GRAY, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0.00', 'data_type': 'string'},
-            {'cell_ref': 'P14', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': DARK_GRAY, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0.00', 'data_type': 'string'},
-            {'cell_ref': 'Q14', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': '808080', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0.00', 'data_type': 'string'},
-            {'cell_ref': 'S14', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': DARK_GRAY, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0.00', 'data_type': 'string'},
-            {'cell_ref': 'T14', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': RED, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0.00', 'data_type': 'string'},
-            {'cell_ref': 'U14', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': DARK_GRAY, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0.00', 'data_type': 'string'},
-            {'cell_ref': 'V14', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': DARK_GRAY, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0.00', 'data_type': 'string'},
+            {'cell_ref': 'A5:J5', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "PRECIOS SUJETOS A CAMBIOS SIN PREVIO AVISO", 'data_type': 'string'},   
+            {'cell_ref': 'K4:O5', 'font_name': 'Calibri', 'font_size': 18, 'font_color': WHITE, 'bold': True, 'fill_color': BLACK, 'border': None, 'align': 'right', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0.00', 'value': "FECHA DE ACTUALIZACIÓN", 'data_type': 'string'},
+            
+            {'cell_ref': 'S4:S5', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': True, 'fill_color': WHITE, 'border': None, 'align': 'right', 'top_align': 'center', 'wrap_text': True, 'num_format': 'DD/MM/YYYY', 'value': date.today(), 'data_type': 'string'},
+            
+            {'cell_ref': 'A1:E1', 'font_name': 'Calibri', 'font_size': 20, 'font_color': BLACK, 'bold': True, 'fill_color': WHITE, 'border': 'thick', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'data_type': 'string'},  
+            {'cell_ref': 'F1:U1', 'font_name': 'Calibri', 'font_size': 20, 'font_color': BLACK, 'bold': True, 'fill_color': WHITE, 'border': 'thick', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "Lista de precios", 'data_type': 'string'},   
+            
+            {'cell_ref': 'A13', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': DARK_GRAY, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0.00', 'data_type': 'string'},
+            {'cell_ref': 'B13', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': DARK_GRAY, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0.00', 'data_type': 'string'},
+            {'cell_ref': 'C13', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': DARK_GRAY, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0.00', 'data_type': 'string'},
+            {'cell_ref': 'D13', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': DARK_GRAY, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0.00', 'data_type': 'string'},
+            {'cell_ref': 'E13', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': DARK_GRAY, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0.00', 'data_type': 'string'},
+            {'cell_ref': 'F13', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': DARK_GRAY, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0.00', 'data_type': 'string'},
+            {'cell_ref': 'G13', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': DARK_GRAY, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0.00', 'data_type': 'string'},
+            {'cell_ref': 'H13', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': DARK_GRAY, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0.00', 'data_type': 'string'},
+            {'cell_ref': 'I13', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': DARK_GRAY, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0.00', 'data_type': 'string'},
+            {'cell_ref': 'J13', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': DARK_GRAY, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0.00', 'data_type': 'string'},
+            {'cell_ref': 'K13', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': DARK_GRAY, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0.00', 'data_type': 'string'},
+            {'cell_ref': 'L13', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': DARK_GRAY, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0.00', 'data_type': 'string'},
+            {'cell_ref': 'M13', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': DARK_GRAY, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0.00', 'data_type': 'string'},
+            {'cell_ref': 'N13', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': DARK_GRAY, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0.00', 'data_type': 'string'},
+            {'cell_ref': 'O13', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': DARK_GRAY, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0.00', 'data_type': 'string'},
+            {'cell_ref': 'P13', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': DARK_GRAY, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0.00', 'data_type': 'string'},
+            {'cell_ref': 'Q13', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': '808080', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0.00', 'data_type': 'string'},
+            {'cell_ref': 'S13', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': DARK_GRAY, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0.00', 'data_type': 'string'},
+            {'cell_ref': 'T13', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': RED, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0.00', 'data_type': 'string'},
+            {'cell_ref': 'U13', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': DARK_GRAY, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0.00', 'data_type': 'string'},
+            {'cell_ref': 'V13', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': DARK_GRAY, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0.00', 'data_type': 'string'},
         ]
         
         #Establecer formatos
@@ -944,7 +1006,7 @@ class ListaDePrecios(models.TransientModel):
         self.format_column(sheet1,'U','number')
         self.format_column(sheet1,'V','string')
         
-        columna_a_ocultar_sheet1 = ['A', 'C', 'G', 'P', 'Q', 'R']
+        columna_a_ocultar_sheet1 = ['A', 'C', 'G', 'P', 'Q', 'R', 'V']
         
         for columna_sheet1 in columna_a_ocultar_sheet1:
             sheet1.column_dimensions[columna_sheet1].hidden = True
@@ -955,9 +1017,9 @@ class ListaDePrecios(models.TransientModel):
             
         self.color_cells_based_on_condition(sheet1)
         sheet1.sheet_view.showGridLines = False
-        sheet1.freeze_panes = 'A15'
+        sheet1.freeze_panes = 'A14'
         
-        start_row = 14
+        start_row = 13
         end_row = num_rows_1
         start_col = 'A'
         end_col = 'V'   
@@ -987,10 +1049,9 @@ class ListaDePrecios(models.TransientModel):
                     for cell in row:
                         if cell.column_letter == "X":
                             cell.protection = Protection(locked=False)
-                            print ("Celda desbloqueada:", cell.coordinate)
+                            #print ("Celda desbloqueada:", cell.coordinate)
                         else:
                             cell.protection = Protection(locked=True)
-                            
                         
                 # Desbloquear las celdas del rango B2:B4 (por ejemplo)
                 for row in hoja.iter_rows(min_row=1, max_row=num_rows_3, min_col=26, max_col=30):
@@ -1015,69 +1076,101 @@ class ListaDePrecios(models.TransientModel):
             self.set_combos(sheet3, combo_data_sheet3)
 
             data_for_sheet3 = [
-                {'cell_ref': 'K1:O2', 'font_name': 'Calibri', 'font_size': 18, 'font_color': WHITE, 'bold': True, 'fill_color': BLACK, 'border': None, 'align': 'right', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0.00', 'value': "INVENTARIO Y PRECIOS VIGENTES", 'data_type': 'string'},
-                {'cell_ref': 'O3', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': True, 'fill_color': WHITE, 'border': None, 'align': 'right', 'top_align': 'center', 'wrap_text': True, 'num_format': 'DD/MM/YYYY', 'value': date.today(), 'data_type': 'string'},
-            
-                {'cell_ref': 'A14', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': DARK_GRAY, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0.00', 'data_type': 'string'},
-                {'cell_ref': 'B14', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': DARK_GRAY, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0.00', 'data_type': 'string'},
-                {'cell_ref': 'C14', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': DARK_GRAY, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0.00', 'data_type': 'string'},
-                {'cell_ref': 'D14', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': DARK_GRAY, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0.00', 'data_type': 'string'},
-                {'cell_ref': 'E14', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': DARK_GRAY, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0.00', 'data_type': 'string'},
-                {'cell_ref': 'F14', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': DARK_GRAY, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0.00', 'data_type': 'string'},
-                {'cell_ref': 'G14', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': DARK_GRAY, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0.00', 'data_type': 'string'},
-                {'cell_ref': 'H14', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': DARK_GRAY, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0.00', 'data_type': 'string'},
-                {'cell_ref': 'I14', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': DARK_GRAY, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0.00', 'data_type': 'string'},
-                {'cell_ref': 'J14', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': DARK_GRAY, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0.00', 'data_type': 'string'},
-                {'cell_ref': 'K14', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': DARK_GRAY, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0.00', 'data_type': 'string'},
-                {'cell_ref': 'L14', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': DARK_GRAY, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0.00', 'data_type': 'string'},
-                {'cell_ref': 'M14', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': DARK_GRAY, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0.00', 'data_type': 'string'},
-                {'cell_ref': 'N14', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': DARK_GRAY, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0.00', 'data_type': 'string'},
-                {'cell_ref': 'O14', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': DARK_GRAY, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0.00', 'data_type': 'string'},
-                {'cell_ref': 'P14', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': DARK_GRAY, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0.00', 'data_type': 'string'},
-                {'cell_ref': 'Q14', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': '808080', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0.00', 'data_type': 'string'},
-                {'cell_ref': 'S14', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': RED, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0.00', 'data_type': 'string'},
-                {'cell_ref': 'T14', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': DARK_GRAY, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0.00', 'data_type': 'string'},
-                {'cell_ref': 'U14', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': DARK_GRAY, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0.00', 'data_type': 'string'},
-                {'cell_ref': 'V14', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': DARK_GRAY, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0.00', 'data_type': 'string'},
-                {'cell_ref': 'W14', 'font_name': 'Calibri', 'font_size': 11, 'font_color': 'C00000', 'bold': True, 'fill_color': 'D9D9D9', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0.00', 'data_type': 'string'},
-                {'cell_ref': 'X14', 'font_name': 'Calibri', 'font_size': 11, 'font_color': 'C00000', 'bold': True, 'fill_color': 'D9D9D9', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0.00', 'data_type': 'string'},
-                #{'cell_ref': 'Y14', 'font_name': 'Calibri', 'font_size': 11, 'font_color': 'C00000', 'bold': True, 'fill_color': 'D9D9D9', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0.00', 'data_type': 'string'},
+                {'cell_ref': 'A2:D2', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': True, 'fill_color': WHITE, 'border': None, 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "CÓDIGO:", 'data_type': 'string'},   
+                {'cell_ref': 'E2', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': None, 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "VTA-FO-03", 'data_type': 'string'},   
+                {'cell_ref': 'J2', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': True, 'fill_color': WHITE, 'border': None, 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "VERSIÓN:", 'data_type': 'string'},   
+                {'cell_ref': 'K2', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': None, 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "01", 'data_type': 'string'},
+                {'cell_ref': 'O2:T2', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': True, 'fill_color': WHITE, 'border': None, 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "FECHA DE EMISIÓN:", 'data_type': 'string'},   
+                {'cell_ref': 'U2', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': None, 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': 'DD/MM/YYYY', 'value': "17/12/2025", 'data_type': 'string'},   
                 
-                #{'cell_ref': 'S12:V13', 'font_name': 'Calibri', 'font_size': 11, 'font_color': 'C00000', 'bold': True, 'fill_color': 'D9D9D9', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0.00', 'value': "VALOR CUPON YA DESCONTADO EN PRECIO CON DESCUENTO", 'data_type': 'string'},
+                {'cell_ref': 'A3:U3', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': BLACK, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'data_type': 'string'},   
+                
+                {'cell_ref': 'A4:E4', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'right', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "ASESOR: ", 'data_type': 'string'},   
+                {'cell_ref': 'F4:J4', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'left', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': vendedor, 'data_type': 'string'},   
+                
+                {'cell_ref': 'A5:J5', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "PRECIOS SUJETOS A CAMBIOS SIN PREVIO AVISO", 'data_type': 'string'},   
+                {'cell_ref': 'K4:O5', 'font_name': 'Calibri', 'font_size': 18, 'font_color': WHITE, 'bold': True, 'fill_color': BLACK, 'border': None, 'align': 'right', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0.00', 'value': "FECHA DE ACTUALIZACIÓN", 'data_type': 'string'},
+                
+                {'cell_ref': 'U4:U5', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': True, 'fill_color': WHITE, 'border': None, 'align': 'right', 'top_align': 'center', 'wrap_text': True, 'num_format': 'DD/MM/YYYY', 'value': date.today(), 'data_type': 'string'},
+                
+                {'cell_ref': 'A1:E1', 'font_name': 'Calibri', 'font_size': 20, 'font_color': BLACK, 'bold': True, 'fill_color': WHITE, 'border': 'thick', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'data_type': 'string'},  
+                {'cell_ref': 'F1:U1', 'font_name': 'Calibri', 'font_size': 20, 'font_color': BLACK, 'bold': True, 'fill_color': WHITE, 'border': 'thick', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "Lista de precios", 'data_type': 'string'},  
+                    
+                {'cell_ref': 'A6:C7', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': False, 'fill_color': BLACK, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': "LLANTAS AL MES", 'data_type': 'string'},
+                {'cell_ref': 'D6:F6', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': False, 'fill_color': RED, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': "DESCUENTOS  SEGÚN POLÍTICA COMERCIAL", 'data_type': 'string'},
+                {'cell_ref': 'D7', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': False, 'fill_color': '595959', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': "Volumen", 'data_type': 'string'},
+                {'cell_ref': 'E7', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': 'EBEBEB', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': "Logístico", 'data_type': 'string'},
+                {'cell_ref': 'F7', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': False, 'fill_color': '595959', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': "Financiero", 'data_type': 'string'},
+                
+                {'cell_ref': 'A8:C8', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': 1},
+                {'cell_ref': 'D8', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '0%', 'value': f"""=IF(A8=1,0%,IF(A8=150,1%,IF(A8=350,2%,IF(A8=600,3%, 0%))))"""},
+                {'cell_ref': 'E8', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '0%', 'value': "0%"},
+                {'cell_ref': 'F8', 'font_name': 'Calibri', 'font_size': 11, 'font_color': '00B050', 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '0%', 'value': "0%"},
+                
+                {'cell_ref': 'A9:C9', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': False, 'fill_color': BLACK, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': "TOTAL LLANTAS", 'data_type': 'string'},
+                {'cell_ref': 'A10:C11', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': f"""=SUM(U14:U{num_rows_3})+SUM('Precios Con Iva'!U14:U{num_rows_1})"""},
+                
+                {'cell_ref': 'D9:F9', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': f"""=IF(E8=0%, "Sin descuento de 1 a 99 llantas por envío", IF(E8=2%,"Descuento Logístico: Mín. 100 llantas x envío", IF(E8=4%, "Descuento Logístico: Mín. 300 llantas x envío", "Sin descuento de 1 a 99 llantas por envío")))"""},
+                {'cell_ref': 'D10:F10', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': 'EBEBEB', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': "Códigos con Super descuento", 'data_type': 'string'},
+                {'cell_ref': 'D11:F11', 'font_name': 'Calibri', 'font_size': 11, 'font_color': '00B050', 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': "Financiero aplica pagando en tiempo sus facturas", 'data_type': 'string'},
+                    
+                {'cell_ref': 'A13', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': DARK_GRAY, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0.00', 'data_type': 'string'},
+                {'cell_ref': 'B13', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': DARK_GRAY, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0.00', 'data_type': 'string'},
+                {'cell_ref': 'C13', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': DARK_GRAY, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0.00', 'data_type': 'string'},
+                {'cell_ref': 'D13', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': DARK_GRAY, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0.00', 'data_type': 'string'},
+                {'cell_ref': 'E13', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': DARK_GRAY, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0.00', 'data_type': 'string'},
+                {'cell_ref': 'F13', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': DARK_GRAY, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0.00', 'data_type': 'string'},
+                {'cell_ref': 'G13', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': DARK_GRAY, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0.00', 'data_type': 'string'},
+                {'cell_ref': 'H13', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': DARK_GRAY, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0.00', 'data_type': 'string'},
+                {'cell_ref': 'I13', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': DARK_GRAY, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0.00', 'data_type': 'string'},
+                {'cell_ref': 'J13', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': DARK_GRAY, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0.00', 'data_type': 'string'},
+                {'cell_ref': 'K13', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': DARK_GRAY, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0.00', 'data_type': 'string'},
+                {'cell_ref': 'L13', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': DARK_GRAY, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0.00', 'data_type': 'string'},
+                {'cell_ref': 'M13', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': DARK_GRAY, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0.00', 'data_type': 'string'},
+                {'cell_ref': 'N13', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': DARK_GRAY, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0.00', 'data_type': 'string'},
+                {'cell_ref': 'O13', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': DARK_GRAY, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0.00', 'data_type': 'string'},
+                {'cell_ref': 'P13', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': DARK_GRAY, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0.00', 'data_type': 'string'},
+                {'cell_ref': 'Q13', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': DARK_GRAY, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0.00', 'data_type': 'string'},
+                
+                {'cell_ref': 'R13', 'font_name': 'Calibri', 'font_size': 11, 'font_color': 'C00000', 'bold': True, 'fill_color': 'D9D9D9', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0.00', 'data_type': 'string'},
+                {'cell_ref': 'S13', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': '92D050', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0.00', 'data_type': 'string'},
+                {'cell_ref': 'T13', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': '92D050', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0.00', 'data_type': 'string'},
+                {'cell_ref': 'U13', 'font_name': 'Calibri', 'font_size': 11, 'font_color': 'C00000', 'bold': True, 'fill_color': 'D9D9D9', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0.00', 'data_type': 'string'},
+                
+                # {'cell_ref': 'U13', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': DARK_GRAY, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0.00', 'data_type': 'string'},
+                # {'cell_ref': 'V13', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': DARK_GRAY, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0.00', 'data_type': 'string'},
+                
+                {'cell_ref': 'V13', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': '92D050', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0.00', 'data_type': 'string'},
+                {'cell_ref': 'W13', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': '92D050', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0.00', 'data_type': 'string'},
+                {'cell_ref': 'X13', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': '92D050', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0.00', 'data_type': 'string'},
+                
+                # {'cell_ref': 'W13', 'font_name': 'Calibri', 'font_size': 11, 'font_color': 'C00000', 'bold': True, 'fill_color': 'D9D9D9', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0.00', 'data_type': 'string'},
+                
+                # {'cell_ref': 'X13', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': '92D050', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0.00', 'data_type': 'string'},
+                # {'cell_ref': 'Y13', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': '92D050', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0.00', 'data_type': 'string'},
+
+                # {'cell_ref': 'Z13', 'font_name': 'Calibri', 'font_size': 11, 'font_color': 'C00000', 'bold': True, 'fill_color': 'D9D9D9', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0.00', 'data_type': 'string'},
+                # {'cell_ref': 'Y14', 'font_name': 'Calibri', 'font_size': 11, 'font_color': 'C00000', 'bold': True, 'fill_color': 'D9D9D9', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0.00', 'data_type': 'string'},
+                
+                # {'cell_ref': 'S12:V13', 'font_name': 'Calibri', 'font_size': 11, 'font_color': 'C00000', 'bold': True, 'fill_color': 'D9D9D9', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0.00', 'value': "VALOR CUPON YA DESCONTADO EN PRECIO CON DESCUENTO", 'data_type': 'string'},
                 ]
             
             promobrid = [
-                {'cell_ref': 'A5:C6', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': False, 'fill_color': BLACK, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': "LLANTAS AL MES", 'data_type': 'string'},
-                {'cell_ref': 'D5:F5', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': False, 'fill_color': RED, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': "DESCUENTOS  SEGÚN POLÍTICA COMERCIAL", 'data_type': 'string'},
-                {'cell_ref': 'D6', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': False, 'fill_color': '595959', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': "Volumen", 'data_type': 'string'},
-                {'cell_ref': 'E6', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': 'EBEBEB', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': "Logístico", 'data_type': 'string'},
-                {'cell_ref': 'F6', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': False, 'fill_color': '595959', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': "Financiero", 'data_type': 'string'},
+                {'cell_ref': 'I6:L6', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': False, 'fill_color': RED, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': "PROMOCIÓN BRIDGESTONE Y FIRESTONE", 'data_type': 'string'},
                 
-                {'cell_ref': 'A7:C7', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': 1},
-                {'cell_ref': 'D7', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '0%', 'value': f"""=IF(A7=1,0%,IF(A7=150,1%,IF(A7=350,2%,IF(A7=600,3%, 0%))))"""},
-                {'cell_ref': 'E7', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '0%', 'value': "0%"},
-                {'cell_ref': 'F7', 'font_name': 'Calibri', 'font_size': 11, 'font_color': '00B050', 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '0%', 'value': "0%"},
+                {'cell_ref': 'I7:J7', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': 'FDE9D9', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': "CUPONES", 'data_type': 'string'},
+                {'cell_ref': 'I8:J8', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': False, 'fill_color': BLACK, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': "Desde 1 llanta limitado a 200 por RFC", 'data_type': 'string'},
+                {'cell_ref': 'I9:J9', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': 'FDE9D9', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': "5% (Consulte medidas participantes)", 'data_type': 'string'},
                 
-                {'cell_ref': 'A8:C8', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': False, 'fill_color': BLACK, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': "TOTAL LLANTAS", 'data_type': 'string'},
-                {'cell_ref': 'A9:C10', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': f"""=SUM(X15:X{num_rows_3})+SUM('Precios Con Iva'!U15:U{num_rows_1})"""},
+                {'cell_ref': 'K7:L7', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': 'F2DCDB', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': "BONO TARJETA", 'data_type': 'string'},
                 
-                {'cell_ref': 'D8:F8', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': f"""=IF(E7=0%, "Sin descuento de 1 a 99 llantas por envío", IF(E7=2%,"Descuento Logístico: Mín. 100 llantas x envío", IF(E7=4%, "Descuento Logístico: Mín. 300 llantas x envío", "Sin descuento de 1 a 99 llantas por envío")))"""},
-                {'cell_ref': 'D9:F9', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': 'EBEBEB', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': "Códigos con Super descuento", 'data_type': 'string'},
-                {'cell_ref': 'D10:F10', 'font_name': 'Calibri', 'font_size': 11, 'font_color': '00B050', 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': "Financiero aplica pagando en tiempo sus facturas", 'data_type': 'string'},
+                {'cell_ref': 'K8:L8', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': False, 'fill_color': BLACK, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '0%', 'value': "Sin bono", 'data_type': 'string'},
+                {'cell_ref': 'K9:L9', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': 'F2DCDB', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': f"""=IF(K8 = "Por cada 50 mil pesos por mes", "Tarjeta de 2 mil pesos de regalo", IF(K8 = "Por cada 100 mil pesos por mes", "Tarjeta de 5 mil pesos de regalo", IF(K8 = "Por cada 200 mil pesos por mes", "Tarjeta de 12 mil pesos de regalo", "Seleccione Promoción")))""", 'data_type': 'string'},
+                                                                                                                                                                                                                                                            
+                {'cell_ref': 'I10:L10', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': 'D9D9D9', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': "DESCUENTO ACUMULADO", 'data_type': 'string'},
                 
-                #################################################################################################################################################################################################################################################################################################################################
-                
-                {'cell_ref': 'I5:L5', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': False, 'fill_color': RED, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': "P R O M O C I Ó N        M A Y O R E O    B S", 'data_type': 'string'},
-                {'cell_ref': 'I6:L6', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': False, 'fill_color': '404040', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': "Promoción mayoreo aplicable desde 1 llanta", 'data_type': 'string'},
-                {'cell_ref': 'I7:J7', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': False, 'fill_color': BLACK, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': "FACTURACIÓN REQUERIDA", 'data_type': 'string'},
-                {'cell_ref': 'K7:L7', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': False, 'fill_color': RED, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': "DESCUENTO REFLEJADO EN PRECIO CON DESCUENTOS", 'data_type': 'string'},
-                
-                {'cell_ref': 'I8:J8', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': 'FDE9D9', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': '1 llanta', 'data_type': 'string'},
-                {'cell_ref': 'K8:L8', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': 'FDE9D9', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '0%', 'value': "5%", 'data_type': 'string'},
-                
-                {'cell_ref': 'I9:L9', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': 'D9D9D9', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': "DESCUENTO ACUMULADO", 'data_type': 'string'},
-                
-                {'cell_ref': 'I10:L10', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '$#,##0.00', 'value': f"""=SUM(SUMIFS(Y15:Y{num_rows_3}, P15:P{num_rows_3}, "SI"))""", 'data_type': 'string'},
+                {'cell_ref': 'I11:J11', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '$#,##0.00', 'value': f"""=SUMPRODUCT((Q14:Q{num_rows_3} <> "")*(Q14:Q{num_rows_3})*(U14:U{num_rows_3}))""", 'data_type': 'string'},
+                {'cell_ref': 'K11:L11', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '$#,##0.00', 'value': f"""=SUMPRODUCT((S14:S{num_rows_3} <> "")*(S14:S{num_rows_3})*(U14:U{num_rows_3}))""", 'data_type': 'string'},
                 ]
 
             data_for_sheet5 = [
@@ -1112,9 +1205,9 @@ class ListaDePrecios(models.TransientModel):
             sheets2 = [sheet5]
             # Diccionario que define las columnas y sus formatos
             formats = {
-                'string': ['B', 'C', 'D', 'E', 'F', 'H', 'I', 'J', 'K', 'L', 'M', 'O', 'P'],
-                'number': ['A', 'X'],
-                'currency': ['Q', 'R', 'S', 'T', 'U', 'V', 'W', 'Y'],
+                'string': ['B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'M'],
+                'number': ['A', 'L', 'U'],
+                'currency': ['N', 'O', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'X'],
             }
             
             formats2 = {
@@ -1129,11 +1222,11 @@ class ListaDePrecios(models.TransientModel):
             # Para ocultar la hoja:
             # sheet.sheet_state = 'hidden'
             
-            columna_a_ocultar_sheet3 = ['A', 'C', 'G', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'Y']
+            columna_a_ocultar_sheet3 = ['A', 'N', 'O', 'V', 'W', 'X']
             
             # Itera sobre cada hoja
             for sheet in sheets:
-                start_row = 14
+                start_row = 13
                 end_row = num_rows_3
                 start_col = 'A'
                 end_col = 'X'
@@ -1144,7 +1237,7 @@ class ListaDePrecios(models.TransientModel):
                         #-----------Ocultar cuadricula---------------------------
                         self.color_cells_based_on_condition_sheet3(sheet)
                         sheet.sheet_view.showGridLines = False
-                        sheet.freeze_panes = 'A15'
+                        sheet.freeze_panes = 'A14'
                 for columna_sheet3 in columna_a_ocultar_sheet3:
                     sheet.column_dimensions[columna_sheet3].hidden = True
 
@@ -1184,13 +1277,29 @@ class ListaDePrecios(models.TransientModel):
 
 
         # Ajustar el ancho de las columnas en todas las hojas basándose en la fila 1 (por ejemplo)
-        row_num = 14
-        desired_height = 40  # Altura deseada en puntos
-        
         for sheet_name in wb.sheetnames:
-            ws = wb[sheet_name]
-
-            ws.row_dimensions[row_num].height = desired_height
+            row_num = 13
+            desired_height = 40  # Altura deseada en Columnas
+            desired_height_2 = 50  # Altura deseada en ENCABEZADO
+            if sheet_name in ['Transitos']:
+                row_num = 2
+                ws = wb[sheet_name]
+                ws.row_dimensions[row_num].height = desired_height
+            else:
+                ws = wb[sheet_name]
+                ws.row_dimensions[row_num].height = desired_height
+                ws.row_dimensions[row_num - 12].height = desired_height_2
+                
+                # start_col = ['E', 'O', 'U', 'X']
+                # thin_border = Border(
+                #                 right=Side(style='thick', color=BLACK),
+                # )
+                # for col in start_col:
+                #     if sheet_name == 'Precios Con Iva' and col == 'X':
+                #         continue
+                #     for row in ws.iter_rows(min_row=1, max_row=6, min_col=column_index_from_string(col), max_col=column_index_from_string(col)):
+                #         for cell in row:
+                #             cell.border = thin_border
 
             if sheet_name == 'P. BRIDGESTONE':
                 col = 23  # columna W
@@ -1246,7 +1355,7 @@ class ListaDePrecios(models.TransientModel):
         action = {
             'name': 'Lista de Precios',
             'type': 'ir.actions.act_url',
-            'url': f'/web/content/?model=inv_promo.lista_precios_wizard&id={self.id}&field=file_data&download=true&filename={self.partner_id.name or "Lista de Precios M"}.xlsx',
+            'url': f'/web/content/?model=inv_promo.lista_precios_wizard&id={self.id}&field=file_data&download=true&filename=VTA-FO-03 Lista de Precios {date.today()}.xlsx',
             'target': '_blank',
             }
         return action

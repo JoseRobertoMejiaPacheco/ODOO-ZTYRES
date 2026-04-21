@@ -111,6 +111,7 @@
                                     <field name="tier_ids" widget="many2many_tags" />
                                     <field name="measure_ids" widget="many2many_tags" />
                                     <field name="segment_ids" widget="many2many_tags" />
+                                    <field name="price_list_ids" widget="many2many_tags" />
                                 </group>
 
                                 <separator string="Tipo de política" colspan="4" />
@@ -168,13 +169,16 @@
                                         type="object"
                                         string="Cargar Códigos (.xlsx)"
                                         class="oe_highlight"
-                                        icon="fa fa-file-excel" />
+                                        icon="fa-file-excel" />
 
+
+
+                                        
                                     <button name="clear_product_relations"
                                         type="object"
                                         string="Limpiar Productos"
                                         class="oe_stat_button"
-                                        icon="fa fa-trash"
+                                        icon="fa-trash"
                                         confirm="¿Está seguro que desea eliminar todas las relaciones con productos?" />
                                     <field name="not_found" />
                                 </group>
@@ -188,6 +192,32 @@
                                 <field name="excluded_invoice_ids_domain" invisible="1"/>
                                 <field name="excluded_invoice_ids"/>
                             </page>
+
+                            <page string="Cupones">
+                                <group colspan="4" class="oe_button_box">
+                                    <button name="action_open_coupon_excel_import"
+                                        type="object"
+                                        string="Cargar Códigos (.xlsx)"
+                                        class="oe_highlight"
+                                        icon="fa-file-excel" />                                        
+
+    
+</group>                                
+                                <field name="coupon_ids">
+                                    <tree editable="bottom">
+                                        <field name="product_id" />
+                                        <field name="amount" />
+                                    </tree>
+                                </field>
+
+                                    <button name="clear_coupon_product_relations"
+                                        type="object"
+                                        string="Limpiar Productos de cupones"
+                                        class="oe_stat_button"
+                                        icon="fa-trash" 
+                                        confirm="¿Está seguro que desea eliminar todas las relaciones con productos?" />
+                                    <field name="not_found" />                                
+                            </page>                              
 
                         </notebook>
                     </sheet>

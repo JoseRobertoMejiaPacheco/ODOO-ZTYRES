@@ -1,0 +1,169 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* bi_import_bank_statement_line
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 13.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2021-05-18 07:49+0000\n"
+"PO-Revision-Date: 2021-05-18 07:49+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: bi_import_bank_statement_line
+#: code:addons/bi_import_bank_statement_line/models/bank_statement.py:0
+#, python-format
+msgid " \"%s\" Currency are not available."
+msgstr " \"%s\" العملة غير متوفرة."
+
+#. module: bi_import_bank_statement_line
+#: model_terms:ir.ui.view,arch_db:bi_import_bank_statement_line.view_bank_statement_form_inherit_import_lines
+msgid "Add Lines"
+msgstr "أضف السطور"
+
+#. module: bi_import_bank_statement_line
+#. openerp-web
+#: code:addons/bi_import_bank_statement_line/static/src/xml/account_reconciliation.xml:0
+#, python-format
+msgid "Automatic reconciliation"
+msgstr "تسوية تلقائية"
+
+#. module: bi_import_bank_statement_line
+#: model:ir.model.fields.selection,name:bi_import_bank_statement_line.selection__account_bank_statement_wizard__file_opt__csv
+msgid "CSV"
+msgstr "CSV"
+
+#. module: bi_import_bank_statement_line
+#: model_terms:ir.ui.view,arch_db:bi_import_bank_statement_line.bank_statement_import_line_wizard
+msgid "Cancel"
+msgstr "يلغي"
+
+#. module: bi_import_bank_statement_line
+#: model:ir.model.fields,field_description:bi_import_bank_statement_line.field_account_bank_statement_wizard__create_uid
+msgid "Created by"
+msgstr "انشأ من قبل"
+
+#. module: bi_import_bank_statement_line
+#: model:ir.model.fields,field_description:bi_import_bank_statement_line.field_account_bank_statement_wizard__create_date
+msgid "Created on"
+msgstr "تم إنشاؤها على"
+
+#. module: bi_import_bank_statement_line
+#: model:ir.model.fields,field_description:bi_import_bank_statement_line.field_account_bank_statement_wizard__display_name
+msgid "Display Name"
+msgstr "اسم العرض"
+
+#. module: bi_import_bank_statement_line
+#: model:ir.model.fields.selection,name:bi_import_bank_statement_line.selection__account_bank_statement_wizard__file_opt__excel
+msgid "Excel"
+msgstr "اكسل"
+
+#. module: bi_import_bank_statement_line
+#: model:ir.model.fields,field_description:bi_import_bank_statement_line.field_account_bank_statement_wizard__file
+msgid "File"
+msgstr "ملف"
+
+#. module: bi_import_bank_statement_line
+#: model:ir.model.fields,field_description:bi_import_bank_statement_line.field_account_bank_statement_wizard__file_opt
+msgid "File Opt"
+msgstr "ملف Opt"
+
+#. module: bi_import_bank_statement_line
+#: model:ir.model.fields,field_description:bi_import_bank_statement_line.field_account_bank_statement_wizard__id
+msgid "ID"
+msgstr "هوية شخصية"
+
+#. module: bi_import_bank_statement_line
+#: model_terms:ir.ui.view,arch_db:bi_import_bank_statement_line.bank_statement_import_line_wizard
+msgid "Import"
+msgstr "يستورد"
+
+#. module: bi_import_bank_statement_line
+#: model_terms:ir.ui.view,arch_db:bi_import_bank_statement_line.bank_statement_import_line_wizard
+msgid "Import Bank Statement Lines"
+msgstr "خطوط كشف الحساب البنكي للاستيراد"
+
+#. module: bi_import_bank_statement_line
+#: model:ir.model.fields,field_description:bi_import_bank_statement_line.field_account_bank_statement_wizard____last_update
+msgid "Last Modified on"
+msgstr "تاريخ آخر تعديل"
+
+#. module: bi_import_bank_statement_line
+#: model:ir.model.fields,field_description:bi_import_bank_statement_line.field_account_bank_statement_wizard__write_uid
+msgid "Last Updated by"
+msgstr "آخر تحديث بواسطة"
+
+#. module: bi_import_bank_statement_line
+#: model:ir.model.fields,field_description:bi_import_bank_statement_line.field_account_bank_statement_wizard__write_date
+msgid "Last Updated on"
+msgstr "آخر تحديث في"
+
+#. module: bi_import_bank_statement_line
+#. openerp-web
+#: code:addons/bi_import_bank_statement_line/static/src/xml/account_reconciliation.xml:0
+#, python-format
+msgid "Let odoo try to reconcile entries for the user"
+msgstr "دع odoo يحاول التوفيق بين الإدخالات للمستخدم"
+
+#. module: bi_import_bank_statement_line
+#. openerp-web
+#: code:addons/bi_import_bank_statement_line/static/src/xml/account_reconciliation.xml:0
+#, python-format
+msgid "Load more"
+msgstr "تحميل المزيد"
+
+#. module: bi_import_bank_statement_line
+#: code:addons/bi_import_bank_statement_line/models/bank_statement.py:0
+#, python-format
+msgid "Not a valid file!"
+msgstr "ملف غير صالح!"
+
+#. module: bi_import_bank_statement_line
+#. openerp-web
+#: code:addons/bi_import_bank_statement_line/static/src/xml/account_reconciliation.xml:0
+#, python-format
+msgid "Nothing to do!"
+msgstr "لا شيء لأفعله!"
+
+#. module: bi_import_bank_statement_line
+#. openerp-web
+#: code:addons/bi_import_bank_statement_line/static/src/xml/account_reconciliation.xml:0
+#, python-format
+msgid "OK"
+msgstr "نعم"
+
+#. module: bi_import_bank_statement_line
+#. openerp-web
+#: code:addons/bi_import_bank_statement_line/static/src/xml/account_reconciliation.xml:0
+#, python-format
+msgid ""
+"This page displays all the bank transactions that are to be reconciled and "
+"provides with a neat interface to do so."
+msgstr ""
+
+#. module: bi_import_bank_statement_line
+#. openerp-web
+#: code:addons/bi_import_bank_statement_line/static/src/xml/account_reconciliation.xml:0
+#, python-format
+msgid "Tip: Hit CTRL-Enter to reconcile all the balanced items in the sheet."
+msgstr "نصيحة: اضغط على CTRL-Enter لتسوية جميع العناصر المتوازنة في الورقة."
+
+#. module: bi_import_bank_statement_line
+#: model:ir.model,name:bi_import_bank_statement_line.model_account_bank_statement_wizard
+msgid "account.bank.statement.wizard"
+msgstr ""
+
+#. module: bi_import_bank_statement_line
+#: model:ir.actions.act_window,name:bi_import_bank_statement_line.action_bank_statement_import_line_wizard
+msgid "action bank statement import line wizard"
+msgstr "معالج خط استيراد كشف الحساب المصرفي الإجراء"
+
+#. module: bi_import_bank_statement_line
+#: model_terms:ir.ui.view,arch_db:bi_import_bank_statement_line.bank_statement_import_line_wizard
+msgid "or"
+msgstr "أو"

@@ -5,7 +5,7 @@ from datetime import datetime, timedelta, date
 import numpy as np
 from dateutil.relativedelta import relativedelta
 from functools import reduce
-from odoo.addons.inv_promo.wizard.models.lista_de_precios import codes, codes2, codes3
+# from odoo.addons.inv_promo.wizard.models.lista_de_precios import codes, codes2, codes3
 
 class MyModel(models.TransientModel):
     _name = 'reporte_ventas25'

@@ -28,17 +28,36 @@ class MyModel(models.TransientModel):
 
     def add_month(self, dataframe, move_type, reverse_move_type, details):
         ids = dataframe['id'].tolist()
-        dfs_to_merge = [pd.DataFrame(self.get_last_invoice_product_qty_by_period(item['month_name'], ids, item['start_date'], item['end_date'])) for item in details]
+        dfs_to_merge = []
+
+        for item in details:
+            month_name = item['month_name']
+
+            df = pd.DataFrame(
+                self.get_last_invoice_product_qty_by_period(
+                    month_name,
+                    ids,
+                    item['start_date'],
+                    item['end_date']
+                )
+            )
+
+            if df.empty:
+                month_name_col = f"'{month_name}'"
+                df = pd.DataFrame({
+                    'id': ids,
+                    month_name_col: 0
+                })
+
+            dfs_to_merge.append(df)
+
         for df in dfs_to_merge:
-            try:
-                if not df.empty:
-                    dataframe = dataframe.merge(df, on='id', how='left')
-            except:
-                print('Hola')
+            dataframe = dataframe.merge(df, on='id', how='left')
+
+        dataframe.fillna(0, inplace=True)
+
         return dataframe
-
     # Métodos para obtener datos
-
     def get_transit_qty(self, product_tmpl_ids):
         query = """
         SELECT  
@@ -139,88 +158,6 @@ class MyModel(models.TransientModel):
         params = (tuple(product_tmpl_ids),)
         return self.execute_query(query, params)
     
-    # def get_avg_x_studio_costo_final_new(self, product_tmpl_ids, to_date = False):
-    #     desired_fields = [
-    #         'id',
-    #         'default_code',
-    #         'qty_available',
-    #         'standard_price'
-    #     ]
-    #     records = self.env['product.template'].search_read([('detailed_type', 'in', ['product'])], fields=desired_fields)
-    #     # Extraer solo los valores de las tuplas
-    #     result = [{key: value[1] if isinstance(value, tuple) else value for key, value in record.items()} for record in records]
-    #     df = pd.DataFrame(result)
-    #     df = df.loc [df['qty_available'] != 0]
-    #     query = """
-    #         SELECT 
-    #             am.currency_id AS moneda_pedido, 
-    #             pp.product_tmpl_id AS id,
-    #             pp.id AS pp_id,
-    #             pt.default_code AS codigo,
-    #             aml.quantity AS cantidad,
-    #             aml.price_unit AS costo_final_promedio,
-    #             am."date" AS fecha_pedido_compra
-    #         FROM 
-    #             account_move am
-    #         JOIN 
-    #             account_move_line aml ON am.id = aml.move_id
-    #         JOIN 
-    #             product_product pp ON aml.product_id = pp.id
-    #         JOIN 
-    #             product_template pt ON pp.product_tmpl_id = pt.id
-    #         WHERE 
-    #             am.state IN ('posted')
-    #             AND am.move_type IN ('in_invoice')
-    #             AND aml.display_type IN ('product')
-    #             AND aml.price_unit IS NOT NULL
-    #             AND aml.price_unit != 0
-    #             AND pp.product_tmpl_id IN %s
-    #             AND am."date" <= %s
-    #         ORDER BY 
-    #             am."date" DESC
-    #     """
-    #     params = (tuple(product_tmpl_ids), to_date)
-    #     result2 = self.execute_query(query, params)
-    #     df2 = pd.DataFrame(result2)
-    #     # Nuevo DataFrame para almacenar los registros
-    #     nuevo_df = pd.DataFrame(columns=['moneda_pedido', 'id','pp_id', 'codigo', 'cantidad', 'costo_final_promedio', 'fecha_pedido_compra'])
-    #     # Iterar sobre los registros del segundo DataFrame
-    #     for index, row in df2.iterrows():
-    #         codigo = row['id']
-    #         cantidad_restante = row['cantidad']
-    #         # Buscar el código en el primer DataFrame
-    #         if codigo in df['id'].values:
-    #             # Restar la cantidad del primer DataFrame hasta que sea menor o igual a 0
-    #             while cantidad_restante > 0:
-    #                 # Obtener la cantidad disponible en el primer DataFrame
-    #                 cantidad_disponible = df.loc[df['id'] == codigo, 'qty_available'].values[0]
-    #                 # Si la cantidad disponible es mayor que 0
-    #                 if cantidad_disponible > 0:
-    #                     # Calcular la cantidad a restar
-    #                     cantidad_a_restar = min(cantidad_restante, cantidad_disponible)
-    #                     # Restar la cantidad del primer DataFrame
-    #                     df.loc[df['id'] == codigo, 'qty_available'] -= cantidad_a_restar
-    #                     # Guardar el registro en el nuevo DataFrame
-    #                     # nuevo_df = nuevo_df.append({'moneda_pedido': row['moneda_pedido'] ,'id': codigo, 'cantidad': cantidad_a_restar, 'costo_final_promedio': row['costo_final_promedio'], 'fecha_pedido_compra': row['fecha_pedido_compra']}, ignore_index=True)
-    #                     nuevo_df = pd.concat([nuevo_df, pd.DataFrame([{'moneda_pedido': row['moneda_pedido'], 'id': codigo, 'cantidad': cantidad_a_restar, 'costo_final_promedio': row['costo_final_promedio'], 'fecha_pedido_compra': row['fecha_pedido_compra']}])], ignore_index=True)
-    #                     # Actualizar la cantidad restante
-    #                     cantidad_restante -= cantidad_a_restar
-    #                 # Si la cantidad disponible es igual a 0, salir del bucle
-    #                 if cantidad_disponible == 0:
-    #                     break
-        
-    #     reports_core = self.env['ztyres_ms_sql_excel_core']
-    #     nuevo_df['monto_en_moneda_empresa'] = nuevo_df.apply(lambda row: self.convert_to_company_currency(row['moneda_pedido'], row['costo_final_promedio'], row['fecha_pedido_compra']), axis=1)
-    #     # Calcular la suma ponderada del costo por ID
-    #     nuevo_df['Costo Ponderado'] = nuevo_df['cantidad'] * nuevo_df['monto_en_moneda_empresa']
-        
-    #     reports_core.action_insert_dataframe(nuevo_df, 'pmp2')
-    #     # Agrupar por ID y calcular la suma ponderada del costo y la suma de la cantidad
-    #     grupo = nuevo_df.groupby('id').agg({'Costo Ponderado': 'sum', 'cantidad': 'sum'})
-    #     # Calcular el costo promedio por ID
-    #     grupo['costo_final_promedio'] = grupo['Costo Ponderado'] / grupo['cantidad']
-    #     new_df = grupo.rename(columns={'monto_en_moneda_empresa': 'costo_final_promedio'})
-    #     return new_df
     
     def get_avg_x_studio_costo_final(self, product_tmpl_ids):
         desired_fields = [
@@ -261,56 +198,7 @@ class MyModel(models.TransientModel):
         df2 = pd.DataFrame(result2)
         
         df2['Pesos'] = df2.apply(lambda row: self.convert_to_company_currency(row['moneda_pedido'], row['precio_unitario'], row['fecha_pedido_compra']), axis=1)
-        
-        # # Nuevo DataFrame para almacenar los registros
-        # nuevo_df = pd.DataFrame(columns=['moneda_pedido', 'id', 'codigo', 'cantidad', 'precio_unitario' 'costo_final_promedio', 'fecha_pedido_compra', 'Pesos'])
-        
-        # # Iterar sobre los registros del segundo DataFrame
-        # for index, row in df2.iterrows():
-        #     codigo = row['id']
-        #     cantidad_restante = row['cantidad']
-        #     # Buscar el código en el primer DataFrame
-        #     if codigo in df['id'].values:
-        #         # Restar la cantidad del primer DataFrame hasta que sea menor o igual a 0
-        #         while cantidad_restante > 0:
-        #             # Obtener la cantidad disponible en el primer DataFrame
-        #             cantidad_disponible = df.loc[df['id'] == codigo, 'qty_available'].values[0]
-        #             # Si la cantidad disponible es mayor que 0
-        #             if cantidad_disponible > 0:
-        #                 # Calcular la cantidad a restar
-        #                 cantidad_a_restar = min(cantidad_restante, cantidad_disponible)
-        #                 # Restar la cantidad del primer DataFrame
-        #                 df.loc[df['id'] == codigo, 'qty_available'] -= cantidad_a_restar
-        #                 # Guardar el registro en el nuevo DataFrame
-        #                 # nuevo_df = nuevo_df.append({'moneda_pedido': row['moneda_pedido'] ,'id': codigo, 'cantidad': cantidad_a_restar, 'costo_final_promedio': row['costo_final_promedio'], 'fecha_pedido_compra': row['fecha_pedido_compra']}, ignore_index=True)
-        #                 nuevo_df = pd.concat([nuevo_df, pd.DataFrame([{'moneda_pedido': row['moneda_pedido'], 
-        #                                                                'id': codigo, 
-        #                                                                'cantidad': cantidad_a_restar, 
-        #                                                                'precio_unitario': row['precio_unitario'], 
-        #                                                                'costo_final_promedio': row['costo_final_promedio'], 
-        #                                                                'fecha_pedido_compra': row['fecha_pedido_compra'],
-        #                                                                 'Pesos': row['Pesos']
-        #                                                                }])], ignore_index=True)
-
-        #                 # Actualizar la cantidad restante
-        #                 cantidad_restante -= cantidad_a_restar
-        #             # Si la cantidad disponible es igual a 0, salir del bucle
-        #             if cantidad_disponible == 0:
-        #                 break
-                    
-        # reports_core = self.env['ztyres_ms_sql_excel_core']
-                    
-        # # nuevo_df['monto_en_moneda_empresa'] = nuevo_df.apply(lambda row: self.convert_to_company_currency(row['moneda_pedido'], row['costo_final_promedio'], row['fecha_pedido_compra']), axis=1)
-        # # Calcular la suma ponderada del costo por ID
-        # nuevo_df['Costo Ponderado'] = nuevo_df['cantidad'] * nuevo_df['costo_final_promedio']
-        
-        # reports_core.action_insert_dataframe(nuevo_df, 'pmp2')
-        # # Agrupar por ID y calcular la suma ponderada del costo y la suma de la cantidad
-        # grupo = nuevo_df.groupby('id').agg({'Costo Ponderado': 'sum', 'cantidad': 'sum'})
-        # # Calcular el costo promedio por ID
-        # grupo['costo_final_promedio'] = grupo['Costo Ponderado'] / grupo['cantidad']
-        # # new_df = grupo.rename(columns={'monto_en_moneda_empresa': 'costo_final_promedio'})
-        
+                
         nuevo_df = pd.DataFrame(columns=['moneda_pedido', 'id','pp_id', 'codigo', 'cantidad', 'costo_final_promedio', 'fecha_pedido_compra'])
         # Iterar sobre los registros del segundo DataFrame
         for index, row in df2.iterrows():
@@ -426,7 +314,6 @@ class MyModel(models.TransientModel):
     def get_last_invoice_product_cost(self, product_tmpl_id):
         return self.get_last_invoice_product_price(product_tmpl_id,'in_invoice').x_studio_costo_final
 
-
     def get_last_price_unit(self,product_tmpl_ids):
         query = """
         SELECT
@@ -461,35 +348,30 @@ class MyModel(models.TransientModel):
         df = self.dict_to_df(result)
         return df
         
-    
     def get_last_invoice_product_qty_by_period(self, month_name, product_tmpl_ids, date_from, date_to):
-        query  =  """
-        SELECT
-            pp.product_tmpl_id as id,
-            SUM(CASE
-                WHEN am.move_type = 'out_invoice' THEN aml.quantity * 1
-                WHEN am.move_type = 'out_refund' THEN aml.quantity * -1
-                ELSE aml.quantity  -- Puedes manejar otros casos si es necesario
-            END) AS "%s"
-        FROM
-            account_move_line AS aml
-        JOIN
-            product_product AS pp ON aml.product_id = pp.id
-        JOIN
-            account_move AS am ON aml.move_id = am.id 
-        WHERE
-            pp.product_tmpl_id IN (select id from product_template where "type" = 'product' ) and
-            am.state IN ('posted') AND
-            aml.display_type = 'product' AND
-            am.move_type IN ('out_invoice', 'out_refund') AND
-            am.invoice_date >= %s AND
-            am.invoice_date <= %s
-            group by pp.product_tmpl_id;
+        query = """
+            SELECT 
+                pp.product_tmpl_id AS id,
+                SUM(
+                    CASE 
+                        WHEN am.move_type = 'out_invoice' THEN aml.quantity
+                        WHEN am.move_type = 'out_refund' THEN -aml.quantity
+                    END
+                ) AS "%s"
+            FROM account_move_line aml
+            JOIN product_product pp ON aml.product_id = pp.id
+            JOIN product_template pt ON pp.product_tmpl_id = pt.id
+            JOIN account_move am ON aml.move_id = am.id
+            WHERE pt.type = 'product'
+                AND am.state = 'posted'
+                AND aml.display_type = 'product'
+                AND am.move_type IN ('out_invoice', 'out_refund')
+                AND am.invoice_date BETWEEN %s AND %s
+            GROUP BY pp.product_tmpl_id
         """
         params = (month_name, date_from, date_to)
         return self.execute_query(query, params)
 
-##############
     def get_avg_ucfact(self, product_tmpl_ids):
         query = """
             SELECT 
@@ -531,15 +413,13 @@ class MyModel(models.TransientModel):
                 product_product AS pp ON aml.product_id = pp.id
             JOIN 
                 account_move AS am ON aml.move_id = am.id
-            WHERE 
-                am.state IN ('posted') AND
-                pp.product_tmpl_id IN %s AND
-                aml.display_type = 'product' AND
-                am.move_type = 'in_invoice'
+            WHERE am.state IN ('posted') 
+            AND pp.product_tmpl_id IN %s 
+            AND aml.display_type = 'product' 
+            AND am.move_type = 'in_invoice'
             AND aml.costo_final is not null 
             AND aml.costo_final != 0
         )
-
         SELECT
             id, fecha_pedido_compra, ultimo_costo_factura_moneda_original as ultimo_costo_factura, monto_en_moneda_empresa
         FROM 
@@ -560,6 +440,18 @@ class MyModel(models.TransientModel):
         pp = self.env['product.product'].search(domain)
         free_qty = pp.free_qty
         return max(0, free_qty)
+    
+    def get_qty_reserved(self,product_tmpl_id):
+        MoveLine = self.env['stock.move.line']
+        move_lines = MoveLine.search([
+        ('reserved_uom_qty', '>', 0),
+        ('move_id.sale_line_id', '!=', False),
+        ('move_id.state', 'in', ['confirmed', 'assigned', 'partially_available']),
+        ('product_id.product_tmpl_id', '=', product_tmpl_id),
+            ])
+        
+        reserved_qty = sum(move_lines.mapped('reserved_uom_qty'))
+        return max(0, reserved_qty)
 
     def get_all_products(self):
         desired_fields = [
@@ -582,7 +474,8 @@ class MyModel(models.TransientModel):
             'hq_id',
             'qty_available',
             'standard_price',
-            'active'
+            'active',
+            'outgoing_qty'
         ]
         
         domain = [('detailed_type', 'in', ['product']), ('active', 'in', [True, False]), ('tire', '=', True)]
@@ -594,8 +487,10 @@ class MyModel(models.TransientModel):
             # Extraer solo los valores de las tuplas y agregar 'free_qty'
         result = [{
             **{key: value[1] if isinstance(value, tuple) else value for key, value in record.items()},
-            'free_qty': self.get_qty_free(record['id']),
-            'qty_reserved': record['qty_available'] - self.get_qty_free(record['id'])
+            #'free_qty': self.get_qty_free(record['id']),
+            'free_qty': record['qty_available'] - self.get_qty_reserved(record['id']),
+            'qty_reserved': self.get_qty_reserved(record['id']),
+            'qty_reserved2': record['qty_available'] - self.get_qty_free(record['id'])
         } for record in records]
         return result
 
@@ -689,5 +584,4 @@ class MyModel(models.TransientModel):
             })
             today -= relativedelta(months=1)
         months_details.reverse()
-        print(months_details)
         return months_details

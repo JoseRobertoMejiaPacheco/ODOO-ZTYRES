@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     Hereda la vista de la orden de compra para añadir el botón de importación
+     y un stat button con el contador de XMLs importados.
+══════════════════════════════════════════════════════════════════════════ -->
+<record id="view_purchase_order_form_inherit_xml" model="ir.ui.view">
+    <field name="name">purchase.order.form.xml.import</field>
+    <field name="model">purchase.order</field>
+    <field name="inherit_id" ref="purchase.purchase_order_form"/>
+    <field name="arch" type="xml">
+
+        <!-- ── Botón principal en la barra de botones ── -->
+        <xpath expr="//div[@name='button_box']" position="inside">
+            <button name="action_import_xml_cfdi"
+                    type="object"
+                    class="oe_stat_button"
+                    icon="fa-file-code-o"
+                    attrs="{'invisible': [('state', 'not in', ['purchase','done'])]}">
+                <div class="o_field_widget o_stat_info">
+                    <span class="o_stat_value">
+                        <field name="xml_import_count"/>
+                    </span>
+                    <span class="o_stat_text">XML CFDI</span>
+                </div>
+            </button>
+        </xpath>
+
+        <!-- ── Botón de acción visible también en la zona de acciones ── -->
+        <xpath expr="//div[@name='button_box']" position="after">
+            <div class="o_field_widget"
+                 attrs="{'invisible': [('state', 'not in', ['purchase','done'])]}">
+                <button name="action_import_xml_cfdi"
+                        type="object"
+                        string="📥 Importar XML CFDI"
+                        class="btn btn-secondary"
+                        help="Importar la factura XML CFDI 4.0 del proveedor, validar el almacén y crear la factura automáticamente."/>
+            </div>
+        </xpath>
+
+    </field>
+</record>
+
+</odoo>

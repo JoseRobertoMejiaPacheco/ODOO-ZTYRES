@@ -36,3 +36,7 @@ from . import ventas_acumuladas
 from . import reporte_ventas_6meses
 from . import facturas_y_nc
 from . import ventas_del_mes
+from . import reportes_cxc
+from . import comportamiento_clientes
+from . import reporte_plan_comercial
+from . import Reporte_ventas_direccion

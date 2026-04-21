@@ -3,7 +3,9 @@
 from odoo import api, fields, models, _
 from odoo.tools import float_compare
 from odoo.exceptions import ValidationError, UserError
-
+from odoo.exceptions import ValidationError
+from odoo import api, _
+from odoo.tools.float_utils import float_compare
 
 class SaleOrderLine(models.Model):
     _inherit = "sale.order.line"
@@ -121,27 +123,58 @@ class SaleOrderLine(models.Model):
 
     @api.constrains("product_uom_qty")
     def _constrains_check_product_availability(self):
+        MoveLine = self.env["stock.move.line"]
+
         for record in self:
-            if self.env.context.get(
-                "check_availability", True
-            ):  # El valor predeterminado es True
-                if (
-                    record.product_id.detailed_type == "product"
-                    and record.product_uom_qty
-                ):
-                    if record.product_uom_qty > record.product_id.free_qty:
-                        raise ValidationError(
-                            _(
-                                "Estás intentando vender %s de %s pero solo tienes %s disponibles (después de considerar otras reservaciones)."
-                            )
-                            % (
-                                record.product_uom_qty,
-                                record.product_id.name,
-                                record.product_id.free_qty,
-                            )
-                        )
-            else:
+            if not self.env.context.get("check_availability", True):
                 continue
+
+            product = record.product_id
+
+            if (
+                product.detailed_type != "product"
+                or not record.product_uom_qty
+            ):
+                continue
+
+            # 🔹 Cantidad física real
+            qty_available = product.qty_available
+
+            # 🔹 Reservas reales (misma lógica que validamos)
+            move_lines = MoveLine.search([
+                ('product_id', '=', product.id),
+                ('reserved_uom_qty', '>', 0),
+                ('move_id.state', 'in', ['assigned', 'partially_available']),
+                ('location_id.usage', '=', 'internal'),
+                ('move_id.picking_type_id.code', '=', 'outgoing'),
+            ])
+
+            total_reservado = sum(move_lines.mapped('reserved_uom_qty'))
+
+            # 🔹 Disponible real calculado
+            disponible_real = qty_available - total_reservado
+
+            # 🔹 Validación con precisión UoM
+            if float_compare(
+                record.product_uom_qty,
+                disponible_real,
+                precision_rounding=product.uom_id.rounding,
+            ) > 0:
+                raise ValidationError(
+                    _(
+                        "Intentas vender %s de %s.\n\n"
+                        "Stock físico: %s\n"
+                        "Reservado real: %s\n"
+                        "Disponible real: %s"
+                    )
+                    % (
+                        record.product_uom_qty,
+                        product.display_name,
+                        qty_available,
+                        total_reservado,
+                        disponible_real,
+                    )
+                )
 
     def rango_fechas(self, anos):
         # Filtrar solo los años que tengan el formato correcto (4 dígitos)
@@ -185,73 +218,134 @@ class SaleOrderLine(models.Model):
 
     @api.onchange("product_uom_qty", "product_id")
     def _onchange_check_product_availability(self):
-        for record in self:
-            if record.lots_ids:
-                stock_quants = self.env["stock.quant"].search(
-                    [
-                        ("product_id", "=", record.product_id.id),
-                        ("quantity", ">", 0),
-                        ("location_id.usage", "=", "internal"),
-                        (
-                            "location_id.id",
-                            "in",
-                            record.lots_ids.quant_ids.location_id.ids,
-                        ),
-                    ]
-                )
-                total_available = sum(stock_quants.mapped("quantity"))
-                if total_available < record.product_uom_qty:
-                    raise UserError(
-                        _(
-                            'No hay suficiente stock disponible del producto "%s" en las ubicaciones internas. Disponible: %s, Solicitado: %s'
-                        )
-                        % (
-                            record.product_id.name,
-                            total_available,
-                            record.product_uom_qty,
-                        )
-                    )
+        MoveLine = self.env["stock.move.line"]
 
-        for product in self:
-            if (
-                product.product_id.detailed_type == "product"
-                and product.product_uom_qty
-            ):
-                if product.product_uom_qty > product.product_id.free_qty:
-                    warning_msg = {
+        for record in self:
+            if not record.product_id or not record.product_uom_qty:
+                continue
+
+            product = record.product_id
+
+            if product.detailed_type != "product":
+                continue
+
+            # 🔹 STOCK FÍSICO
+            qty_available = product.qty_available
+
+            # 🔹 RESERVAS REALES (misma lógica que el constraint)
+            domain = [
+                ('product_id', '=', product.id),
+                ('reserved_uom_qty', '>', 0),
+                ('move_id.state', 'in', ['assigned', 'partially_available']),
+                ('location_id.usage', '=', 'internal'),
+                ('move_id.picking_type_id.code', '=', 'outgoing'),
+            ]
+
+            # 🔸 Si se están forzando lotes específicos
+            if record.lots_ids:
+                domain.append(
+                    ('location_id', 'in', record.lots_ids.quant_ids.location_id.ids)
+                )
+
+            move_lines = MoveLine.search(domain)
+
+            total_reservado = sum(move_lines.mapped('reserved_uom_qty'))
+
+            disponible_real = qty_available - total_reservado
+
+            # 🔹 Validación con precisión correcta
+            if float_compare(
+                record.product_uom_qty,
+                disponible_real,
+                precision_rounding=product.uom_id.rounding,
+            ) > 0:
+
+                return {
+                    "warning": {
                         "title": _("¡Inventario insuficiente!"),
                         "message": _(
-                            "Estás intentando vender %s de %s pero solo tienes %s disponibles (después de considerar otras reservaciones)."
+                            "Producto: %s\n\n"
+                            "Stock físico: %s\n"
+                            "Reservado real: %s\n"
+                            "Disponible real: %s\n\n"
+                            "Intentas vender: %s"
                         )
                         % (
-                            product.product_uom_qty,
-                            product.product_id.name,
-                            product.product_id.free_qty,
+                            product.display_name,
+                            qty_available,
+                            total_reservado,
+                            disponible_real,
+                            record.product_uom_qty,
                         ),
                     }
-                    return {"warning": warning_msg}
+                }
 
-    @api.constrains("product_uom_qty")
+    @api.constrains("product_uom_qty", "product_id")
     def _constrains_check_product_availability(self):
-        if self.env.context.get("check_availability", True):
-            for record in self:
-                if (
-                    record.product_id.detailed_type == "product"
-                    and record.product_uom_qty
-                ):
-                    if record.product_uom_qty > record.product_id.free_qty:
-                        raise ValidationError(
-                            _(
-                                "Estás intentando vender %s de %s pero solo tienes %s disponibles (después de considerar otras reservaciones)."
-                            )
-                            % (
-                                record.product_uom_qty,
-                                record.product_id.name,
-                                record.product_id.free_qty,
-                            )
-                        )
-        else:
+
+        if not self.env.context.get("check_availability", True):
             return
+
+        MoveLine = self.env["stock.move.line"]
+
+        for record in self:
+            product = record.product_id
+
+            if (
+                not product
+                or product.detailed_type != "product"
+                or not record.product_uom_qty
+            ):
+                continue
+
+            # 🔹 Stock físico total
+            qty_available = product.qty_available
+
+            # 🔹 Reservas reales (assigned y parcialmente disponible)
+            domain = [
+                ('product_id', '=', product.id),
+                ('reserved_uom_qty', '>', 0),
+                ('move_id.state', 'in', ['assigned', 'partially_available']),
+                ('location_id.usage', '=', 'internal'),
+                ('move_id.picking_type_id.code', '=', 'outgoing'),
+            ]
+
+            move_lines = MoveLine.search(domain)
+
+            total_reservado = sum(move_lines.mapped('reserved_uom_qty'))
+
+            # 🔹 Excluir la propia línea si ya tiene movimientos creados
+            if record.move_ids:
+                own_reserved = sum(
+                    record.move_ids.mapped('move_line_ids.reserved_uom_qty')
+                )
+                total_reservado -= own_reserved
+
+            disponible_real = qty_available - total_reservado
+
+            if float_compare(
+                record.product_uom_qty,
+                disponible_real,
+                precision_rounding=product.uom_id.rounding,
+            ) > 0:
+
+                raise ValidationError(
+                    _(
+                        "Inventario insuficiente.\n\n"
+                        "Producto: %s\n"
+                        "Stock físico: %s\n"
+                        "Reservado real: %s\n"
+                        "Disponible real: %s\n"
+                        "Intentas vender: %s"
+                    )
+                    % (
+                        product.display_name,
+                        qty_available,
+                        total_reservado,
+                        disponible_real,
+                        record.product_uom_qty,
+                    )
+                )
 
     def _get_valid_pricelists(self):
         return [1, 108]

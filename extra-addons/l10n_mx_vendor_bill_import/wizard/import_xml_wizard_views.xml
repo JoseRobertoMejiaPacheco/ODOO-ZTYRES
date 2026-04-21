@@ -1,0 +1,239 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+<!-- ══════════════════════════════════════════════════════════════
+     VISTA FORM DE DISTRIBUCIÓN (popup separado)
+     Se abre al presionar "Editar distribución" en cada línea
+══════════════════════════════════════════════════════════════ -->
+<record id="view_import_xml_line_dist_form" model="ir.ui.view">
+    <field name="name">import.xml.line.dist.form</field>
+    <field name="model">import.xml.line</field>
+    <field name="arch" type="xml">
+        <form string="Distribución por pedido">
+            <sheet>
+                <div class="oe_title">
+                    <h2>
+                        <field name="descripcion" readonly="1"/>
+                    </h2>
+                </div>
+
+                <group col="4" string="Resumen del concepto">
+                    <field name="no_identificacion" readonly="1" string="Código XML"/>
+                    <field name="cantidad"          readonly="1" string="Cantidad en XML"/>
+                    <field name="qty_distributed"   readonly="1" string="Ya distribuido"
+                           class="font-weight-bold"/>
+                    <field name="qty_remaining"     readonly="1" string="Falta distribuir"
+                           class="font-weight-bold text-danger"/>
+                </group>
+
+                <separator string="Distribución entre pedidos — la suma debe ser igual a la Cantidad XML"/>
+
+                <field name="split_ids" nolabel="1">
+                    <tree editable="bottom"
+                          decoration-danger="qty_to_receive > qty_pending_po and qty_pending_po > 0"
+                          decoration-success="qty_to_receive > 0 and qty_to_receive &lt;= qty_pending_po"
+                          decoration-warning="qty_to_receive &lt;= 0">
+                        <field name="purchase_order_id" string="Pedido"   readonly="1"/>
+                        <field name="purchase_line_id"  string="Línea PO"
+                               options="{'no_create': True}"/>
+                        <field name="qty_pending_po"    string="Pendiente PO" readonly="1"/>
+                        <field name="qty_to_receive"    string="A recibir"/>
+                        <field name="po_candidates_json"    invisible="1"/>
+                        <field name="po_candidate_line_ids" invisible="1"/>
+                        <field name="wizard_id"             invisible="1"/>
+                        <field name="wizard_po_order_ids"   invisible="1"/>
+                    </tree>
+                </field>
+
+                <div class="alert alert-info mt8" role="alert" style="font-size:12px">
+                    <i class="fa fa-info-circle"/>
+                    <strong>Verde</strong> = cantidad OK.
+                    <strong>Rojo</strong> = excede el pendiente del pedido.
+                    <strong>Amarillo</strong> = cantidad en cero.
+                    <br/>
+                    Usa <strong>Agregar una linea</strong> para dividir este concepto entre mas pedidos.
+                </div>
+
+                <!-- Campos necesarios pero ocultos -->
+                <field name="po_candidates_json"  invisible="1"/>
+                <field name="distribution_ok"     invisible="1"/>
+                <field name="qty_distributed"     invisible="1"/>
+                <field name="qty_remaining"       invisible="1"/>
+            </sheet>
+            <footer>
+                <button name="action_save_distribution"
+                        string="Guardar y regresar"
+                        type="object"
+                        class="btn-primary"/>
+                <button string="Descartar" class="btn-secondary" special="cancel"/>
+            </footer>
+        </form>
+    </field>
+</record>
+
+<!-- ══════════════════════════════════════════════════════════════
+     VISTA PRINCIPAL DEL WIZARD
+══════════════════════════════════════════════════════════════ -->
+<record id="view_import_xml_wizard_form" model="ir.ui.view">
+    <field name="name">import.xml.wizard.form</field>
+    <field name="model">import.xml.wizard</field>
+    <field name="arch" type="xml">
+        <form string="Importar Factura XML CFDI 4.0">
+            <sheet>
+
+                <!-- ═══════════ CARGAR XML ═══════════ -->
+                <div attrs="{'invisible': [('state', '!=', 'upload')]}">
+                    <group string="1. Cargar archivo XML CFDI 4.0">
+                        <field name="xml_file" filename="xml_filename" widget="binary"
+                               attrs="{'required': [('state','=','upload')]}"/>
+                        <field name="xml_filename" invisible="1"/>
+                    </group>
+                    <group string="2. Pedidos de Compra relacionados">
+                        <field name="purchase_order_ids" widget="many2many_tags"
+                               options="{'no_create': True}" nolabel="1" colspan="2"/>
+                        <div class="text-muted" colspan="2" style="font-size:12px">
+                            Si el XML cubre varios pedidos, agregalos todos antes de analizar.
+                        </div>
+                    </group>
+                    <group attrs="{'invisible': [('origin_po_id','=',False)]}">
+                        <field name="origin_po_id" readonly="1"/>
+                    </group>
+                </div>
+
+                <!-- ═══════════ RESOLVER ═══════════ -->
+                <div attrs="{'invisible': [('state', '!=', 'resolve')]}">
+
+                    <div class="alert alert-danger" role="alert"
+                         attrs="{'invisible': [('uuid_warning','=','')]}">
+                        <i class="fa fa-ban"/>
+                        <field name="uuid_warning" readonly="1" class="oe_inline"/>
+                    </div>
+
+                    <group col="4">
+                        <group string="Emisor">
+                            <field name="supplier_rfc"  readonly="1"/>
+                            <field name="supplier_name" readonly="1"/>
+                        </group>
+                        <group string="CFDI">
+                            <field name="cfdi_uuid"     readonly="1"/>
+                            <field name="invoice_date"  readonly="1"/>
+                            <field name="total_amount"  readonly="1" widget="monetary"/>
+                            <field name="currency_code" readonly="1"/>
+                        </group>
+                    </group>
+
+                    <group string="Pedidos relacionados">
+                        <field name="purchase_order_ids" widget="many2many_tags"
+                               readonly="1" nolabel="1" colspan="2"/>
+                    </group>
+
+                    <div class="alert alert-warning" role="alert"
+                         attrs="{'invisible': [('amount_warning','=','')]}">
+                        <i class="fa fa-exclamation-triangle"/>
+                        <field name="amount_warning" readonly="1" class="oe_inline"/>
+                    </div>
+                    <div class="alert alert-warning" role="alert"
+                         attrs="{'invisible': [('pending_count','=',0)]}">
+                        <i class="fa fa-exclamation-circle"/>
+                        <strong>
+                            <field name="pending_count" readonly="1" class="oe_inline"/>
+                            concepto(s) requieren atencion.
+                        </strong>
+                    </div>
+
+                    <!-- CONCEPTOS -->
+                    <separator string="Paso 1 — Asigna el producto de cada concepto"/>
+                    <field name="line_ids" nolabel="1">
+                        <tree editable="bottom"
+                              decoration-success="distribution_ok and product_state == 'ok'"
+                              decoration-warning="not distribution_ok or product_state == 'manual'"
+                              decoration-danger="not product_id and not create_product"
+                              decoration-info="product_state == 'new'">
+
+                            <field name="no_identificacion" readonly="1" string="Cód."    optional="show"/>
+                            <field name="descripcion"       readonly="1" string="Descripción"/>
+                            <field name="cantidad"          readonly="1" string="Cant. XML"/>
+                            <field name="valor_unitario"    readonly="1" string="P.Unit." optional="show"/>
+                            <field name="importe"           readonly="1" string="Importe" optional="show"/>
+                            <field name="product_state" widget="badge" string="Estado"
+                                   decoration-success="product_state == 'ok'"
+                                   decoration-warning="product_state == 'manual'"
+                                   decoration-info="product_state == 'new'"
+                                   optional="show"/>
+                            <field name="candidate_ids" widget="many2many_tags"
+                                   readonly="1" string="Candidatos" optional="show"/>
+                            <field name="product_id" string="Producto"
+                                   domain="[('purchase_ok','=',True)]"/>
+                            <field name="create_product" string="Crear?"/>
+                            <field name="new_product_name" string="Nombre nuevo"
+                                   attrs="{'invisible': [('create_product','=',False)],
+                                           'required':  [('create_product','=',True)]}"/>
+                            <field name="new_product_code" string="Ref."
+                                   attrs="{'invisible': [('create_product','=',False)]}"/>
+                            <field name="qty_distributed" readonly="1" string="Distribuido"/>
+                            <field name="qty_remaining"   readonly="1" string="Falta"
+                                   decoration-danger="qty_remaining > 0"
+                                   decoration-success="qty_remaining &lt;= 0"/>
+                            <button name="action_open_distribution"
+                                    string="Editar distribución"
+                                    type="object"
+                                    icon="fa-sliders"
+                                    class="btn-sm btn-secondary"
+                                    attrs="{'invisible': [('product_id','=',False)]}"/>
+                            <field name="po_candidates_json" invisible="1"/>
+                            <field name="distribution_ok"    invisible="1"/>
+                        </tree>
+                    </field>
+
+                    <div class="alert alert-info mt8" role="alert" style="font-size:12px">
+                        <i class="fa fa-info-circle"/>
+                        Presiona el boton <strong>Editar distribucion</strong> de cada concepto
+                        para asignar las cantidades a los pedidos de compra correspondientes.
+                        La columna <strong>Falta</strong> debe ser <strong>0</strong> en todos los conceptos antes de confirmar.
+                    </div>
+                </div>
+
+                <!-- Campos ocultos globales -->
+                <field name="state"                     invisible="1"/>
+                <field name="uuid_warning"              invisible="1"/>
+                <field name="amount_warning"            invisible="1"/>
+                <field name="po_total"                  invisible="1"/>
+                <field name="pending_count"             invisible="1"/>
+                <field name="purchase_order_ids_json"   invisible="1"/>
+                <field name="purchase_order_ids_backup" invisible="1"/>
+
+            </sheet>
+            <footer>
+                <button name="action_analyze"
+                        string="Analizar XML"
+                        type="object" class="btn-primary"
+                        attrs="{'invisible': [('state','!=','upload')]}"/>
+                <button name="action_confirm"
+                        string="Confirmar, Recibir y Facturar"
+                        type="object" class="btn-primary"
+                        attrs="{'invisible': [('state','!=','resolve')]}"/>
+                <button name="action_back_to_upload"
+                        string="Cambiar XML"
+                        type="object" class="btn-secondary"
+                        attrs="{'invisible': [('state','!=','resolve')]}"/>
+                <button string="Cancelar" class="btn-secondary" special="cancel"/>
+            </footer>
+        </form>
+    </field>
+</record>
+
+<record id="action_import_xml_wizard" model="ir.actions.act_window">
+    <field name="name">Importar Factura XML CFDI 4.0</field>
+    <field name="res_model">import.xml.wizard</field>
+    <field name="view_mode">form</field>
+    <field name="target">new</field>
+</record>
+
+<menuitem
+    id="menu_import_xml_cfdi"
+    name="Importar Factura XML (CFDI 4.0)"
+    parent="account.menu_finance_entries_actions"
+    action="l10n_mx_vendor_bill_import.action_import_xml_wizard"
+    sequence="99"/>
+
+</odoo>

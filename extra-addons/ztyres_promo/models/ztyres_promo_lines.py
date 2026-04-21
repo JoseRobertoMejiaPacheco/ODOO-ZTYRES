@@ -9,6 +9,7 @@ class ZtyresVolumenLines(models.Model):
     move_id = fields.Many2one('account.move',string='Move Name')
     product_name = fields.Char(string='Product Name')
     name = fields.Char(string='Name')
+    product_id = fields.Many2one('product.template', string='Producto')
     product_code = fields.Char(string='Product Code')
     product_brand = fields.Char(string='Brand')
     date = fields.Date(string='Date')

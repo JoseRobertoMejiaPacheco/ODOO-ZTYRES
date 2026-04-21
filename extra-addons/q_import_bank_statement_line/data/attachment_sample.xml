@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <data noupdate="0">
+
+        <record id="sample_import_lines_xls" model="ir.attachment">
+            <field name="name">import_lines.xls</field>
+            <field name="datas" type="base64"
+                   file="q_import_bank_statement_line/sample_files/import_lines.xls"/>
+        </record>
+
+        <record id="sample_import_lines_csv" model="ir.attachment">
+            <field name="name">import_lines.csv</field>
+            <field name="datas" type="base64"
+                   file="q_import_bank_statement_line/sample_files/import_lines.csv"/>
+        </record>
+
+    </data>
+</odoo>

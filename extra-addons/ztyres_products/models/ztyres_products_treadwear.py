@@ -12,15 +12,9 @@ class FloorDepth(models.Model):
         compute='_compute_name',
         store=True
     )
-    number = fields.Float(string='Valor treadwear')
+    number = fields.Char(string='Valor treadwear')  # <-- cambio aquí
 
     @api.depends('number')
     def _compute_name(self):
         for record in self:
-            if record.number:
-                if float(record.number).is_integer():
-                    record.name = f"{int(record.number)}"
-                else:
-                    record.name = f"{record.number}"
-            else:
-                record.name = ''
+            record.name = record.number or ''

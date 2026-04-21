@@ -2,7 +2,6 @@
 from odoo.tools import DEFAULT_SERVER_DATE_FORMAT
 from odoo import models, fields, api,_
 from babel.dates import format_date
-import pandas as pd
 import zipfile
 import base64
 import io
@@ -35,7 +34,7 @@ class ZtyresVolumen(models.Model):
 
     promo_type = fields.Selection(
         string='Tipo de Política',
-        selection=[('quantity', 'Cantidad'), ('amount', 'Monto')]
+        selection=[('quantity', 'Cantidad'), ('amount', 'Monto'),('coupons','Cupones')]
     )
     apply_volume = fields.Selection(
         string='Aplica por cantidad global y descuento especifico?',
@@ -47,12 +46,14 @@ class ZtyresVolumen(models.Model):
     segment_ids = fields.Many2many('ztyres_products.segment','product_segment_rel','product_id','segment_id',string='Segmentos')
     product_ids = fields.Many2many('product.template', string='Productos')
     
+    price_list_ids = fields.Many2many('product.pricelist', string='Listas de Precios')
+    
     policy_line_qty_ids = fields.One2many(comodel_name='ztyres_promo.current_policy_qty', inverse_name='notas_credito_id')
     policy_line_amount_ids = fields.One2many(comodel_name='ztyres_promo.current_policy_amount', inverse_name='notas_credito_id')
     #line_ids = fields.One2many('ztyres_promo.notas_credito_lines', 'definitive_nc_id', string='Notas de Crédito Definitivas')
     line_ids = fields.One2many('ztyres_promo.notas_credito_lines', 'definitive_nc_id', string='Notas de Crédito Definitivas',domain=[('total_nc_untaxed','>',0)])
     detailed_line_ids = fields.One2many('ztyres_promo.lines', 'definitive_nc_id', string='Detalle')
-    
+    coupon_ids = fields.One2many('ztyres_promo.coupon', 'notas_credito_id', string='Cupones')
     excluded_partner_ids = fields.Many2many('res.partner')
     not_found = fields.Text(string='Códigos no encontrados')
     # Campos contadores (mostrarán el número en el smart button)
@@ -72,7 +73,7 @@ class ZtyresVolumen(models.Model):
         compute="_compute_excluded_invoice_ids_domain",
         readonly=True,
         store=False
-    )
+    )    
     
     @api.depends('start_date', 'end_date')
     def _compute_excluded_invoice_ids_domain(self):
@@ -130,6 +131,8 @@ class ZtyresVolumen(models.Model):
     
     def _set_nc_amount(self):
         for line in self.line_ids:
+            if self.promo_type == 'coupons':
+                return
             line.total_nc_untaxed = line.price_subtotal * (line.reward_percent/100)
 
     def get_grouped_data(self):
@@ -183,15 +186,20 @@ class ZtyresVolumen(models.Model):
         self.line_ids.search([('definitive_nc_id', 'in', self.ids)]).unlink()
         self.detailed_line_ids.search([('definitive_nc_id', 'in', self.ids)]).unlink()
         for partner_id in self._get_partner_ids():
+            if partner_id.id == 7102:
+                pass
             valid_lines = self.line_ids._domain_lines(self._get_domain(partner_id,self.start_date,self.end_date))
             invalid_lines = self.line_ids._domain_lines(self._get_invalid_domain(valid_lines,partner_id,self.start_date,self.end_date))
             result = self._get_dict_detailed_data(valid_lines, invalid_lines) or []
             detailed_data.extend(result or [])
         self.detailed_line_ids = detailed_data
-        res_2 = self._set_nc_lines()
+        x = self._set_nc_lines()
+        print(x)
+        res_2 = x
         self.line_ids = res_2
         
         if self.apply_volume == 'si' and self.apply_on_groups == 'si':
+            x = self.get_grouped_data_volume()
             for group_id,quantity_sum in self.get_grouped_data_volume():
                 group_discount = self.line_ids._get_discount_percent(self.policy_line_qty_ids,quantity_sum)
                 self.line_ids.filtered(lambda line: line.group_id.id == group_id).write({'reward_percent': group_discount})            
@@ -243,6 +251,9 @@ class ZtyresVolumen(models.Model):
             or_conditions.append(('product_id.brand_id', 'in', self.brand_ids.ids))
         if self.product_ids:
             or_conditions.append(('product_id', 'in', self.product_ids.product_variant_id.ids))
+        if self.price_list_ids:
+            price_list_names = self.price_list_ids.mapped('name')
+            or_conditions.append(('sol_id.list_origin', 'in', price_list_names))
         
         # Solo agregar OR si hay condiciones
         if or_conditions:
@@ -263,7 +274,62 @@ class ZtyresVolumen(models.Model):
                     
             }
     
+    def _get_coupon_nc_amount(self, lines):
+        total_nc = 0.0
+        coupons = self.coupon_ids
 
+        # ---------------------------------------
+        # Agrupar líneas por producto
+        # ---------------------------------------
+        products = {}
+        for line in lines:
+            products.setdefault(line.product_id.id, []).append(line)
+
+        # ---------------------------------------
+        # Procesar cada producto
+        # ---------------------------------------
+        for product_id, product_lines in products.items():
+
+            coupon = coupons.filtered(
+                lambda c: c.product_id.id == product_id
+            )[:1]
+
+            if not coupon:
+                for line in product_lines:
+                    line.state = 'invalid'
+                continue
+
+            # Preparar líneas
+            enriched_lines = [{
+                'line': line,
+                'qty': line.quantity,
+                'coupon': coupon.amount,
+            } for line in product_lines]
+
+            # Ordenar (opcional, aquí todas tienen el mismo cupón)
+            enriched_lines.sort(key=lambda x: x['coupon'], reverse=True)
+
+            remaining_qty = 200
+
+            # Aplicar cupón hasta 200
+            for data in enriched_lines:
+                line = data['line']
+
+                if remaining_qty <= 0:
+                    line.state = 'invalid'
+                    continue
+
+                if data['qty'] <= remaining_qty:
+                    total_nc += data['qty'] * data['coupon']
+                    remaining_qty -= data['qty']
+                    line.state = 'valid'
+                else:
+                    total_nc += remaining_qty * data['coupon']
+                    line.state = 'partial'
+                    remaining_qty = 0
+
+        return total_nc
+    
     def _get_dict_detailed_data(self,valid_lines, invalid_lines):
         
         data = []
@@ -275,6 +341,7 @@ class ZtyresVolumen(models.Model):
                 'group_id': self._get_group_id(line.partner_id.id),
                 'move_type': line.move_id.move_type,
                 'move_id': line.move_id.id,
+                'product_id': line.product_id.product_tmpl_id.id,
                 'product_name': line.product_id.name,
                 'name': line.name,
                 'product_code': line.product_id.default_code,
@@ -306,6 +373,7 @@ class ZtyresVolumen(models.Model):
                 'group_id': self._get_group_id(line.partner_id.id),
                 'move_type': line.move_id.move_type,
                 'move_id': line.move_id.id,
+                'product_id': line.product_id.product_tmpl_id.id,
                 'product_name': line.product_id.name,
                 'name': line.name,
                 'product_code': line.product_id.default_code,
@@ -320,61 +388,102 @@ class ZtyresVolumen(models.Model):
             }))
         
         return (data)
-    
-    def _set_nc_lines(self): 
+    #TODO Separar las variables correctamente para que la cantidad de grupos este correcta.
+    def _set_nc_lines(self):
         data = []
-        # Para cada partner en las líneas detalladas
         partners = self.detailed_line_ids.mapped('partner_id')
-        for partner_id in self.detailed_line_ids.mapped('partner_id'):
+
+        for partner_id in partners:
+            if partner_id.id == 7102:
+                pass
             edi_vat = self.detailed_line_ids.filtered(
-                lambda l: l.partner_id.id == partner_id.id and l.state == 'valid'  and l.rfc != 'XAXX010101000'
-            )
-            edi_vat_generic = self.detailed_line_ids.filtered(
-                lambda l: l.partner_id.id == partner_id.id and l.state == 'valid' and l.rfc == 'XAXX010101000'
-            )            
-            total_amount =  sum(edi_vat.mapped('price_subtotal')) + sum(edi_vat_generic.mapped('price_subtotal'))
-            if self.apply_volume == 'no':
-                total_qty =  sum(edi_vat.mapped('quantity')) + sum(edi_vat_generic.mapped('quantity'))
-            if self.apply_volume == 'si':
-                total_qty =  sum(              
-                self.detailed_line_ids.filtered(
                 lambda l: l.partner_id.id == partner_id.id
-            ).mapped('quantity'))
-            print(total_qty)
-            discount = 0
+                and l.state == 'valid'
+                and l.rfc != 'XAXX010101000'
+            )
+
+            edi_vat_generic = self.detailed_line_ids.filtered(
+                lambda l: l.partner_id.id == partner_id.id
+                and l.state == 'valid'
+                and l.rfc == 'XAXX010101000'
+            )
+
+            total_amount = (
+                sum(edi_vat.mapped('price_subtotal')) +
+                sum(edi_vat_generic.mapped('price_subtotal'))
+            )
+
+            total_qty = (
+                sum(edi_vat.mapped('quantity')) +
+                sum(edi_vat_generic.mapped('quantity'))
+            )
+
+            # ---------------- PROMO TYPE ----------------
+            discount = 0.0
+
             if self.promo_type == 'quantity':
-                discount = self.line_ids._get_discount_percent(self.policy_line_qty_ids, total_qty)
-            if self.promo_type == 'amount':
-                discount = self.line_ids._get_discount_percent(self.policy_line_amount_ids, total_amount)
-            
+                if self.apply_volume == 'si':
+                    total_qty = sum(self.detailed_line_ids.filtered(
+                lambda l: l.partner_id.id == partner_id.id).mapped('quantity'))
+                discount = self.line_ids._get_discount_percent(
+                    self.policy_line_qty_ids, total_qty
+                )
+
+            elif self.promo_type == 'amount':
+                discount = self.line_ids._get_discount_percent(
+                    self.policy_line_amount_ids, total_amount
+                )
+
+            elif self.promo_type == 'coupons':
+                discount = 0.0
+            # --------------------------------------------
+
+            # ---------------- CUPONES ----------------
+            nc_coupon_vat = (
+                self._get_coupon_nc_amount(edi_vat)
+                if self.promo_type == 'coupons' else 0.0
+            )
+
+            nc_coupon_generic = (
+                self._get_coupon_nc_amount(edi_vat_generic)
+                if self.promo_type == 'coupons' else 0.0
+            )
+            # -------------------------------------------
+
+            # ---------------- VAT ----------------
             base_v = sum(edi_vat.mapped('price_subtotal'))
             descuento_v = base_v * discount / 100
-            #def _get_dict_data(self,partner_id,valid_amount,valid_qty,rfc,discount,total_nc_untaxed):
-            _line_v = self._get_dict_data(
-                partner_id.id,                             # ID del partner (entero)
-                sum(edi_vat.mapped('price_subtotal')),            # total price_subtotal en 'edi_vat'
+            total_nc_v = descuento_v + nc_coupon_vat
+
+            line_v = self._get_dict_data(
+                partner_id.id,
+                base_v,
                 sum(edi_vat.mapped('quantity')),
-                partner_id.vat,      # descuento calculado
+                partner_id.vat,
                 discount,
-                descuento_v
+                total_nc_v
             )
-            if _line_v:
-                data.append((0, 0, _line_v))
+            if line_v:
+                data.append((0, 0, line_v))
+
+            # ---------------- GENÉRICO ----------------
             base_g = sum(edi_vat_generic.mapped('price_subtotal'))
             descuento_g = base_g * discount / 100
-            #def _get_dict_data(self,partner_id,valid_amount,valid_qty,rfc,discount,total_nc_untaxed):
-            _line_v = self._get_dict_data(
-                partner_id.id,                             # ID del partner (entero)
-                sum(edi_vat_generic.mapped('price_subtotal')),            # total price_subtotal en 'edi_vat'
+            total_nc_g = descuento_g + nc_coupon_generic
+
+            line_g = self._get_dict_data(
+                partner_id.id,
+                base_g,
                 sum(edi_vat_generic.mapped('quantity')),
                 'XAXX010101000',
                 discount,
-                descuento_g
+                total_nc_g
             )
-            if _line_v:
-                data.append((0, 0, _line_v))
-        # Importante: return (data) FUERA de todos los 'for'
+            if line_g:
+                data.append((0, 0, line_g))
+
         return data
+
     
     def _get_group_id(self, partner_id):
         groups = self.env['ztyres_volumen.group'].search([])
@@ -465,13 +574,27 @@ class ZtyresVolumen(models.Model):
                 'default_res_id': self.id,
             },
         }
-    
+    def action_open_coupon_excel_import(self):
+        return {
+            'name': _('Importar Cupones desde Excel'),
+            'type': 'ir.actions.act_window',
+            'res_model': 'ztyres_promo.coupon_excel_wizard',
+            'view_mode': 'form',
+            'target': 'new',
+            'context': {
+                'default_notas_credito_id': self.id,
+            },
+        }
     def clear_product_relations(self):
         """Elimina todas las relaciones con productos (deja la relación vacía)"""
         for record in self:
             # Esta es la forma correcta de limpiar una relación Many2many
             record.write({'product_ids': [(5, 0, 0)],'not_found':False})
-    
+    def clear_coupon_product_relations(self):
+        """Elimina todas las relaciones con productos (deja la relación vacía)"""
+        for record in self:
+            # Esta es la forma correcta de limpiar una relación Many2many
+            record.write({'coupon_ids': [(5, 0, 0)],'not_found':False})
 
     def download_zip_xmls(self):
         """

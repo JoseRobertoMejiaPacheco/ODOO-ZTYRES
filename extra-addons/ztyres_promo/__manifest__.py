@@ -24,8 +24,9 @@
     'data': [
         'security/ir.model.access.csv',
         'wizard/ztyres_promo_product_excel_wizard.xml',
+        'wizard/ztyres_promo_coupon_excel_wizard.xml',
         'views/ztyres_promo_current_policy.xml',
-        'views/ztyres_promo_lines.xml',
+        'views/ztyres_promo_lines.xml',        
         'views/ztyres_promo_notas_credito_lines.xml',
         'views/ztyres_promo_notas_credito.xml',
         'views/menu_item.xml'

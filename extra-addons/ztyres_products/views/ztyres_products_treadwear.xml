@@ -7,9 +7,9 @@
             <field name="name">ztyres_products.treadwear.tree</field>
             <field name="model">ztyres_products.treadwear</field>
             <field name="arch" type="xml">
-                <tree>
-                    <field name="name"/>
+                <tree string="Índice Treadwear">
                     <field name="number"/>
+                    <field name="name"/>
                 </tree>
             </field>
         </record>
@@ -19,10 +19,10 @@
             <field name="name">ztyres_products.treadwear.form</field>
             <field name="model">ztyres_products.treadwear</field>
             <field name="arch" type="xml">
-                <form>
+                <form string="Índice Treadwear">
                     <sheet>
                         <group>
-                            <field name="number"/>
+                            <field name="number" placeholder="Ej: 300, 300AA, N/A"/>
                             <field name="name" readonly="1"/>
                         </group>
                     </sheet>
@@ -36,8 +36,6 @@
             <field name="res_model">ztyres_products.treadwear</field>
             <field name="view_mode">tree,form</field>
         </record>
-
-
 
     </data>
 </odoo>

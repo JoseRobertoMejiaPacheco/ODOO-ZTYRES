@@ -2,11 +2,12 @@ from odoo import api, fields, models
 from dateutil.relativedelta import relativedelta
 import pandas as pd
 from datetime import date
-from odoo.addons.inv_promo.wizard.models.lista_de_precios import codes2
+# from odoo.addons.inv_promo.wizard.models.lista_de_precios import codes2
 
 class VentasPorMarca(models.TransientModel):
     _name = 'ventas_por_marca'
 
+    codes2 = []
     def get_report(self):
         fecha_actual = date.today()
         # Obtén el primer día del mes actual

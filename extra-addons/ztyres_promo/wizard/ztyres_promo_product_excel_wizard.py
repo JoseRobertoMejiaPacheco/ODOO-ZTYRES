@@ -1,13 +1,13 @@
 from odoo import models, fields, api, _
 from odoo.exceptions import UserError
-import pandas as pd
+
 import io
 import base64
 
 class ProductExcelWizard(models.TransientModel):
     _name = 'ztyres_promo.product_excel_wizard'
     _description = 'Wizard para importar productos desde Excel'
-
+    
     file = fields.Binary(
         string='Archivo Excel',
         required=True,
@@ -21,6 +21,7 @@ class ProductExcelWizard(models.TransientModel):
             raise UserError(_("Debe subir un archivo Excel."))
         
         try:
+            import pandas as pd
             # Leer el archivo Excel
             file_content = base64.b64decode(self.file)
             excel_data = pd.read_excel(io.BytesIO(file_content))

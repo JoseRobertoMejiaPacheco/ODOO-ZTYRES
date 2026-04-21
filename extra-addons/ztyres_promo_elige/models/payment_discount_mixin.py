@@ -26,11 +26,12 @@ class PaymentDiscountMixin(models.AbstractModel):
     def get_discounts_list_promo_sel(self,record):
         descuentos = []
         shipping_with_taxes = self._calculate_without_shipping_price(record)
-        monto_descuento_1, fecha_vencimiento_1 = self._calculate_discount_promo_sel(record, shipping_with_taxes, record.promo_sel.percent_1,record.promo_sel.property_payment_term_id_1.line_ids.days)
-        descuentos.append((record.promo_sel.percent_1, record.promo_sel.property_payment_term_id_1.line_ids.days, fecha_vencimiento_1, monto_descuento_1))
-        
-        monto_descuento_2, fecha_vencimiento_2 = self._calculate_discount_promo_sel(record, shipping_with_taxes, record.promo_sel.percent_2,record.promo_sel.property_payment_term_id_2.line_ids.days)
-        descuentos.append((record.promo_sel.percent_2, record.promo_sel.property_payment_term_id_2.line_ids.days, fecha_vencimiento_2, monto_descuento_2))
+        if record.promo_sel.percent_1 > 0 and record.promo_sel.property_payment_term_id_1:
+            monto_descuento_1, fecha_vencimiento_1 = self._calculate_discount_promo_sel(record, shipping_with_taxes, record.promo_sel.percent_1,record.promo_sel.property_payment_term_id_1.line_ids.days)
+            descuentos.append((record.promo_sel.percent_1, record.promo_sel.property_payment_term_id_1.line_ids.days, fecha_vencimiento_1, monto_descuento_1))
+        if record.promo_sel.percent_2 > 0 and record.promo_sel.property_payment_term_id_2:
+            monto_descuento_2, fecha_vencimiento_2 = self._calculate_discount_promo_sel(record, shipping_with_taxes, record.promo_sel.percent_2,record.promo_sel.property_payment_term_id_2.line_ids.days)
+            descuentos.append((record.promo_sel.percent_2, record.promo_sel.property_payment_term_id_2.line_ids.days, fecha_vencimiento_2, monto_descuento_2))
         return descuentos
     
     def _calculate_discount(self, record, shipping_with_taxes, profile_line):

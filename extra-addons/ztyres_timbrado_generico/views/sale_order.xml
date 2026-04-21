@@ -10,6 +10,9 @@
                 <field name="mostrar_venta_mostrador_rel" invisible="1"/>
                 <field name="tipo_de_timbrado"  attrs="{'invisible': [('mostrar_venta_mostrador_rel', '!=', True)],'required': [('mostrar_venta_mostrador_rel', '=', True)]}"/>
                 </xpath>
+                <xpath expr="//field[@name='partner_invoice_id']" position="attributes">
+                <attribute name="readonly"> 1 </attribute>
+                </xpath>
             </field>
         </record>        
     </data>

@@ -6,10 +6,14 @@ from datetime import date, timedelta
 import calendar
 import pandas as pd
 from odoo import api, fields, models
-from odoo.addons.inv_promo.wizard.models.lista_de_precios import codes, codes2, codes3
+# from odoo.addons.inv_promo.wizard.models.lista_de_precios import codes, codes2, codes3
 
 class VentasPorVendedorIndividual(models.TransientModel):
     _name = 'ventas_por_vendedor_individual'
+    
+    codes = []
+    codes2 = []
+    codes3 = []
 
     def get_report(self, vendedor_id):
         fecha_actual = date.today()

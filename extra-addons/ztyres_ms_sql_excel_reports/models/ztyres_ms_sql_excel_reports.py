@@ -3,13 +3,17 @@
 from odoo import api, fields, models
 import pandas as pd
 import numpy as np
+from datetime import datetime
+from dateutil.relativedelta import relativedelta
 
 class MyModel(models.TransientModel):
     _name = 'ztyres_ms_sql_excel_reports'
 
     def generate_report(self):
         reports_direccion = self.env['ztyres_ms_sql_excel_reports_direccion']
-        
+        meses = [] 
+        meses_map = ["ENE", "FEB", "MAR", "ABR", "MAY", "JUN", "JUL", "AGO", "SEP", "OCT", "NOV", "DIC"]
+
         # Obtener todos los productos y crear un DataFrame
         product_data = reports_direccion.get_all_products()
         product_df = reports_direccion.dict_to_df(product_data)
@@ -23,6 +27,12 @@ class MyModel(models.TransientModel):
         # Renombrar columnas
         transformed_df = self.rename_columns(transformed_df)
         
+        for col in transformed_df.columns:
+            if col in meses_map:
+                meses.append(col)
+                
+        ultimos_5_meses = meses[:5]
+        
         transformed_df.loc[transformed_df['Trans'] < 0, 'Trans'] = 0
         transformed_df.loc[transformed_df['BO'].isnull(), 'CBO'] = np.nan
         transformed_df['HQ'] = pd.to_numeric(transformed_df['HQ'], errors='coerce')
@@ -30,7 +40,7 @@ class MyModel(models.TransientModel):
         transformed_df['CPFac'] = transformed_df['CPFac'].round(2)
         transformed_df['CFinalP'] = transformed_df['CFinalP'].round(2)
         
-        #archivados_df = transformed_df.copy()
+        archivados_df = transformed_df.copy()
         transformed_df = transformed_df.loc[transformed_df['active'] == 1]
         transformed_df = transformed_df.drop(columns=['active'])
         
@@ -63,18 +73,22 @@ class MyModel(models.TransientModel):
         expo_df = expo_df[columnas_deseadas2]
         
         groupby_ciu = transformed_df.copy()
-        columnas_deseadas3 = ['CIU','Medida','Cara','C','Seg','Tipo','Tier', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC', 'ENE', 'Inv', 'Res', 'Disp', 'Trans', 'BO']
+        columnas_deseadas3 = ['CIU','Medida','Cara','C','Seg','Tipo','Tier']
+        columnas_deseadas3 += meses
+        columnas_deseadas3 += ['Inv', 'Res', 'Disp', 'Trans', 'BO']
+        
         groupby_ciu = groupby_ciu[columnas_deseadas3]
-        groupby_ciu = groupby_ciu.groupby(['CIU', 'Medida', 'Cara', 'C', 'Seg', 'Tipo', 'Tier'])[['AGO', 'SEP', 'OCT', 'NOV', 'DIC', 'ENE', 'Inv', 'Res', 'Disp', 'Trans', 'BO']].sum().reset_index()
-        groupby_ciu['Prom'] = groupby_ciu[['AGO', 'SEP', 'OCT', 'NOV', 'DIC']].mean(axis=1).round(2)
+        groupby_ciu = groupby_ciu.groupby(['CIU', 'Medida', 'Cara', 'C', 'Seg', 'Tipo', 'Tier'])[meses + ['Inv', 'Res', 'Disp', 'Trans', 'BO']].sum().reset_index()
+        groupby_ciu['Prom'] = groupby_ciu[ultimos_5_meses].mean(axis=1).round(2)
         groupby_ciu['Rotacion'] = (groupby_ciu['Inv'] / groupby_ciu['Prom']).replace([np.inf, -np.inf], np.nan).round(2)
 
-
         groupby_marca = transformed_df.copy()
-        rotacion = ['Marca', 'Tier', 'AGO', 'SEP', 'OCT', 'NOV',  'DIC', 'ENE', 'Inv']
+        rotacion = ['Marca', 'Tier']
+        rotacion += meses
+        rotacion += ['Inv']
         groupby_marca = groupby_marca[rotacion]
-        groupby_marca = groupby_marca.groupby(['Marca', 'Tier'])[['AGO', 'SEP', 'OCT', 'NOV',  'DIC', 'ENE', 'Inv']].sum().reset_index()
-        groupby_marca['Prom'] = groupby_marca[['AGO', 'SEP', 'OCT', 'NOV', 'DIC']].mean(axis=1).round(2)
+        groupby_marca = groupby_marca.groupby(['Marca', 'Tier'])[meses + ['Inv']].sum().reset_index()
+        groupby_marca['Prom'] = groupby_marca[ultimos_5_meses].mean(axis=1).round(2)
         groupby_marca['Rotacion'] = (groupby_marca['Inv'] / groupby_marca['Prom']).replace([np.inf, -np.inf], np.nan).round(2)
 
         expo_df = expo_df.drop(columns=['Mayoreo', 'Outlet'])
@@ -88,7 +102,7 @@ class MyModel(models.TransientModel):
         # Insertar el DataFrame en la base de datos
         reports_core = self.env['ztyres_ms_sql_excel_core']
         reports_core.action_insert_dataframe(transformed_df, 'reporte_direccion')
-        #reports_core.action_insert_dataframe(archivados_df, 'reporte_direccion_archivados')
+        reports_core.action_insert_dataframe(archivados_df, 'reporte_direccion_archivados')
         reports_core.action_insert_dataframe(fob_cif, 'reporte_fob_cif')
         reports_core.action_insert_dataframe(nacional_df, 'reporte_nacional')
         reports_core.action_insert_dataframe(importado_df, 'reporte_importado')
@@ -99,9 +113,15 @@ class MyModel(models.TransientModel):
     def transform_data(self, product_df, last_six_months):
         reports_direccion = self.env['ztyres_ms_sql_excel_reports_direccion']
         transformed_df = product_df.copy()
-        transformed_df = reports_direccion.add_month(transformed_df, 'out_invoice', 'out_refund', last_six_months)
+
+        transformed_df = reports_direccion.add_month(
+            transformed_df,
+            'out_invoice',
+            'out_refund',
+            last_six_months
+        )
+
         transformed_df = reports_direccion.add_transit(transformed_df)
-        # Agregar datos de la lista de precios
         transformed_df = self.add_price_lists(transformed_df)
         transformed_df = reports_direccion.add_last_price_unit(transformed_df)
         transformed_df = reports_direccion.add_origin(transformed_df)
@@ -112,7 +132,7 @@ class MyModel(models.TransientModel):
         transformed_df = reports_direccion.add_avg_x_studio_costo_final(transformed_df)
         transformed_df = reports_direccion.add_upf(transformed_df)
         transformed_df = reports_direccion.add_upf_expo(transformed_df)
-        
+
         return transformed_df
 
     def add_price_lists(self, dataframe):
@@ -125,6 +145,26 @@ class MyModel(models.TransientModel):
         return dataframe
 
     def rename_columns(self, dataframe):
+        meses = {} 
+        
+        meses_map = {
+            "'ENERO'": "ENE",
+            "'FEBRERO'": "FEB",
+            "'MARZO'": "MAR",
+            "'ABRIL'": "ABR",
+            "'MAYO'": "MAY",
+            "'JUNIO'": "JUN",
+            "'JULIO'": "JUL",
+            "'AGOSTO'": "AGO",
+            "'SEPTIEMBRE'": "SEP",
+            "'OCTUBRE'": "OCT",
+            "'NOVIEMBRE'": "NOV",
+            "'DICIEMBRE'": "DIC",
+        }
+
+        for col in dataframe.columns:
+            if col in meses_map.keys():
+                meses[col] = meses_map[col]
 
         new_names = {
             "id": "Id",
@@ -144,12 +184,11 @@ class MyModel(models.TransientModel):
             "tier_id": "Tier",
             "product_dot_range": "DOT",
             "country_of_origin": "Origen",
-            "'AGOSTO'": 'AGO',
-            "'SEPTIEMBRE'": 'SEP',
-            "'OCTUBRE'": 'OCT',
-            "'NOVIEMBRE'": 'NOV',
-            "'DICIEMBRE'": 'DIC',
-            "'ENERO'": 'ENE',
+        }
+        
+        new_names.update(meses)
+            
+        new_names.update({
             "qty_available": "Inv",
             "qty_reserved": "Res",
             "free_qty": "Disp",
@@ -172,7 +211,7 @@ class MyModel(models.TransientModel):
             "last_price_unit": "CBO", 
             'active': 'active',
             "product_nationality": "Mode",
-        }
+        })
         
         # Crear un nuevo DataFrame con las columnas en el orden deseado
         ordered_dataframe = dataframe[list(new_names.keys())]
@@ -182,8 +221,8 @@ class MyModel(models.TransientModel):
         
         return ordered_dataframe
 
-    def export_to_excel(self, dataframe):
-        dataframe.to_excel('/mnt/extra-addons/TEstttt.xlsx')
+    # def export_to_excel(self, dataframe):
+    #     dataframe.to_excel('/mnt/extra-addons/TEstttt.xlsx')
 
 
 # Uso de la función para generar el informe
