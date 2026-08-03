@@ -81,6 +81,10 @@ class SaleOrder(models.Model):
             :return (str):                  The warning message to be showed.
         '''
         partner_id = self.partner_id.commercial_partner_id
+        
+        if (partner_id.property_payment_term_id.id != 1) and (partner_id.credit_limit <= 0):
+            raise UserError("No es posible confirmar el pedido, Verifique con finanzas")
+        
         if not partner_id.credit_limit or updated_credit <= partner_id.credit_limit:
             return ''
         msg = _('%s alcanzó el límite de crédito de : %s\nTotal adeudado ',
@@ -98,7 +102,7 @@ class SaleOrder(models.Model):
     
     def cancel_old_quotation_picking(self):
         now = fields.Datetime.now()
-        seven_days_ago = now - timedelta(days=7)
+        seven_days_ago = now - timedelta(days=10)
 
         orders = self.search([
             ('keep', '!=', True),
@@ -149,7 +153,7 @@ class SaleOrder(models.Model):
                 if pickings:
                     pickings.action_cancel()
 
-                order.action_cancel()
+                order._action_cancel()
 
                 cancelled.append({
                     'order': order.name,

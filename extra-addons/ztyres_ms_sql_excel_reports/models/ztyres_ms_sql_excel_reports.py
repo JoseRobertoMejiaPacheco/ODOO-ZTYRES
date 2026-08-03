@@ -31,6 +31,14 @@ class MyModel(models.TransientModel):
             if col in meses_map:
                 meses.append(col)
                 
+        transformed_df['Trans'].fillna(0, inplace=True)
+        transformed_df['BO'].fillna(0, inplace=True)
+        
+        columnas = [c for c in transformed_df.columns if c in meses_map]
+        columnas += ['Inv', 'Res', 'Disp', 'Trans', 'BO']
+
+        transformed_df = transformed_df[ ~(transformed_df[columnas] == 0).all(axis=1)]
+                
         ultimos_5_meses = meses[:5]
         
         transformed_df.loc[transformed_df['Trans'] < 0, 'Trans'] = 0

@@ -199,7 +199,7 @@ class MyModel(models.TransientModel):
         
         df2['Pesos'] = df2.apply(lambda row: self.convert_to_company_currency(row['moneda_pedido'], row['precio_unitario'], row['fecha_pedido_compra']), axis=1)
                 
-        nuevo_df = pd.DataFrame(columns=['moneda_pedido', 'id','pp_id', 'codigo', 'cantidad', 'costo_final_promedio', 'fecha_pedido_compra'])
+        nuevo_df = pd.DataFrame(columns=['moneda_pedido', 'id','pp_id', 'codigo', 'cantidad', 'costo_final_promedio', 'precio_unitario', 'fecha_pedido_compra'])
         # Iterar sobre los registros del segundo DataFrame
         for index, row in df2.iterrows():
             codigo = row['id']
@@ -218,7 +218,7 @@ class MyModel(models.TransientModel):
                         df.loc[df['id'] == codigo, 'qty_available'] -= cantidad_a_restar
                         # Guardar el registro en el nuevo DataFrame
                         # nuevo_df = nuevo_df.append({'moneda_pedido': row['moneda_pedido'] ,'id': codigo, 'cantidad': cantidad_a_restar, 'costo_final_promedio': row['costo_final_promedio'], 'fecha_pedido_compra': row['fecha_pedido_compra']}, ignore_index=True)
-                        nuevo_df = pd.concat([nuevo_df, pd.DataFrame([{'moneda_pedido': row['moneda_pedido'], 'id': codigo, 'cantidad': cantidad_a_restar, 'costo_final_promedio': row['costo_final_promedio'], 'fecha_pedido_compra': row['fecha_pedido_compra']}])], ignore_index=True)
+                        nuevo_df = pd.concat([nuevo_df, pd.DataFrame([{'moneda_pedido': row['moneda_pedido'], 'id': codigo, 'cantidad': cantidad_a_restar, 'costo_final_promedio': row['costo_final_promedio'], 'precio_unitario': row['precio_unitario'], 'fecha_pedido_compra': row['fecha_pedido_compra']}])], ignore_index=True)
                         # Actualizar la cantidad restante
                         cantidad_restante -= cantidad_a_restar
                     # Si la cantidad disponible es igual a 0, salir del bucle

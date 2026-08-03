@@ -86,7 +86,7 @@ class ReporteVentasDireccion(models.TransientModel):
             WHERE pt.detailed_type = 'product'
             AND so.date_order BETWEEN %s AND %s
             AND sol.qty_invoiced = 0
-            AND so.state not IN ('cancel')
+            AND so.state not IN ('posted')
             GROUP BY rp2."name", so."name", so.date_order, rp."name", zpm."name"
         """
         # Ejecutar la consulta
@@ -191,13 +191,8 @@ class ReporteVentasDireccion(models.TransientModel):
         pivot_mes_vendedor = pd.pivot_table(df2, values='cantidad', index=['mes'], columns=['vendedor'], aggfunc='sum', fill_value=0)
         pivot_mes_vendedor = pivot_mes_vendedor.reset_index()
         pivot_mes_vendedor = pivot_mes_vendedor.reindex(columns= ['mes'] + vendedores, fill_value=0)
-                # ordenar filas por mes
-        pivot_mes_vendedor['mes'] = pd.Categorical(
-            pivot_mes_vendedor['mes'],
-            categories=orden_meses,
-            ordered=True
-        )
-
+        # ordenar filas por mes
+        pivot_mes_vendedor['mes'] = pd.Categorical(pivot_mes_vendedor['mes'], categories=orden_meses, ordered=True)
         pivot_mes_vendedor = pivot_mes_vendedor.sort_values('mes')
         
         
@@ -206,16 +201,9 @@ class ReporteVentasDireccion(models.TransientModel):
         pivot_mes_vendedor_subtotal = pivot_mes_vendedor_subtotal.reset_index()
         pivot_mes_vendedor_subtotal = pivot_mes_vendedor_subtotal.reindex(columns= ['mes'] + vendedores, fill_value=0)
         # ordenar filas por mes
-        pivot_mes_vendedor_subtotal['mes'] = pd.Categorical(
-            pivot_mes_vendedor_subtotal['mes'],
-            categories=orden_meses,
-            ordered=True
-        )
-
+        pivot_mes_vendedor_subtotal['mes'] = pd.Categorical(pivot_mes_vendedor_subtotal['mes'], categories=orden_meses, ordered=True)
         pivot_mes_vendedor_subtotal = pivot_mes_vendedor_subtotal.sort_values('mes')
         
-        
-
         #TABLA DE FACTURAS POR ESTADO Y MARCA
         pivot_estado_fabricante = pd.pivot_table(df_x_mes, values='cantidad', index=['fabricante'], columns=['estado'], aggfunc='sum', fill_value=0)
         pivot_estado_fabricante = pivot_estado_fabricante.reset_index()
@@ -226,10 +214,7 @@ class ReporteVentasDireccion(models.TransientModel):
         total_row = total_row.reindex(column_order, fill_value=0)
         total_row['fabricante'] = 'Total'
 
-        pivot_estado_fabricante = pd.concat(
-            [pd.DataFrame([total_row]), pivot_estado_fabricante],
-            ignore_index=True
-        )
+        pivot_estado_fabricante = pd.concat([pd.DataFrame([total_row]), pivot_estado_fabricante], ignore_index=True)
 
         # query3 = """
         #     SELECT 

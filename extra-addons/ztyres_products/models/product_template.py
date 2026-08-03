@@ -44,42 +44,6 @@ class ProductTemplate(models.Model):
         selection=[('national', 'Nacional'), ('imported', 'Importado'), ('national/imported', 'Nacional/Importado')]
     )
     
-    # @api.constrains('tire', 'tire_measure_id', 'face_id', 'layer_id', 'manufacturer_id',
-    #                 'brand_id', 'model_id', 'speed_id', 'index_of_load_id', 'floor_depth_id',
-    #                 'country_id', 'segment_id', 'tier_id', 'type_id', 'supplier_segment_id',
-    #                 'original_equipment_id', 'usage_id', 'e_mark_id', 's_mark_id', 'ccc_id')
-    # def _check_tire_required_fields(self):
-    #     for record in self:
-    #         if record.tire:  # Si es llanta
-    #             if not record.tire_measure_id:
-    #                 raise ValidationError('El campo "Medida" es requerido para productos tipo llanta.')
-    #             if not record.face_id:
-    #                 raise ValidationError('El campo "Cara" es requerido para productos tipo llanta.')
-    #             if not record.layer_id:
-    #                 raise ValidationError('El campo "Capas" es requerido para productos tipo llanta.')
-    #             if not record.manufacturer_id:
-    #                 raise ValidationError('El campo "Fabricante" es requerido para productos tipo llanta.')
-    #             if not record.brand_id:
-    #                 raise ValidationError('El campo "Marca" es requerido para productos tipo llanta.')
-    #             if not record.model_id:
-    #                 raise ValidationError('El campo "Modelo" es requerido para productos tipo llanta.')
-    #             if not record.speed_id:
-    #                 raise ValidationError('El campo "Velocidad" es requerido para productos tipo llanta.')
-    #             if not record.index_of_load_id:
-    #                 raise ValidationError('El campo "Índice de carga" es requerido para productos tipo llanta.')
-    #             if not record.country_id:
-    #                 raise ValidationError('El campo "Origen" es requerido para productos tipo llanta.')
-    #             if not record.segment_id:
-    #                 raise ValidationError('El campo "Segmento" es requerido para productos tipo llanta.')
-    #             if not record.tier_id:
-    #                 raise ValidationError('El campo "Tier" es requerido para productos tipo llanta.')
-    #             if not record.type_id:
-    #                 raise ValidationError('El campo "Tipo" es requerido para productos tipo llanta.')
-    #             if not record.supplier_segment_id:
-    #                 raise ValidationError('El campo "Segmento de proveedor" es requerido para productos tipo llanta.')
-    #             if not record.usage_id:
-    #                 raise ValidationError('El campo "Uso" es requerido para productos tipo llanta.')
-    
     @api.depends('tire_measure_id')
     def _compute_volume_f(self):
         for record in self:
@@ -147,20 +111,52 @@ class ProductTemplate(models.Model):
                 cui = record.tire_measure_id.name + record.segment_id.name + record.type_id.name
                 record.cui = cui.replace(" ", "")
             else:
-                record.cui = ''    
+                record.cui = ''
+                
     def _compute_product_dot_range(self):
         for record in self:
             record.product_dot_range = record.product_variant_id.dot_range
     
-    def update_name_ztyres(self):
-        for record in self:            
-            name = "%s %s%s%s %s %s"%(record.tire_measure_id.name or "",record.face_id.name or "",record.layer_id.name or "",record.speed_id.name or "",record.brand_id.name or "",record.model_id.name or "")
-            record.name = name
-            record.display_name = name
+    # def update_name_ztyres(self):
+    #     for record in self:            
+    #         name = "%s %s%s%s %s %s"%(record.tire_measure_id.name or "",record.face_id.name or "",record.layer_id.name or "",record.speed_id.name or "",record.brand_id.name or "",record.model_id.name or "")
+    #         record.name = name
+    #         record.display_name = name
     
+    def update_name_ztyres(self):
+        for record in self:
+            name = "%s %s%s%s %s %s" % (
+                record.tire_measure_id.name or "",
+                record.face_id.name or "",
+                record.layer_id.name or "",
+                record.speed_id.name or "",
+                record.brand_id.name or "",
+                record.model_id.name or "",
+            )
+            # Valor principal
+            record.name = name
+
+            record.with_context(lang='es_MX').name = name
+            record.with_context(lang='en_US').name = name
+            
+    def _update_translations(self, new_name):
+        """
+        Actualiza traducciones ES y EN del campo name
+        """
+
+        # Español
+        self.with_context(lang='es_MX').write({
+            'name': new_name
+        })
+
+        # Inglés
+        self.with_context(lang='en_US').write({
+            'name': new_name
+        })
+        
     def write(self, vals):
         # Campos que afectan el nombre de las llantas
-        tire_fields = ['tire_measure_id', 'face_id', 'layer_id', 'speed_id', 'brand_id', 'model_id', 'tire']
+        tire_fields = ['name','tire_measure_id', 'face_id', 'layer_id', 'speed_id', 'brand_id', 'model_id', 'tire']
         
         # Si alguno de estos campos está en los valores a escribir
         if any(field in vals for field in tire_fields):
@@ -184,6 +180,7 @@ class ProductTemplate(models.Model):
                             'name': name,
                             'display_name': name
                         })
+                        record._update_translations(name)
             return res
         else:
             return super(ProductTemplate, self).write(vals)

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+  <!--
+    Página pública del cotizador (sin sesión). La sirve el controlador
+    en /ztyres_promotions/cotizador vía request.render().
+
+    Es una página 100% propia (no extiende el layout del website ni
+    del portal: sin menú, sin header de Odoo) — solo carga el bundle
+    web.assets_common (trae el Owl nativo + el loader de módulos) y
+    el bundle público de este módulo (ztyres_promotions.assets_cotizador_public),
+    y monta el componente sobre #app-root vía public_main.js.
+
+    Sin CDN externo, sin token: la sesión no importa aquí porque la
+    página es pública a propósito, y los endpoints que consume
+    (/ztyres_promotions/cotizador/catalog, /partners, /quote, /image)
+    también son auth='public', mismo origen.
+  -->
+  <template id="cotizador_public_page" name="Cotizador (público)">
+    <html lang="es">
+      <head>
+        <meta charset="utf-8"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+        <title>Cotizador · Ztyres</title>
+        <t t-call-assets="web.assets_common" t-js="false"/>
+        <t t-call-assets="ztyres_promotions.assets_cotizador_public" t-js="false"/>
+      </head>
+      <body>
+        <div id="app-root"/>
+        <t t-call-assets="web.assets_common" t-css="false"/>
+        <t t-call-assets="ztyres_promotions.assets_cotizador_public" t-css="false"/>
+      </body>
+    </html>
+  </template>
+</odoo>

@@ -5,26 +5,48 @@
             <field name="name">ztyres.promo.product.excel.wizard.form</field>
             <field name="model">ztyres_promo.product_excel_wizard</field>
             <field name="arch" type="xml">
-                <form string="Importar Productos desde Excel">
-                    <sheet>
-                        <group>
-                            <label for="file" string="Seleccione archivo Excel"/>
-                            <div class="o_row">
-                                <field name="file" 
-                                       string="Archivo Excel"
-                                       required="1"
-                                       widget="binary"
-                                       filename="file_name"
-                                       class="oe_no_button"/>
-                                <field name="file_name" readonly="1" class="oe_inline" 
-                                invisible="1"
-                                 nolabel="1"/>
-                            </div>
-                        </group>
-                    </sheet>
+                <form string="Cargar códigos de productos">
+                    <field name="promotion_id" invisible="1"/>
+
+                    <div class="alert alert-info" role="alert">
+                        <p class="mb-1">
+                            <strong>Formato del archivo (.xlsx)</strong>
+                        </p>
+                        <table class="table table-sm table-bordered bg-white mb-2" style="width:auto;">
+                            <thead>
+                                <tr><th class="text-center">codigo</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>LLA-DUN-19565R15-91H</td></tr>
+                                <tr><td>LLA-FAL-20555R16-91V</td></tr>
+                            </tbody>
+                        </table>
+                        <p class="mb-1">
+                            Una sola columna llamada <b>codigo</b>, con la
+                            referencia interna del producto en Odoo. Un código
+                            por renglón, a partir del renglón 2.
+                        </p>
+                        <p class="mb-0">
+                            Los códigos que no existan no detienen la carga: se
+                            listan al terminar y quedan en “Códigos no
+                            encontrados”.
+                        </p>
+                    </div>
+
+                    <group>
+                        <field name="file" widget="binary" filename="file_name"
+                               string="Archivo Excel"/>
+                        <field name="file_name" invisible="1"/>
+                        <field name="mode" widget="radio"/>
+                    </group>
+
                     <footer>
-                        <button name="action_import" string="Importar" type="object" class="oe_highlight"/>
-                        <button string="Cancelar" class="btn-secondary" special="cancel"/>
+                        <button name="action_import" string="Importar" type="object"
+                                class="btn-primary"
+                                attrs="{'invisible': [('file','=',False)]}"/>
+                        <button name="action_download_template" string="Descargar plantilla"
+                                type="object" class="btn-secondary" icon="fa-download"/>
+                        <button string="Cancelar" class="btn-link" special="cancel"/>
                     </footer>
                 </form>
             </field>

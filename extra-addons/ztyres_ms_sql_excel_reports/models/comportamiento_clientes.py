@@ -26,7 +26,7 @@ class ComportamientoClientes(models.TransientModel):
 
         primer_dia_mes_actual = hoy.replace(day=1)
         ultimo_dia_intervalo = primer_dia_mes_actual - timedelta(days=1)
-        primer_dia_intervalo = primer_dia_mes_actual - relativedelta(months=6)
+        primer_dia_intervalo = primer_dia_mes_actual - relativedelta(months=12)
         
         search_domain = [
             ('move_type', 'in', ['out_invoice', 'out_refund']),
@@ -104,9 +104,14 @@ class ComportamientoClientes(models.TransientModel):
         df2 = pd.DataFrame(result)
 
         df2 = df2.drop(columns=['divisa'])
+        
 
         merged_df = pd.merge(df10, df2, on='factura', how='left')
+        
+        merged_df.loc[merged_df['pagos'].isna(), 'monto_restante'] = merged_df['TotalFac']
+        
         merged_df['monto_restante'] = merged_df['monto_restante'].fillna(0)
+        
         merged_df = merged_df.rename(columns={'monto_restante': 'monto restante'})
         
         merged_df["ultima_fecha_aplicación"] = pd.to_datetime(merged_df["ultima_fecha_aplicación"], errors="coerce")
@@ -124,6 +129,7 @@ class ComportamientoClientes(models.TransientModel):
             .transform(lambda s: (s * merged_df.loc[s.index, 'TotalFac']).sum() / merged_df.loc[s.index, 'TotalFac'].sum())
             .round(2)
         )
+        
 
         #merged_df['atrasos dias prom (%)'] = (
         #    (merged_df.groupby('Cliente')['dias de atraso'].transform('sum') / merged_df.groupby('Cliente')['dias de credito'].transform('sum')).clip(lower=0) * 100).round(2)

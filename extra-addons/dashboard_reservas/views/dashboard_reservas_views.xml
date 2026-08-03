@@ -1,0 +1,169 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+
+        <!-- ============================================================
+             Vista Lista (tree)
+        ============================================================ -->
+        <record id="view_dashboard_reservas_tree" model="ir.ui.view">
+            <field name="name">dashboard.reservas.tree</field>
+            <field name="model">dashboard.reservas</field>
+            <field name="arch" type="xml">
+                <tree string="Antigüedad de Reservas"
+                      create="false" edit="false" delete="false"
+                      decoration-danger="dias_reservada &gt;= 30"
+                      decoration-warning="dias_reservada &gt;= 15 and dias_reservada &lt; 30"
+                      decoration-success="dias_reservada &lt; 15">
+                    <field name="dias_reservada" string="Días" widget="integer"/>
+                    <field name="codigo" string="Código"/>
+                    <field name="producto" string="Producto"/>
+                    <field name="picking" string="Transferencia"/>
+                    <field name="pedido_venta" string="Pedido"/>
+                    <field name="cliente" string="Cliente"/>
+                    <field name="vendedor" string="Vendedor"
+                           groups="dashboard_reservas.group_dashboard_reservas_manager"/>
+                    <field name="cantidad_solicitada" string="Cant." sum="Total"/>
+                    <field name="fecha_programada" string="F. Programada"/>
+                    <field name="fecha_reserva_aprox" string="F. Reserva"/>
+                    <field name="vendedor_uid" invisible="1"/>
+                </tree>
+            </field>
+        </record>
+
+        <!-- ============================================================
+             Vista Búsqueda
+        ============================================================ -->
+        <record id="view_dashboard_reservas_search" model="ir.ui.view">
+            <field name="name">dashboard.reservas.search</field>
+            <field name="model">dashboard.reservas</field>
+            <field name="arch" type="xml">
+                <search string="Buscar Reservas">
+
+                    <!-- Búsquedas por texto -->
+                    <field name="codigo" string="Código"/>
+                    <field name="producto" string="Producto"/>
+                    <field name="pedido_venta" string="Pedido de Venta"/>
+                    <field name="picking" string="Transferencia"/>
+                    <field name="cliente" string="Cliente"/>
+                    <field name="vendedor" string="Vendedor"
+                           groups="dashboard_reservas.group_dashboard_reservas_manager"/>
+
+                    <separator/>
+
+                    <!-- Filtros por antigüedad -->
+                    <filter name="criticos" string="Críticos (≥ 30 días)"
+                            domain="[('dias_reservada', '&gt;=', 30)]"/>
+                    <filter name="alerta" string="Alerta (15–29 días)"
+                            domain="[('dias_reservada', '&gt;=', 15), ('dias_reservada', '&lt;', 30)]"/>
+                    <filter name="normales" string="Normales (&lt; 15 días)"
+                            domain="[('dias_reservada', '&lt;', 15)]"/>
+
+                    <separator/>
+
+                    <!-- Filtros por fecha programada -->
+                    <filter name="vencidos" string="Fecha programada vencida"
+                            domain="[('fecha_programada', '&lt;', context_today().strftime('%Y-%m-%d'))]"/>
+                    <filter name="esta_semana" string="Programados esta semana"
+                            domain="[
+                                ('fecha_programada', '&gt;=', (context_today() + relativedelta(weekday=0, weeks=-1)).strftime('%Y-%m-%d')),
+                                ('fecha_programada', '&lt;=', (context_today() + relativedelta(weekday=6, weeks=-1)).strftime('%Y-%m-%d'))
+                            ]"/>
+
+                    <separator/>
+
+                    <!-- Agrupaciones -->
+                    <group expand="0" string="Agrupar por">
+                        <filter name="group_vendedor" string="Vendedor"
+                                context="{'group_by': 'vendedor'}"
+                                groups="dashboard_reservas.group_dashboard_reservas_manager"/>
+                        <filter name="group_cliente" string="Cliente"
+                                context="{'group_by': 'cliente'}"/>
+                        <filter name="group_picking" string="Transferencia"
+                                context="{'group_by': 'picking'}"/>
+                        <filter name="group_pedido" string="Pedido de Venta"
+                                context="{'group_by': 'pedido_venta'}"/>
+                        <filter name="group_producto" string="Producto"
+                                context="{'group_by': 'producto'}"/>
+                        <filter name="group_fecha_prog" string="Fecha Programada"
+                                context="{'group_by': 'fecha_programada:week'}"/>
+                    </group>
+                </search>
+            </field>
+        </record>
+
+        <!-- ============================================================
+             Vista Kanban (por antigüedad)
+        ============================================================ -->
+        <record id="view_dashboard_reservas_kanban" model="ir.ui.view">
+            <field name="name">dashboard.reservas.kanban</field>
+            <field name="model">dashboard.reservas</field>
+            <field name="arch" type="xml">
+                <kanban create="false" edit="false" delete="false"
+                        class="o_kanban_dashboard">
+                    <field name="codigo"/>
+                    <field name="producto"/>
+                    <field name="picking"/>
+                    <field name="pedido_venta"/>
+                    <field name="cliente"/>
+                    <field name="vendedor"/>
+                    <field name="dias_reservada"/>
+                    <field name="cantidad_solicitada"/>
+                    <field name="fecha_programada"/>
+                    <templates>
+                        <t t-name="kanban-box">
+                            <div t-attf-class="oe_kanban_card oe_kanban_global_click
+                                #{record.dias_reservada.raw_value >= 30 ? 'border-danger' :
+                                  record.dias_reservada.raw_value >= 15 ? 'border-warning' :
+                                  'border-success'}">
+                                <div class="oe_kanban_content">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <strong>
+                                            <t t-esc="record.picking.value"/>
+                                        </strong>
+                                        <span t-attf-class="badge
+                                            #{record.dias_reservada.raw_value >= 30 ? 'bg-danger' :
+                                              record.dias_reservada.raw_value >= 15 ? 'bg-warning' :
+                                              'bg-success'}">
+                                            <t t-esc="record.dias_reservada.value"/> días
+                                        </span>
+                                    </div>
+                                    <div class="text-muted small">
+                                        <i class="fa fa-cube"/> <t t-esc="record.codigo.value"/>
+                                        — <t t-esc="record.producto.value"/>
+                                    </div>
+                                    <div class="mt-1">
+                                        <i class="fa fa-user"/> <t t-esc="record.cliente.value"/>
+                                    </div>
+                                    <div class="mt-1 text-muted small">
+                                        SO: <t t-esc="record.pedido_venta.value"/>
+                                        · Cant: <t t-esc="record.cantidad_solicitada.value"/>
+                                    </div>
+                                </div>
+                            </div>
+                        </t>
+                    </templates>
+                </kanban>
+            </field>
+        </record>
+
+        <!-- ============================================================
+             Acción de ventana principal
+        ============================================================ -->
+        <record id="action_dashboard_reservas" model="ir.actions.act_window">
+            <field name="name">Antigüedad de Reservas</field>
+            <field name="res_model">dashboard.reservas</field>
+            <field name="view_mode">tree,kanban</field>
+            <field name="context">{}</field>
+            <field name="help" type="html">
+                <p class="o_view_nocontent_smiling_face">
+                    No hay pedidos reservados que mostrar.
+                </p>
+                <p>
+                    Este dashboard muestra los pedidos en estado <b>Listo</b> (reservado)
+                    junto con el número de días que llevan en ese estado.
+                </p>
+            </field>
+        </record>
+
+    </data>
+</odoo>

@@ -1,0 +1,45 @@
+/* ============================================================
+   Dashboard Reservas — Estilos personalizados
+   ============================================================ */
+
+/* Colores de alerta en la vista lista */
+.o_list_view .o_data_row.o_tr_danger td {
+    background-color: rgba(220, 53, 69, 0.08) !important;
+    color: #842029;
+    font-weight: 600;
+}
+
+.o_list_view .o_data_row.o_tr_warning td {
+    background-color: rgba(255, 193, 7, 0.10) !important;
+    color: #664d03;
+}
+
+.o_list_view .o_data_row.o_tr_success td {
+    background-color: rgba(25, 135, 84, 0.06) !important;
+}
+
+/* Badge de días en kanban */
+.o_kanban_view .badge {
+    font-size: 0.85rem;
+    padding: 0.35em 0.65em;
+}
+
+/* Borde lateral de color en tarjetas kanban */
+.o_kanban_view .oe_kanban_card.border-danger {
+    border-left: 4px solid #dc3545 !important;
+}
+
+.o_kanban_view .oe_kanban_card.border-warning {
+    border-left: 4px solid #ffc107 !important;
+}
+
+.o_kanban_view .oe_kanban_card.border-success {
+    border-left: 4px solid #198754 !important;
+}
+
+/* Columna de días — resalta el número */
+.o_list_view td[name="dias_reservada"] {
+    font-weight: 700;
+    font-size: 1.05em;
+    text-align: center;
+}

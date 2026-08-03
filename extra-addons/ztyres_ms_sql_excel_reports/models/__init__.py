@@ -39,4 +39,6 @@ from . import ventas_del_mes
 from . import reportes_cxc
 from . import comportamiento_clientes
 from . import reporte_plan_comercial
-from . import Reporte_ventas_direccion
+from . import Reporte_ventas_direccion2
+from . import reports_direccion_ventas
+from . import reports_ventas

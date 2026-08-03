@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+
+        <!--
+            Modifica el PDF de la factura:
+            1) Resumen a nivel documento — se ancla en
+               //div[@class='clearfix mb-4'], el mismo punto base de
+               Odoo (account.report_invoice_document) que usa
+               discount_profiles para insertar payment_discount_text.
+               Es una inserción "after" (agrega un hermano), no un
+               "replace", así que funciona de forma independiente,
+               esté o no instalado discount_profiles.
+            2) Nueva columna "Promoción Ganada" en la tabla de líneas
+               (texto por línea, tamaño normal).
+            3) Oculta la columna de Impuestos de esa misma tabla.
+
+            Anclajes verificados contra el arch real de
+            account.report_invoice_document (Odoo 16, confirmado por
+            el usuario vía Ajustes > Técnico > Vistas):
+            - Descripción: <td name="account_invoice_line_name">
+            - Impuestos:   <td name="td_taxes">  (¡no
+              "account_invoice_line_taxes"! — nombre real distinto al
+              que se hubiera esperado por convención)
+            - Subtotal:    <td class="text-end o_price_total">  (sin
+              atributo `name`, igual que en la tabla de la cotización)
+            - Las columnas accountables (producto) están dentro de
+              <t t-if="line.display_type == 'product'"> — a diferencia
+              de la cotización, donde es <t t-if="not line.display_type">.
+        -->
+        <template id="report_invoice_document_promo_ganada" inherit_id="account.report_invoice_document">
+            <!-- Resumen a nivel documento (respeta promo_display_mode) -->
+            <!-- <xpath expr="//div[@class='clearfix mb-4']" position="after">
+                <div t-if="o.promo_ganada_text" t-raw="o.promo_ganada_text"></div>
+            </xpath> -->
+
+            <!-- Ocultar columna de Impuestos (encabezado) -->
+            <xpath expr="//th[@name='th_taxes']" position="attributes">
+                <attribute name="style">display:none;</attribute>
+            </xpath>
+
+            <!-- Ocultar columna de Impuestos (celda por línea) -->
+            <xpath expr="//td[@name='td_taxes']" position="attributes">
+                <attribute name="style">display:none;</attribute>
+            </xpath>
+
+            <!-- Nueva columna "Promoción Ganada" (encabezado) -->
+            <xpath expr="//th[@name='th_subtotal']" position="after">
+                <th name="th_promo_ganada" class="text-center">
+                    Observaciones
+                </th>
+            </xpath>
+
+            <!--
+                Nueva columna "Promoción Ganada" (celda por línea, en
+                tamaño normal). `line.promo_ganada_text` es texto plano
+                (no HTML), así que se usa t-esc (escapa automáticamente).
+            -->
+            <xpath expr="//td[@class='text-end o_price_total']" position="after">
+                <td t-if="line.display_type == 'product'">
+                    <span t-if="line.promo_ganada_text" t-esc="line.promo_ganada_text"/>
+                </td>
+            </xpath>
+        </template>
+
+    </data>
+</odoo>

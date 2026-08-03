@@ -1,0 +1,61 @@
+<section class="oe_container">
+    <div class="oe_row oe_spaced" style="text-align:center;padding:24px 0">
+        <img src="icon.png" style="width:80px;margin-bottom:12px"/>
+        <h2 class="oe_slogan" style="font-size:28px">Pendiente de Facturar</h2>
+        <h3 class="oe_slogan" style="color:#6b7280">Detecta en tiempo real qué entregas no han sido facturadas</h3>
+    </div>
+</section>
+
+<section class="oe_container oe_dark">
+    <div class="oe_row oe_spaced">
+        <div class="oe_span6">
+            <h3>📦 ¿Qué hace?</h3>
+            <p>Compara las entregas de stock con las facturas emitidas y muestra únicamente las líneas donde
+            <strong>la cantidad entregada supera la cantidad facturada</strong>,
+            considerando devoluciones y notas de crédito.</p>
+            <ul>
+                <li>🗓 Filtro por <strong>año</strong>, <strong>mes</strong> o <strong>rango de fechas</strong></li>
+                <li>🔍 Búsqueda por venta, cliente o producto</li>
+                <li>👤 Filtro por vendedor</li>
+                <li>🔄 Auto-refresco cada 3 horas</li>
+                <li>📜 Tabla con scroll y header fijo</li>
+            </ul>
+        </div>
+        <div class="oe_span6">
+            <h3>🔎 Análisis de pedido</h3>
+            <p>Ingresa cualquier número de venta para ver el desglose completo línea por línea:
+            entregado, devolución, facturado, NC y pendiente, aunque la orden
+            <strong>no aparezca</strong> en la lista de pendientes.</p>
+            <h3>⚠️ NC no ligadas</h3>
+            <p>Detecta automáticamente notas de crédito que no están vinculadas a ninguna
+            línea de venta y muestra un aviso con botón para abrirlas en contabilidad.</p>
+        </div>
+    </div>
+</section>
+
+<section class="oe_container">
+    <div class="oe_row oe_spaced">
+        <h3>🧮 Lógica de cálculo</h3>
+        <div style="font-family:monospace;background:#f9fafb;border:1px solid #e5e7eb;padding:16px;border-radius:8px;line-height:2">
+            Entrega neta &nbsp;&nbsp;&nbsp;= Entregas <em>outgoing</em> − Devoluciones <em>incoming</em><br/>
+            Facturado neto = Facturas <em>out_invoice</em> − Notas crédito <em>out_refund</em><br/>
+            <strong>Pendiente &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= Entrega neta − Facturado neto</strong>
+        </div>
+        <p style="margin-top:12px">El cálculo se realiza con SQL nativo usando subqueries independientes por fuente,
+        evitando productos cartesianos. El agrupamiento por <code>(venta, producto)</code> ocurre
+        en la BD para manejar correctamente órdenes con múltiples líneas del mismo producto.</p>
+    </div>
+</section>
+
+<section class="oe_container oe_dark">
+    <div class="oe_row oe_spaced">
+        <h3>⚙️ Información técnica</h3>
+        <ul>
+            <li><strong>Odoo:</strong> 16 Enterprise</li>
+            <li><strong>Módulos requeridos:</strong> <code>sale_management</code>, <code>account</code>, <code>stock</code></li>
+            <li><strong>Frontend:</strong> OWL 2 con template inline — sin dependencias externas</li>
+            <li><strong>Backend:</strong> controlador JSON-RPC + SQL nativo para máximo rendimiento</li>
+            <li><strong>Localización MX:</strong> compatible con <code>l10n_mx_edi_cfdi_uuid</code></li>
+        </ul>
+    </div>
+</section>

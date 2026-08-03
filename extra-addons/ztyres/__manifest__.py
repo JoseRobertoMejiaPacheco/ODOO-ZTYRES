@@ -26,7 +26,7 @@
     
     # any module necessary for this one to work correctly
     # 'l10n_mx_edi'
-    'depends': ['ztyres_price_list','mail', 'stock', 'product', 'contacts', 'base', 'sale', 'sale_management', 'account'],
+    'depends': ['ztyres_price_list','l10n_mx_edi','mail', 'stock', 'product', 'contacts', 'base', 'sale', 'sale_management', 'account', 'l10n_mx_edi_stock'],
     'application': False,
     'installable': True,
     'auto_install': False,

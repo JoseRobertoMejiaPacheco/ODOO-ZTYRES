@@ -25,5 +25,20 @@
                 </field>
             </field>
         </record>
+
+        <record id="product_pricelist_form" model="ir.ui.view">
+            <field name="name">product_pricelist.form</field>
+            <field name="model">product.pricelist</field>
+            <field name="inherit_id" ref="product.product_pricelist_view" />
+            <field name="arch" type="xml">
+                <xpath expr="//page[@name='pricelist_rules']//tree[1]/field[@name='date_end']" position="after">
+                    <field name="write_date"/>
+                </xpath>
+
+                <xpath expr="//page[@name='pricelist_rules']//tree[2]/field[@name='date_end']" position="after">
+                    <field name="write_date"/>
+                </xpath>
+            </field>
+        </record>
     </data>
 </odoo>

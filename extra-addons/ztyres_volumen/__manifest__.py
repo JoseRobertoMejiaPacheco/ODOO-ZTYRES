@@ -17,10 +17,10 @@
     # Check https://github.com/odoo/odoo/blob/16.0/odoo/addons/base/data/ir_module_category_data.xml
     # for the full list
     'category': 'Uncategorized',
-    'version': '0.1',
+    'version': '16.0.3.0.0',
 
     # any module necessary for this one to work correctly
-    'depends': ['account'],
+    'depends': ['account', 'ztyres_timbrado_generico'],
     # always loaded
     'data': [
         'security/security.xml',
@@ -29,7 +29,7 @@
         'views/ztyres_volumen_group.xml',
         'views/ztyres_volumen_notas_credito_lines.xml',
         'views/ztyres_volumen_notas_credito.xml',
-        'views/menu_item.xml'
+        'views/menu_item.xml',
     ],
     # only loaded in demonstration mode
     'demo': [

@@ -79,7 +79,8 @@ class reportescxc(models.TransientModel):
             ('COMERCIALIZADORA PEGUZA', 'EXTRAJUDICIAL'),
             ('CIPRIANO ONTIVEROS CAMPOS', 'EXTRAJUDICIAL'),
             ('ALDAHIR ANTONIO LOPEZ SERAFIN', 'EXTRAJUDICIAL'),
-            ('GL TIRES GRUP', 'EXTRAJUDICIAL')
+            ('GL TIRES GRUP', 'EXTRAJUDICIAL'),
+            ('ROCIO LIZBETH MORENO MILAN', 'EXTRAJUDICIAL')
         ]
 
         search_domain = [
@@ -433,7 +434,62 @@ class reportescxc(models.TransientModel):
         
         merged_df4['Cobrado real'] = merged_df4['Historico'].fillna(0) - merged_df4['NC aplicada'].fillna(0)
         
-        lista.append(('Concentrado', merged_df4))
+        #####################################################################################################################################################
+        
+        # Filtrado
+        df8 = df[(df['Status'].isin(['EXTRAJUDICIAL']))]
+        df9 = df2[(df2['Status'].isin(['EXTRAJUDICIAL']))]
+
+        # Asegurar tipo fecha
+        df8['mes_aux'] = pd.to_datetime(df8['mes_aux'], errors='coerce')
+        df9['mes_aux'] = pd.to_datetime(df9['mes_aux'], errors='coerce')
+
+        # Agrupaciones
+        df8 = df8.groupby(['mes_aux'], as_index=False)['importe adeudado'].sum()
+        df9 = df9.groupby(['mes_aux'], as_index=False)['cobrado'].sum()
+
+        fecha_inicio = min(df8['mes_aux'].min(), df9['mes_aux'].min())
+        fecha_fin = pd.Timestamp.today()
+
+        idx = pd.date_range(start=fecha_inicio, end=fecha_fin, freq='MS')
+
+        df8 = df8.set_index('mes_aux').reindex(idx)
+        df8['importe adeudado'] = df8['importe adeudado'].fillna(0)
+        df8 = df8.reset_index().rename(columns={'index': 'mes_aux'})
+
+        df9 = df9.set_index('mes_aux').reindex(idx)
+        df9['cobrado'] = df9['cobrado'].fillna(0)
+        df9 = df9.reset_index().rename(columns={'index': 'mes_aux'})
+
+        df8 = df8.sort_values('mes_aux')
+        df8['extrajudicial'] = df8['importe adeudado'].cumsum()
+
+        df9 = df9.sort_values('mes_aux')
+        df9['pagos'] = df9['cobrado'].cumsum()
+
+        meses_es = {
+            1:'Enero',2:'Febrero',3:'Marzo',4:'Abril',5:'Mayo',6:'Junio',
+            7:'Julio',8:'Agosto',9:'Septiembre',10:'Octubre',11:'Noviembre',12:'Diciembre'
+        }
+
+        df8['mes'] = df8['mes_aux'].dt.month.map(meses_es) + ' ' + df8['mes_aux'].dt.year.astype(str)
+        df9['mes'] = df9['mes_aux'].dt.month.map(meses_es) + ' ' + df9['mes_aux'].dt.year.astype(str)
+
+        df_extrajudicial = pd.merge(
+            df8[['mes', 'extrajudicial']],
+            df9[['mes', 'pagos']],
+            on='mes',
+            how='outer'
+        )
+        
+        # df_extrajudicial.to_excel('/mnt/extra-addons/khe.xlsx')
+        
+        df_extrajudicial['Extrajudicial'] = df_extrajudicial['extrajudicial'] - df_extrajudicial['pagos']
+        
+        merged_df5 = pd.merge(merged_df4, df_extrajudicial[['mes', 'Extrajudicial']], on='mes', how='left')
+        
+        lista.append(('Concentrado', merged_df5))
+        
         #####################################################################################################################################################
         total_cobrado = copy_pagos.loc[(copy_pagos['dias de atraso'] <= 0) & (copy_pagos['Status'] == 'COBRANZA'), 'cobrado'].sum()
         
@@ -513,21 +569,25 @@ class reportescxc(models.TransientModel):
             datos2.append(vals2)
 
         df5 = pd.DataFrame(datos2)
+        df5['fecha factura'] = pd.to_datetime(df5['fecha factura'])
         
         df_nc = df5.copy()
         
         df_nc = df_nc[df_nc['payment_state'] == 'paid']
-        df_nc['fecha factura'] = pd.to_datetime(df_nc['fecha factura'])
         df_nc['mes'] = (
             df_nc['fecha factura'].dt.month_name().replace(meses_mapping) + " " +
             df_nc['fecha factura'].dt.year.astype(str)
         )
         
         df5 = df5[df5['payment_state'] == 'not_paid']
-        df5.drop(columns=['payment_state'], inplace=True)
-        df5 = df5.groupby(['Status'], as_index=False)['por vencer'].sum()
+        df5['mes'] = (df5['fecha factura'].dt.month_name().replace(meses_mapping))
         
-        lista.append(('Notas de credito', df5))
+        df5['año'] = (df5['fecha factura'].dt.year.astype(str))
+        
+        # df5.drop(columns=['payment_state'], inplace=True)
+        # df5 = df5.groupby(['Status'], as_index=False)['por vencer'].sum()
+        
+        lista.append(('Notas_de_credito', df5))
 #-------------------------------------------------------------------------------------------------------------------------------------------------
         df_concat = pd.concat([merged_df_copy4, df_monto, df_vencido ,merged_df_copy3, df5], ignore_index=True)
         
@@ -572,11 +632,11 @@ class reportescxc(models.TransientModel):
         #-------------------------------------------------------------------------------------------------------------------------------------------------
         df_vencidos = copy[(copy['dias de atraso'] >= 30) & (copy['importe adeudado'] > 0)]
         
-        columnas_deseadas = ['Cliente', 'Términos de pago del cliente', 'factura', 'dias de atraso', 'por vencer', 'importe adeudado']
+        columnas_deseadas = ['Cliente', 'Términos de pago del cliente', 'factura', 'Status', 'dias de atraso', 'por vencer', 'importe adeudado']
         
         df_vencidos = df_vencidos[columnas_deseadas]
         
-        lista.append(('INDICADOR VENCIDOS', df_vencidos))
+        lista.append(('INDICADOR_VENCIDOS', df_vencidos))
         
         #-------------------------------------------------------------------------------------------------------------------------------------------------
         vendedores1 = [
@@ -593,19 +653,28 @@ class reportescxc(models.TransientModel):
 
         df_cobranza.loc[df_cobranza['cliente'].isin(dict_status.keys()), 'Cobrador2'] = df_cobranza['cliente'].map(dict_status)
         
-        columnas_deseadas2 = ['Cobrador2', 'mes', 'diario', 'cobrado', 'pendiente']
+        columnas_deseadas2 = ['Cobrador2', 'movimiento', 'mes', 'diario', 'cobrado', 'pendiente']
         
         df_cobranza = df_cobranza[columnas_deseadas2]
         
-        df_cobranza = df_cobranza.groupby(['Cobrador2', 'mes', 'diario'], as_index=False).agg({'cobrado': 'sum', 'pendiente': 'sum'})
+        df_cobranza['total_cobrado'] = df_cobranza['cobrado'] + df_cobranza['pendiente']
         
-        df_pivot = df_cobranza.pivot_table(
-            index='Cobrador2',              # Filas
-            columns=['mes', 'diario'],      # Columnas jerárquicas
-            values='cobrado',
-            aggfunc='sum',
-            fill_value=0
-        )
-        lista.append(('DESGLOSE X Cobraor', df_pivot))
+        #df_cobranza = df_cobranza.groupby(['Cobrador2', 'mes', 'diario'], as_index=False).agg({'cobrado': 'sum', 'pendiente': 'sum'})
         
-        return lista
+        # df_pivot = df_cobranza.pivot_table(
+        #     index='Cobrador2',              # Filas
+        #     columns=['mes', 'diario'],      # Columnas jerárquicas
+        #     values='cobrado',
+        #     aggfunc='sum',
+        #     fill_value=0
+        # )
+        lista.append(('DESGLOSE_X_Cobraor', df_cobranza))
+        
+        reports_core = self.env['ztyres_ms_sql_excel_core'].sudo()
+        for name, df in lista:
+            print (f"Insertando DataFrame: {name}")
+            reports_core.action_insert_dataframe(df, name)
+        # reports_core = self.env['ztyres_ms_sql_excel_core']
+        # reports_core.action_insert_dataframe(df_pivoted, 'ventas_lic')
+        return
+        #return lista

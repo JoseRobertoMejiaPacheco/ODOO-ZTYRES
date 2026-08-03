@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+  <!-- Acción cliente: monta el componente Owl registrado en
+       app.js (registry.category("actions")) DENTRO del webclient
+       de Odoo. Ya no es una pestaña aparte a una página HTML
+       pública: es una app más del backend, con el Owl nativo que
+       el propio backend ya trae cargado y con la sesión normal
+       (sin token, sin CORS, mismo origen). -->
+  <record id="action_cotizador_owl" model="ir.actions.client">
+    <field name="name">Cotizador</field>
+    <field name="tag">ztyres_promotions.cotizador</field>
+  </record>
+
+  <!-- Menú raíz = aparece como ícono de app aparte en el menú
+       principal de Odoo (el "waffle"/grid de apps), no como submenú
+       de Ventas ni de ningún otro módulo. Restringido al grupo
+       "Cotizador: acceso a la app de precios": sin ese permiso, ni
+       aparece el ícono ni el menú (ni siquiera para Ventas). -->
+  <menuitem id="menu_cotizador_root"
+            name="Cotizador"
+            action="action_cotizador_owl"
+            web_icon="ztyres_promotions,static/description/icon.png"
+            groups="ztyres_promotions.group_cotizador_access"
+            sequence="50"/>
+
+</odoo>

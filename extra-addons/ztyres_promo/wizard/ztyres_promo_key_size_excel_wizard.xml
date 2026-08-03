@@ -1,0 +1,66 @@
+<?xml version='1.0' encoding='utf-8'?>
+<odoo>
+    <data>
+        <record id="view_key_size_excel_wizard_form" model="ir.ui.view">
+            <field name="name">ztyres.promo.key.size.excel.wizard.form</field>
+            <field name="model">ztyres_promo.key_size_excel_wizard</field>
+            <field name="arch" type="xml">
+                <form string="Cargar Key Sizes">
+                    <field name="notas_credito_id" invisible="1"/>
+
+                    <div class="alert alert-info" role="alert">
+                        <p class="mb-1">
+                            <strong>Formato del archivo (.xlsx)</strong> — una sola
+                            columna con la referencia interna del producto.
+                        </p>
+                        <table class="table table-sm table-bordered bg-white mb-2" style="width:auto;">
+                            <thead>
+                                <tr><th class="text-center">codigo</th></tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>10871003</td></tr>
+                                <tr><td>10492003</td></tr>
+                            </tbody>
+                        </table>
+                        <p class="mb-0">
+                            Aquí <b>no van porcentajes</b>. El porcentaje de los Key Sizes
+                            se captura una sola vez, en la columna <b>% Key Sizes</b> de la
+                            tabla de niveles de la promoción.
+                        </p>
+                    </div>
+
+                    <group>
+                        <field name="file" widget="binary" filename="file_name"
+                               string="Archivo Excel"/>
+                        <field name="file_name" invisible="1"/>
+                        <field name="mode" widget="radio"/>
+                        <field name="add_to_scope"/>
+                    </group>
+
+                    <div class="alert alert-warning" role="alert"
+                         attrs="{'invisible': [('add_to_scope','=',True)]}">
+                        Sin esta opción, los Key Sizes que no estén ya en el alcance de la
+                        promoción <b>no generarán nota de crédito</b>: la lista solo cambia
+                        el porcentaje, no agrega productos.
+                    </div>
+
+                    <footer>
+                        <button name="action_import" string="Importar" type="object"
+                                class="btn-primary"
+                                attrs="{'invisible': [('file','=',False)]}"/>
+                        <button name="action_download_template" string="Descargar plantilla"
+                                type="object" class="btn-secondary" icon="fa-download"/>
+                        <button string="Cancelar" class="btn-link" special="cancel"/>
+                    </footer>
+                </form>
+            </field>
+        </record>
+
+        <record id="action_key_size_excel_wizard" model="ir.actions.act_window">
+            <field name="name">Cargar Key Sizes desde Excel</field>
+            <field name="res_model">ztyres_promo.key_size_excel_wizard</field>
+            <field name="view_mode">form</field>
+            <field name="target">new</field>
+        </record>
+    </data>
+</odoo>

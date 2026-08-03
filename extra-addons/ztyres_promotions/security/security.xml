@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <record id="module_category_ztyres_promotions" model="ir.module.category">
+            <field name="name">Promociones Ztyres</field>
+            <field name="sequence">20</field>
+        </record>
+
+        <record id="group_promotions_user" model="res.groups">
+            <field name="name">Usuario: cotiza con promociones</field>
+            <field name="category_id" ref="module_category_ztyres_promotions"/>
+        </record>
+
+        <!-- Permiso interno especial: quién puede ABRIR el Cotizador
+             (la app de precios dentro del backend). No es lo mismo que
+             "cotiza con promociones" (group_promotions_user, que
+             controla los modelos de reglas/config): este grupo es
+             exclusivamente la llave de acceso a la app en sí, así que
+             ni todo el equipo de Ventas la ve por defecto — hay que
+             agregar manualmente a cada usuario desde Ajustes > Usuarios
+             y Compañías > Usuarios (pestaña "Otros derechos") o desde
+             Ajustes > Grupos. Se define ANTES de group_promotions_manager
+             para poder referenciarlo en su implied_ids de abajo. -->
+        <record id="group_cotizador_access" model="res.groups">
+            <field name="name">Cotizador: acceso a la app de precios</field>
+            <field name="category_id" ref="module_category_ztyres_promotions"/>
+        </record>
+
+        <record id="group_promotions_manager" model="res.groups">
+            <field name="name">Administrador: configura reglas de promoción</field>
+            <field name="category_id" ref="module_category_ztyres_promotions"/>
+            <!-- El administrador de promociones también puede abrir el
+                 Cotizador: no tendría sentido que configure las reglas
+                 pero no pueda ver la app donde se aplican. -->
+            <field name="implied_ids" eval="[(4, ref('group_promotions_user')), (4, ref('group_cotizador_access'))]"/>
+            <field name="users" eval="[(4, ref('base.user_admin'))]"/>
+        </record>
+    </data>
+</odoo>

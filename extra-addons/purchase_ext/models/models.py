@@ -5,7 +5,7 @@ class PurchaseOrder(models.Model):
     _inherit = 'purchase.order'
     
     def update_costo_final(self):
-        for po in self.with_progress(msg="Actualizando Costo Final :3"):
+        for po in self:
             for invoice_line in po.invoice_ids.invoice_line_ids:
                 # Obtener el costo final de la factura
                 costo_final_factura_lista =  po.order_line.filtered(lambda line: line.product_id.id == invoice_line.product_id.id

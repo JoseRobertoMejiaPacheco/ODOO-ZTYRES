@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="0">
+
+        <!-- Categoría del módulo -->
+        <record id="module_category_dashboard_reservas" model="ir.module.category">
+            <field name="name">Dashboard Reservas</field>
+            <field name="description">Gestión de antigüedad de pedidos reservados</field>
+            <field name="sequence">100</field>
+        </record>
+
+        <!-- Grupo: Vendedor (solo ve sus propios pedidos) -->
+        <record id="group_dashboard_reservas_user" model="res.groups">
+            <field name="name">Dashboard Reservas / Vendedor</field>
+            <field name="category_id" ref="module_category_dashboard_reservas"/>
+            <field name="comment">
+                Acceso al dashboard de reservas. Solo visualiza los pedidos
+                asignados a su propio usuario como vendedor.
+            </field>
+        </record>
+
+        <!-- Grupo: Manager (ve todos los pedidos) -->
+        <record id="group_dashboard_reservas_manager" model="res.groups">
+            <field name="name">Dashboard Reservas / Gerente</field>
+            <field name="category_id" ref="module_category_dashboard_reservas"/>
+            <field name="implied_ids" eval="[(4, ref('group_dashboard_reservas_user'))]"/>
+            <field name="comment">
+                Acceso completo al dashboard de reservas. Visualiza los pedidos
+                de todos los vendedores.
+            </field>
+        </record>
+
+    </data>
+</odoo>

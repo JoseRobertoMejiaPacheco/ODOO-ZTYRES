@@ -16,9 +16,48 @@ class account_move(models.Model):
     @api.depends('l10n_mx_edi_cfdi_uuid')
     def _compute_edi_vat_receptor(self):
         for move in self:
-            move.edi_vat_receptor = ''
-            for document in  move.edi_document_ids:
-                move.edi_vat_receptor = document.edi_format_id._get_rfc_from_xml(document) or 'SIN XML ADJUNTO'
+            rfc = ''
+            for document in move.edi_document_ids:
+                rfc = document.edi_format_id._get_rfc_from_xml(document) or 'SIN XML ADJUNTO'
+            move.edi_vat_receptor = rfc
+            move._set_invoice_line_receiver_data(rfc)
+
+    def _set_invoice_line_receiver_data(self, rfc):
+        """Congela RFC receptor y grupo en las líneas al timbrar."""
+        self.ensure_one()
+        rfc = (rfc or '').strip().upper()
+        if not rfc or not self.id or not isinstance(self.id, int):
+            return
+        if self.move_type not in ('out_invoice', 'out_refund'):
+            return
+        product_lines = self.invoice_line_ids.filtered(
+            lambda line: line.display_type == 'product'
+        )
+        if not product_lines:
+            return
+
+        groups_by_partner = self.env[
+            'ztyres_volumen.group'
+        ]._map_partners_to_groups(product_lines.mapped('partner_id'))
+        product_lines.flush_recordset()
+        lines_by_group = {}
+        for line in product_lines:
+            group = groups_by_partner.get(line.partner_id.id)
+            lines_by_group.setdefault(group.id if group else False, []).append(
+                line.id
+            )
+        for group_id, line_ids in lines_by_group.items():
+            self.env.cr.execute("""
+                UPDATE account_move_line
+                   SET edi_vat_receptor = %s,
+                       group_id = %s
+                 WHERE id = ANY(%s)
+                   AND display_type = 'product'
+            """, (rfc, group_id or None, line_ids))
+        product_lines.invalidate_recordset(
+            ['edi_vat_receptor', 'group_id']
+        )
+
     
     def action_post(self):
         res = super().action_post()

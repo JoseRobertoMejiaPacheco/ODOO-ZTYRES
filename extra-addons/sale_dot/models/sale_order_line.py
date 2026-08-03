@@ -378,6 +378,68 @@ class SaleOrderLine(models.Model):
             )
 
         return min_price_item
+
+    @api.model
+    def get_catalog_price_for_product(self, product):
+        """Precio mínimo después de descuento desde las listas de
+        precios válidas, SIN depender de un pedido real (self.order_id
+        no existe en el catálogo ni en el cotizador externo).
+
+        Es la misma idea de get_item_with_min_price_after_discount,
+        pero recortada a la rama que no necesita pedido: siempre usa
+        _get_valid_pricelists() (sin la rama de is_expo/promo_onyx,
+        que solo tienen sentido dentro de un sale.order ya creado).
+
+        Si el producto no tiene ningún ítem en esas listas de precios,
+        cae a product.lst_price para no devolver 0.0 sin explicación.
+        """
+        domain = [
+            ('product_tmpl_id', 'in', product.product_tmpl_id.ids),
+            ('pricelist_id', 'in', self._get_valid_pricelists()),
+        ]
+        pricelist_items = self.env['product.pricelist.item'].search(domain)
+        min_price_item = min(
+            pricelist_items,
+            key=lambda item: item.fixed_price if item.fixed_price else float('inf'),
+            default=None,
+        )
+        if min_price_item and min_price_item.fixed_price:
+            return min_price_item.fixed_price
+        return product.lst_price
+
+    @api.model
+    def get_free_qty_and_dot_range_for_product(self, product):
+        """Cantidad libre de usar (stock disponible no reservado) y
+        rango de DOT, calculados directamente desde stock.quant — sin
+        pasar por un sale.order.line real ni por pickings.
+
+        Pensado para el cotizador externo (módulo ztyres_promotions),
+        que cotiza productos antes de que exista cualquier pedido: ahí
+        no hay self.product_id ni self.order_id, solo un
+        product.product suelto que llega del payload del cotizador.
+        Por eso es @api.model y recibe el producto como parámetro, en
+        vez de leerlo de un registro real de sale.order.line.
+
+        Es PURAMENTE INFORMATIVO: no participa en
+        get_item_with_min_price_after_discount ni en
+        _get_pricelist_price, así que no afecta el precio. Tampoco
+        toca _compute_rangos_dots (esa sigue leyendo picking_ids como
+        siempre, para pedidos ya surtidos) — esta es una vía aparte
+        que lee el stock libre porque en el cotizador todavía no hay
+        pedido ni picking.
+
+        Reutiliza rango_fechas() para no duplicar la lógica de
+        formateo de años (un solo año, rango, o "N/A" si no hay DOT
+        válido en el stock disponible).
+        """
+        quants = self.env['stock.quant'].search([
+            ('product_id', '=', product.id),
+            ('quantity', '>', 0),
+            ('location_id.usage', '=', 'internal'),
+        ])
+        free_qty = sum(q.quantity - q.reserved_quantity for q in quants)
+        dot_range = self.rango_fechas(quants.mapped('lot_id.name'))
+        return free_qty, dot_range
     
     def _get_pricelist_price(self):
         

@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <data>
 
@@ -6,9 +7,9 @@
             <field name="model">product.product</field>
             <field name="arch" type="xml">
                 <tree>
-                    <field name="name" />
-                    <field name="default_code" />
-                    <field name="list_price" />
+                    <field name="name"/>
+                    <field name="default_code"/>
+                    <field name="list_price"/>
                 </tree>
             </field>
         </record>
@@ -17,207 +18,388 @@
             <field name="name">ztyres.promo.notas.credito.form</field>
             <field name="model">ztyres_promo.notas_credito</field>
             <field name="arch" type="xml">
-                <form string="Notas de Crédito">
+                <form string="Promoción">
                     <header>
-                        <button name="action_calcular_nc" type="object" string="Calcular NC"
-                            attrs="{'invisible': [('status', 'in', ['done'])]}" />
-                        <button name="action_approve_p" type="object" string="Aprobar Promocion"
-                            class="btn-default"
-                            attrs="{'invisible': [('status', 'in', ['done','approve','action_approve_p'])]}"
-                            groups="ztyres_volumen.group_supervisor_nc_volumen_promociones" />
-                        <button name="action_approve" type="object"
-                            string="Aprobar Notas de Crédito" class="btn-default"
-                            attrs="{'invisible': [('status', 'in', ['done','approve'])]}"
-                            groups="ztyres_volumen.group_supervisor_nc_volumen_promociones" />
-                        <button name="action_confirmar_nc" type="object" string="Confirmar NC"
-                            class="btn-default"
-                            attrs="{'invisible': [('status', 'not in', ['approve'])]}" />
-                        <button name="check_sat_status" type="object"
-                            string="Verificar estatus  timbrado SAT" class="btn-default"
-                            attrs="{'invisible': [('status', 'in', ['done'])]}" />
-                        <!-- <button name="action_calcular_reporte_lic" type="object"
-                        string="Calcular NC"/> -->
-                        <field name="status" widget="statusbar" />
-                        <button name="download_zip_xmls"
-                            string="Descargar XMLs Facturas"
-                            type="object"
-                            context="{'move_type': 'out_invoice'}"
-                            class="oe_highlight" />
-                        <button name="download_zip_xmls"
-                            string="Descargar XMLs Notas de Credito"
-                            type="object"
-                            context="{'move_type': 'out_refund'}"
-                            class="oe_highlight" />
+                        <button name="action_calcular_nc" type="object" string="Calcular NC" class="oe_highlight"
+                                attrs="{'invisible': [('status', 'in', ['done'])]}"/>
+                        <button name="action_approve_p" type="object" string="Aprobar Promoción" class="btn-default"
+                                attrs="{'invisible': [('status', 'in', ['done','approve','approve_p'])]}"
+                                groups="ztyres_volumen.group_supervisor_nc_volumen_promociones"/>
+                        <button name="action_approve" type="object" string="Aprobar Notas de Crédito" class="btn-default"
+                                attrs="{'invisible': [('status', 'in', ['done','approve'])]}"
+                                groups="ztyres_volumen.group_supervisor_nc_volumen_promociones"/>
+                        <button name="action_confirmar_nc" type="object" string="Confirmar NC" class="btn-default"
+                                attrs="{'invisible': [('status', 'not in', ['approve'])]}"/>
+                        <button name="check_sat_status" type="object" string="Verificar estatus timbrado SAT" class="btn-default"
+                                attrs="{'invisible': [('status', 'in', ['done'])]}"/>
+                        <field name="status" widget="statusbar"/>
+                        <button name="download_zip_xmls" string="XMLs Facturas" type="object"
+                                context="{'move_type': 'out_invoice'}"/>
+                        <button name="download_zip_xmls" string="XMLs Notas de Crédito" type="object"
+                                context="{'move_type': 'out_refund'}"/>
                     </header>
+
                     <sheet>
                         <div class="oe_button_box" name="button_box">
-                            <!-- Smart button para Notas de Crédito -->
-
-                            <button name="action_open_line_ids"
-                                type="object"
-                                class="oe_stat_button"
-                                icon="fa-file-text">
-                                <field name="count_line_ids" widget="statinfo" string="Resumen NC" />
+                            <button name="action_open_line_ids" type="object" class="oe_stat_button" icon="fa-file-text">
+                                <field name="count_line_ids" widget="statinfo" string="Resumen NC"/>
                             </button>
-
-                            <!-- Smart button para Detalle -->
-                            <button name="action_open_detailed_line_ids"
-                                type="object"
-                                class="oe_stat_button"
-                                icon="fa-list-alt">
-                                <field name="count_detailed_line_ids" widget="statinfo"
-                                    string="Detalle" />
+                            <button name="action_open_detailed_line_ids" type="object" class="oe_stat_button" icon="fa-list-alt">
+                                <field name="count_detailed_line_ids" widget="statinfo" string="Detalle"/>
                             </button>
                         </div>
+
                         <div class="oe_title">
                             <h1>
-                                <field name="nombre" placeholder="Escriba el Nombre de la promoción" />
+                                <field name="nombre" placeholder="Nombre de la promoción"/>
                             </h1>
                         </div>
+
                         <group>
-                            <field name="start_date" />
-                            <field name="end_date" />
-                            <field name="generic_edi" />
-                            <field name="apply_on_groups" />
-                            <field name="apply_volume" />
+                            <group string="Vigencia">
+                                <field name="start_date"/>
+                                <field name="end_date"/>
+                            </group>
+                            <group string="Cómo se aplica">
+                                <field name="apply_on_groups"/>
+                                <field name="apply_volume"
+                                       attrs="{'invisible': [('promo_type','not in',['quantity'])]}"/>
+                                <field name="generic_edi"/>
+                            </group>
                         </group>
+
+                        <!-- Lectura en español de la configuración actual.
+                             Sirve para contestar "¿qué está haciendo esta
+                             promoción?" sin tener que calcular. -->
+                        <div class="alert alert-secondary" role="status">
+                            <strong>Resumen de la configuración</strong>
+                            <field name="promo_explanation" nolabel="1" readonly="1"/>
+                        </div>
+
+                        <div class="alert alert-warning" role="alert"
+                             attrs="{'invisible': [('config_warning', '=', False)]}">
+                            <strong>Revise la configuración:</strong>
+                            <field name="config_warning" nolabel="1" readonly="1"/>
+                        </div>
+
+                        <div class="alert alert-danger" role="alert"
+                             attrs="{'invisible': [('missing_partner_vat_warning', '=', False)]}">
+                            <strong>Confirmación bloqueada:</strong>
+                            <field name="missing_partner_vat_warning" nolabel="1" readonly="1"/>
+                        </div>
 
                         <notebook>
 
-                            <page string="Lineas de facturacion">
-                                <field name="line_ids" domain="[('total_nc_untaxed','&gt;',0)]"
-                                    readonly="1">
-                                    <tree editable="bottom">
-                                        <field name="partner_id" />
-                                        <field name="group_id" />
-                                        <field name="price_subtotal" />
-                                        <field name="quantity" />
-                                        <field name="total_nc_untaxed" />
-                                        <field name="reward_percent" />
-                                        <field name="nc_credit_id" />
-                                        <field name="definitive_nc_id" invisible="1" />
-                                        <field name="rfc" />
-                                        <field name="sat_estatus" />
+
+
+                            <!-- ==========================================
+                                 2. RESULTADOS
+                                 ========================================== -->
+                            <page string="Resultados (NC)" name="resultados">
+                                <field name="line_ids" domain="[('total_nc_untaxed','&gt;',0)]" readonly="1">
+                                    <tree>
+                                        <field name="partner_id"/>
+                                        <field name="rfc"/>
+                                        <field name="group_name" optional="show"/>
+                                        <field name="group_id" invisible="1"/>
+                                        <field name="quantity" sum="Piezas"/>
+                                        <field name="price_subtotal" sum="Subtotal"/>
+                                        <field name="reward_type" optional="hide"/>
+                                        <field name="reward_percent" string="% efectivo"/>
+                                        <field name="reward_fixed_amount" optional="hide"/>
+                                        <field name="total_nc_untaxed" sum="Total NC"/>
+                                        <field name="reward_detail" optional="show"/>
+                                        <field name="nc_credit_id" optional="show"/>
+                                        <field name="sat_estatus" optional="hide"/>
+                                        <field name="definitive_nc_id" invisible="1"/>
                                         <button name="action_view_details" type="object"
-                                            string="Ver detalles" class="btn-primary" />
+                                                string="Ver detalles" class="btn-link" icon="fa-search"/>
                                     </tree>
                                 </field>
                             </page>
 
-                            <page string="Productos Participantes">
-                                <separator string="Productos Participantes" colspan="4" />
-                                <group col="2">
-                                    <field name="brand_ids" widget="many2many_tags" />
-                                    <field name="tier_ids" widget="many2many_tags" />
-                                    <field name="measure_ids" widget="many2many_tags" />
-                                    <field name="segment_ids" widget="many2many_tags" />
-                                    <field name="price_list_ids" widget="many2many_tags" />
+                                                        <!-- ==========================================
+                                 1. DEFINICIÓN: los dos ejes, en orden
+                                 ========================================== -->
+                            <page string="Definición de la promoción" name="definicion">
+
+                                <separator string="1. Alcance · ¿qué productos participan?"/>
+                                <group>
+                                    <field name="promo_conditions" widget="radio" nolabel="1"/>
                                 </group>
 
-                                <separator string="Tipo de política" colspan="4" />
-                                <group>
-                                    <field name="promo_type" />
+                                <!-- Ayudas por alcance -->
+                                <div class="alert alert-info" role="alert"
+                                     attrs="{'invisible': [('promo_conditions','!=','tire feature')]}">
+                                    <strong>Modo OR (O)</strong> — participa el producto que cumpla
+                                    <b>al menos una</b> de las características marcadas.
+                                </div>
+                                <div class="alert alert-info" role="alert"
+                                     attrs="{'invisible': [('promo_conditions','!=','attribute_combination')]}">
+                                    <strong>Modo AND (Y)</strong> — participa solo el producto que cumpla
+                                    <b>todas</b> las características marcadas. Marque al menos dos.
+                                </div>
+                                <div class="alert alert-info" role="alert"
+                                     attrs="{'invisible': [('promo_conditions','!=','specific_products')]}">
+                                    <strong>Productos / Códigos Específicos</strong> — participan únicamente
+                                    los productos de la lista, cargados a mano o por Excel.
+                                </div>
+                                <div class="alert alert-info" role="alert"
+                                     attrs="{'invisible': [('promo_conditions','!=','coupons')]}">
+                                    <strong>Cupones por Producto</strong> — el producto y su monto de NC se
+                                    configuran en la pestaña Cupones. No se eligen características.
+                                </div>
+                                <div class="alert alert-warning" role="alert"
+                                     attrs="{'invisible': [('promo_conditions','!=','rim_quantity')]}">
+                                    <strong>Rines de las Políticas (heredado)</strong> — participan todas las
+                                    llantas de los rines listados en la tabla de políticas, <b>de cualquier
+                                    marca</b>. Si la promoción es de marcas específicas, use
+                                    “Combinación de Características” y deje que la tabla de rines
+                                    defina solo el porcentaje.
+                                </div>
+
+                                <!-- Características: un solo bloque para los dos modos -->
+                                <group attrs="{'invisible': [('promo_conditions','not in',['tire feature','attribute_combination'])]}">
+                                    <group string="Características">
+                                        <field name="brand_ids" widget="many2many_tags"/>
+                                        <field name="tier_ids" widget="many2many_tags"/>
+                                        <field name="measure_ids" widget="many2many_tags"/>
+                                        <field name="rin_ids" widget="many2many_tags"/>
+                                    </group>
+                                    <group string="Características (cont.)">
+                                        <field name="segment_ids" widget="many2many_tags"/>
+                                        <field name="face_ids" widget="many2many_tags"/>
+                                        <field name="layer_ids" widget="many2many_tags"/>
+                                        <field name="model_ids" widget="many2many_tags"/>
+                                        <field name="price_list_ids" widget="many2many_tags"
+                                               attrs="{'invisible': [('promo_conditions','!=','tire feature')]}"/>
+                                    </group>
                                 </group>
 
-
-                                <separator string="Políticas de Cantidad" colspan="4"
-                                    attrs="{'invisible': [('promo_type','!=','quantity')]}" />
-                                <group>
-                                    <field name="limite_qty"
-                                        attrs="{'invisible': [('promo_type','!=','quantity')]}" />
-                                    <field name="policy_line_qty_ids"
-                                        attrs="{'invisible': [('promo_type','!=','quantity')]}">
-                                        <tree editable="bottom">
-                                            <field name="lower_limit" />
-                                            <field name="upper_limit" />
-                                            <field name="discount" />
-                                        </tree>
-                                    </field>
-                                </group>
-
-
-                                <separator string="Políticas de Monto" colspan="4"
-                                    attrs="{'invisible': [('promo_type','!=','amount')]}" />
-                                <group>
-                                    <field name="limite_amount"
-                                        attrs="{'invisible': [('promo_type','!=','amount')]}" />
-                                    <field name="policy_line_amount_ids"
-                                        attrs="{'invisible': [('promo_type','!=','amount')]}">
-                                        <tree editable="bottom">
-                                            <field name="lower_limit" />
-                                            <field name="upper_limit" />
-                                            <field name="discount" />
-                                        </tree>
-                                    </field>
-                                </group>
-
-
-                                <separator string="Productos" colspan="4" />
-                                <group>
-                                    <field name="product_ids" domain="[('type', '=', 'product')]"
-                                        context="{'tree_view_ref': 'ztyres_promo.view_product_selection_tree','search_default_filter_product': 1, 'create': 0, 'edit': 0, 'delete': 0}">
+                                <!-- Lista de productos.
+                                     A propósito NO va dentro de un <group>:
+                                     dentro de un group, un x2many se dibuja en
+                                     una de las dos columnas y queda como una
+                                     tira angosta con "Agregar una línea"
+                                     colgando a la izquierda. -->
+                                <div attrs="{'invisible': [('promo_conditions','not in',['specific_products','tire feature'])]}">
+                                    <separator string="Productos / Códigos cargados"/>
+                                    <div class="mb-2">
+                                        <button name="action_open_excel_import" type="object"
+                                                string="Cargar códigos (.xlsx)" class="btn-primary"
+                                                icon="fa-upload"/>
+                                        <button name="clear_product_relations" type="object"
+                                                string="Limpiar productos" class="btn-secondary"
+                                                icon="fa-trash"
+                                                confirm="¿Está seguro que desea eliminar todas las relaciones con productos?"
+                                                attrs="{'invisible': [('product_ids','=',[])]}"/>
+                                    </div>
+                                    <field name="product_ids" nolabel="1" colspan="2"
+                                           domain="[('type', '=', 'product')]"
+                                           context="{'tree_view_ref': 'ztyres_promo.view_product_selection_tree','search_default_filter_product': 1, 'create': 0, 'edit': 0, 'delete': 0}">
                                         <tree>
-                                            <field name="id" />
-                                            <field name="name" />
-                                            <field name="default_code" />
+                                            <field name="default_code" string="Código"/>
+                                            <field name="name"/>
                                         </tree>
                                     </field>
+                                    <div class="alert alert-warning mt-2" role="alert"
+                                         attrs="{'invisible': [('not_found','=',False)]}">
+                                        <strong>Códigos no encontrados en el catálogo</strong>
+                                        <field name="not_found" nolabel="1" readonly="1"/>
+                                    </div>
+                                </div>
+
+                                <separator string="2. Política · ¿cómo se calcula el beneficio?"/>
+                                <group>
+                                    <group>
+                                        <field name="promo_type"
+                                               attrs="{'readonly': [('promo_conditions','in',['coupons','rim_quantity'])]}"/>
+                                        <field name="reward_type"
+                                               attrs="{'invisible': [('promo_type','not in',['quantity','amount'])]}"/>
+                                    </group>
                                 </group>
-                                <!-- Grupo de botones mejor alineados -->
-                                <group colspan="4" class="oe_button_box">
-                                    <button name="action_open_excel_import"
-                                        type="object"
-                                        string="Cargar Códigos (.xlsx)"
-                                        class="oe_highlight"
-                                        icon="fa-file-excel" />
 
-
-
-                                        
-                                    <button name="clear_product_relations"
-                                        type="object"
-                                        string="Limpiar Productos"
-                                        class="oe_stat_button"
-                                        icon="fa-trash"
-                                        confirm="¿Está seguro que desea eliminar todas las relaciones con productos?" />
-                                    <field name="not_found" />
-                                </group>
-                            </page>
-                            <page string="Clientes Excluidos">
-                                <field name="excluded_partner_ids" />
-                            </page>
-
-
-                            <page string="Facturas/NC Excluidas">
-                                <field name="excluded_invoice_ids_domain" invisible="1"/>
-                                <field name="excluded_invoice_ids"/>
-                            </page>
-
-                            <page string="Cupones">
-                                <group colspan="4" class="oe_button_box">
-                                    <button name="action_open_coupon_excel_import"
-                                        type="object"
-                                        string="Cargar Códigos (.xlsx)"
-                                        class="oe_highlight"
-                                        icon="fa-file-excel" />                                        
-
-    
-</group>                                
-                                <field name="coupon_ids">
+                                <!-- Política: cantidad acumulada por rin -->
+                                <div class="alert alert-info" role="alert"
+                                     attrs="{'invisible': [('promo_type','!=','rim_quantity')]}">
+                                    Primero se suman <b>todas las llantas participantes</b> para elegir el
+                                    tramo alcanzado; después cada rin cobra su propio porcentaje sobre el
+                                    subtotal de sus líneas. El porcentaje que aparece en el resumen es el
+                                    <b>efectivo</b> (NC ÷ subtotal), no un porcentaje capturado.
+                                    En “Hasta”, use <b>999999999</b> para un tramo sin tope.
+                                </div>
+                                <field name="rim_policy_line_ids" nolabel="1"
+                                       attrs="{'invisible': [('promo_type','!=','rim_quantity')]}">
                                     <tree editable="bottom">
-                                        <field name="product_id" />
-                                        <field name="amount" />
+                                        <field name="lower_limit" string="Desde (pza)"/>
+                                        <field name="upper_limit" string="Hasta (pza)"/>
+                                        <field name="rim_ids" widget="many2many_tags"/>
+                                        <field name="discount" string="Porcentaje (%)"/>
                                     </tree>
                                 </field>
 
-                                    <button name="clear_coupon_product_relations"
-                                        type="object"
-                                        string="Limpiar Productos de cupones"
-                                        class="oe_stat_button"
-                                        icon="fa-trash" 
-                                        confirm="¿Está seguro que desea eliminar todas las relaciones con productos?" />
-                                    <field name="not_found" />                                
-                            </page>                              
+                                <!-- Política: por cantidad -->
+                                <div class="alert alert-info" role="alert"
+                                     attrs="{'invisible': [('promo_type','not in',['quantity','amount'])]}">
+                                    El tramo aplica cuando el acumulado cae entre <b>Desde</b> y <b>Hasta</b>,
+                                    ambos inclusive. Use <b>999999999</b> en “Hasta” para el último tramo.
+                                    El porcentaje admite decimales (2.10). El monto fijo genera una NC por el
+                                    importe del nivel y, si aplican grupos, se reparte proporcionalmente sin
+                                    duplicarse por cliente.
+                                </div>
+                                <field name="policy_line_qty_ids" nolabel="1"
+                                       attrs="{'invisible': [('promo_type','!=','quantity')]}">
+                                    <tree editable="bottom">
+                                        <field name="lower_limit" string="Desde (pza)"/>
+                                        <field name="upper_limit" string="Hasta (pza)"/>
+                                        <field name="min_qty" string="Mínimo de llantas"/>
+                                        <field name="discount" string="Porcentaje (%)"
+                                               attrs="{'column_invisible': [('parent.reward_type','!=','percentage')]}"/>
+                                        <field name="key_size_discount" string="% Key Sizes"
+                                               attrs="{'column_invisible': [('parent.reward_type','!=','percentage')]}"/>
+                                        <field name="fixed_amount"
+                                               attrs="{'column_invisible': [('parent.reward_type','!=','fixed_amount')]}"/>
+                                    </tree>
+                                </field>
+
+                                <!-- Política: por monto -->
+                                <field name="policy_line_amount_ids" nolabel="1"
+                                       attrs="{'invisible': [('promo_type','!=','amount')]}">
+                                    <tree editable="bottom">
+                                        <field name="lower_limit" string="Desde ($)"/>
+                                        <field name="upper_limit" string="Hasta ($)"/>
+                                        <field name="min_qty" string="Mínimo de llantas"/>
+                                        <field name="discount" string="Porcentaje (%)"
+                                               attrs="{'column_invisible': [('parent.reward_type','!=','percentage')]}"/>
+                                        <field name="key_size_discount" string="% Key Sizes"
+                                               attrs="{'column_invisible': [('parent.reward_type','!=','percentage')]}"/>
+                                        <field name="fixed_amount"
+                                               attrs="{'column_invisible': [('parent.reward_type','!=','fixed_amount')]}"/>
+                                    </tree>
+                                </field>
+
+                                <!-- Política: volumen mensual -->
+                                <field name="monthly_volume_line_ids" nolabel="1"
+                                       attrs="{'invisible': [('promo_type','!=','monthly_volume')]}">
+                                    <tree editable="bottom">
+                                        <field name="lower_limit" string="Desde (pza)"/>
+                                        <field name="upper_limit" string="Hasta (pza)"/>
+                                        <field name="minimum_products" string="Cantidad de Medidas"/>
+                                        <field name="minimum_qty_per_measure"/>
+                                        <field name="discount" string="Porcentaje (%)"/>
+                                    </tree>
+                                </field>
+
+                                <!-- Key Sizes: lista de productos que cobran la
+                                     columna "% Key Sizes". Fuera de <group> a
+                                     propósito, igual que la lista de productos:
+                                     dentro de un group un x2many queda como una
+                                     tira angosta. -->
+                                <div attrs="{'invisible': ['|', ('promo_type','not in',['quantity','amount']), ('reward_type','!=','percentage')]}">
+                                    <separator string="Key Sizes · productos que cobran la columna &quot;% Key Sizes&quot;"/>
+                                    <div class="alert alert-info" role="alert">
+                                        Los productos de esta lista cobran, en cada nivel, el porcentaje
+                                        de la columna <b>% Key Sizes</b> en lugar del general. Si un nivel
+                                        deja esa columna en <b>cero</b>, ahí cobran igual que los demás.
+                                        <br/>
+                                        Siguen <b>sumando al acumulado</b>, así que ayudan a alcanzar el
+                                        objetivo igual que cualquier otra llanta.
+                                        <br/>
+                                        Esta lista <b>no agrega productos</b> a la promoción. Un Key Size
+                                        que el alcance deje fuera no genera NC, y se avisa arriba en amarillo.
+                                    </div>
+                                    <div class="mb-2">
+                                        <button name="action_open_key_size_excel_import" type="object"
+                                                string="Cargar Key Sizes (.xlsx)" class="btn-primary"
+                                                icon="fa-upload"/>
+                                        <button name="clear_key_size_lines" type="object"
+                                                string="Limpiar Key Sizes" class="btn-secondary"
+                                                icon="fa-trash"
+                                                confirm="¿Está seguro que desea quitar todos los Key Sizes?"
+                                                attrs="{'invisible': [('key_size_product_ids','=',[])]}"/>
+                                    </div>
+                                    <field name="key_size_product_ids" nolabel="1" colspan="2"
+                                           domain="[('type', '=', 'product')]"
+                                           context="{'tree_view_ref': 'ztyres_promo.view_product_selection_tree','create': 0, 'edit': 0, 'delete': 0}">
+                                        <tree>
+                                            <field name="default_code" string="Código"/>
+                                            <field name="name"/>
+                                        </tree>
+                                    </field>
+                                </div>
+
+                                <!-- Política: cupones -->
+                                <group attrs="{'invisible': [('promo_type','!=','coupons')]}">
+                                    <field name="coupon_limit_qty"/>
+                                </group>
+                            </page>
+
+                            <!-- ==========================================
+                                 3. EXCLUSIONES
+                                 ========================================== -->
+                            <page string="Exclusiones" name="exclusiones">
+                                <separator string="Clientes excluidos"/>
+                                <field name="excluded_partner_ids" nolabel="1" widget="many2many_tags"/>
+                                <separator string="Facturas / NC excluidas"/>
+                                <field name="excluded_invoice_ids_domain" invisible="1"/>
+                                <field name="excluded_invoice_ids" nolabel="1"/>
+                            </page>
+
+                            <!-- ==========================================
+                                 4. CUPONES
+                                 ========================================== -->
+                            <page string="Cupones" name="cupones"
+                                  attrs="{'invisible': [('promo_conditions','!=','coupons')]}">
+                                <div class="alert alert-info" role="alert">
+                                    El <b>monto</b> es la nota de crédito por
+                                    <b>cada pieza vendida</b> de ese producto, no un
+                                    porcentaje ni el total del cupón. Se bonifican como
+                                    máximo las piezas indicadas en el tope por producto
+                                    y cliente; el excedente aparece como
+                                    <b>parcial</b> en el detalle.
+                                </div>
+                                <div class="mb-2">
+                                    <button name="action_open_coupon_excel_import" type="object"
+                                            string="Cargar cupones (.xlsx)" class="btn-primary"
+                                            icon="fa-upload"/>
+                                    <button name="clear_coupon_product_relations" type="object"
+                                            string="Limpiar cupones" class="btn-secondary" icon="fa-trash"
+                                            confirm="¿Está seguro que desea eliminar todos los cupones?"
+                                            attrs="{'invisible': [('coupon_ids','=',[])]}"/>
+                                </div>
+                                <field name="coupon_ids" nolabel="1">
+                                    <tree editable="bottom">
+                                        <field name="product_id"/>
+                                        <field name="amount" string="Monto de NC por pieza" sum="Total"/>
+                                    </tree>
+                                </field>
+                                <div class="alert alert-warning mt-2" role="alert"
+                                     attrs="{'invisible': [('not_found','=',False)]}">
+                                    <strong>Códigos no encontrados en el catálogo</strong>
+                                    <field name="not_found" nolabel="1" readonly="1"/>
+                                </div>
+                            </page>
+
+                            <!-- ==========================================
+                                 5. PRESENTACIÓN
+                                 ========================================== -->
+                            <page string="Presentación y notas" name="presentacion">
+                                <group>
+                                    <group string="Promoción ganada en documentos">
+                                        <field name="promo_display_mode"/>
+                                        <field name="promo_ganada_message"
+                                               attrs="{'invisible': [('promo_display_mode','in',['none','product'])]}"/>
+                                    </group>
+                                    <group string="Topes informativos">
+                                        <field name="limite_qty"/>
+                                        <field name="limite_amount"/>
+                                        <div colspan="2" class="text-muted">
+                                            Estos dos campos son solo de referencia: no intervienen en el
+                                            cálculo. Los topes reales se definen en los tramos de la política.
+                                        </div>
+                                    </group>
+                                </group>
+                            </page>
 
                         </notebook>
                     </sheet>
@@ -229,12 +411,31 @@
             <field name="name">ztyres.promo.notas.credito.tree</field>
             <field name="model">ztyres_promo.notas_credito</field>
             <field name="arch" type="xml">
-                <tree string="Notas de Crédito">
-                    <field name="nombre" />
-                    <field name="start_date" />
-                    <field name="end_date" />
-                    <field name="status" />
+                <tree string="Promociones">
+                    <field name="nombre"/>
+                    <field name="start_date"/>
+                    <field name="end_date"/>
+                    <field name="promo_conditions" string="Alcance"/>
+                    <field name="promo_type" string="Política"/>
+                    <field name="status"/>
                 </tree>
+            </field>
+        </record>
+
+        <record id="view_ztyres_promo_notas_credito_search" model="ir.ui.view">
+            <field name="name">ztyres.promo.notas.credito.search</field>
+            <field name="model">ztyres_promo.notas_credito</field>
+            <field name="arch" type="xml">
+                <search string="Promociones">
+                    <field name="nombre"/>
+                    <filter name="filter_vigentes" string="Aprobadas"
+                            domain="[('status','in',('approve_p','approve'))]"/>
+                    <group expand="0" string="Agrupar por">
+                        <filter name="group_scope" string="Alcance" context="{'group_by': 'promo_conditions'}"/>
+                        <filter name="group_policy" string="Política" context="{'group_by': 'promo_type'}"/>
+                        <filter name="group_status" string="Estado" context="{'group_by': 'status'}"/>
+                    </group>
+                </search>
             </field>
         </record>
 

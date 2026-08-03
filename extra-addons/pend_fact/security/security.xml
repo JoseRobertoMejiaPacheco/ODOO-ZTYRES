@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Categoría del módulo -->
+    <record id="module_category_pend_fact" model="ir.module.category">
+        <field name="name">Facturación Pendiente</field>
+        <field name="sequence">50</field>
+    </record>
+
+    <!-- Grupo: usuario normal — solo lectura del dashboard -->
+    <record id="group_pend_fact_user" model="res.groups">
+        <field name="name">Usuario</field>
+        <field name="category_id" ref="module_category_pend_fact"/>
+    </record>
+
+    <!-- Grupo: manager — acceso completo -->
+    <record id="group_pend_fact_manager" model="res.groups">
+        <field name="name">Manager</field>
+        <field name="category_id" ref="module_category_pend_fact"/>
+        <field name="implied_ids" eval="[(4, ref('group_pend_fact_user'))]"/>
+        <field name="users" eval="[(4, ref('base.user_root')), (4, ref('base.user_admin'))]"/>
+    </record>
+</odoo>

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+
+        <!-- Menú raíz (aparece en la barra de apps) -->
+        <menuitem id="menu_dashboard_reservas_root"
+                  name="Dashboard Reservas"
+                  sequence="90"
+                  web_icon="dashboard_reservas,static/src/img/icon.png"
+                  groups="dashboard_reservas.group_dashboard_reservas_user"/>
+
+        <!-- Submenú principal -->
+        <menuitem id="menu_dashboard_reservas_main"
+                  name="Antigüedad de Reservas"
+                  parent="menu_dashboard_reservas_root"
+                  sequence="10"
+                  action="action_dashboard_reservas"
+                  groups="dashboard_reservas.group_dashboard_reservas_user"/>
+
+    </data>
+</odoo>

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem
+        id="menu_pend_fact_root"
+        name="Facturación Pendiente"
+        sequence="50"
+        web_icon="pend_fact,static/src/img/icon.png"
+        groups="pend_fact.group_pend_fact_user"
+    />
+    <menuitem
+        id="menu_pend_fact"
+        name="Dashboard"
+        parent="menu_pend_fact_root"
+        action="pend_fact_action"
+        sequence="10"
+        groups="pend_fact.group_pend_fact_user"
+    />
+</odoo>

@@ -104,14 +104,6 @@ class ZtyresVolumen(models.Model):
     def apply_group_policy(self):
         pass
 
-    def _get_group_id(self, partner_id):
-        groups = self.env['ztyres_volumen.group'].search([])
-        _group = False
-        for group in groups:
-            if partner_id in group.partner_ids.ids:
-                _group = group.id
-        return _group
-    
     def get_grouped_data(self):
         lines_grouped = self.env['ztyres_volumen.notas_credito_lines'].read_group(
             domain=[('id','in',self.line_ids.ids)],
@@ -194,6 +186,9 @@ class ZtyresVolumen(models.Model):
             edi_vat_nc_bs = self.detailed_line_ids.filtered(
                 lambda l: l.partner_id == partner_id and l.state == 'nc bs' and l.rfc != 'XAXX010101000'
             )
+            partner_group = self.detailed_line_ids.filtered(
+                lambda l: l.partner_id == partner_id and l.group_id
+            )[:1].group_id
             
             # Cálculo de totales
             total_qty = sum(generic.mapped('quantity')) + sum(edi_vat.mapped('quantity'))
@@ -217,7 +212,7 @@ class ZtyresVolumen(models.Model):
                 descuento_g,
                 'XAXX010101000',        # descuento calculado
                 base_g,              # base calculada
-                
+                partner_group.id,
             )
             if _line_g:
                 data.append((0, 0, _line_g))
@@ -237,9 +232,9 @@ class ZtyresVolumen(models.Model):
                 sum(edi_vat.mapped('quantity')),
                 discount,
                 descuento_v,
-                partner_id.vat,      # descuento calculado
+                edi_vat[:1].rfc or False,
                 base_v,           # base calculada
-                
+                partner_group.id,
             )
             if _line_v:
                 data.append((0, 0, _line_v))
@@ -278,7 +273,7 @@ class ZtyresVolumen(models.Model):
             return False
         return {
                     'partner_id':partner_id,
-                    'group_id': self._get_group_id(partner_id),
+                    'group_id': group_id,
                     'price_subtotal':valid_amount,
                     'quantity':valid_qty,
                     'price_subtotal_bs':nc_bs_amount,
@@ -296,8 +291,8 @@ class ZtyresVolumen(models.Model):
             for line in bs_lines:
                 quantity = line.quantity if line.move_id.move_type == 'out_invoice' else -line.quantity
                 data.append((0,0,{
-                    'rfc':line.move_id.edi_vat_receptor,
-                    'group_id': self._get_group_id(line.partner_id),
+                    'rfc': line.edi_vat_receptor,
+                    'group_id': line.group_id.id,
                     'move_type': line.move_id.move_type,
                     'move_id': line.move_id.id,
                     'product_name': line.product_id.name,
@@ -315,14 +310,12 @@ class ZtyresVolumen(models.Model):
                     'state': 'nc bs'
                 }))
         
-        # Linhas "valid"
-        
         for line in valid_lines:
             price_subtotal = line.price_subtotal if line.move_id.move_type == 'out_invoice' else -line.price_subtotal
             quantity = line.quantity if line.move_id.move_type == 'out_invoice' else -line.quantity
             vals = {
-                'rfc':line.move_id.edi_vat_receptor,
-                'group_id': self._get_group_id(line.partner_id.id),
+                'rfc': line.edi_vat_receptor,
+                'group_id': line.group_id.id,
                 'move_type': line.move_id.move_type,
                 'move_id': line.move_id.id,
                 'product_name': line.product_id.name,
@@ -346,13 +339,12 @@ class ZtyresVolumen(models.Model):
             data.append((0,0,vals))
                 
         
-        # Linhas "invalid"
         for line in invalid_lines:
             price_subtotal = line.price_subtotal if line.move_id.move_type == 'out_invoice' else -line.price_subtotal
             quantity = line.quantity if line.move_id.move_type == 'out_invoice' else -line.quantity
             data.append((0,0,{
-                'rfc':line.move_id.edi_vat_receptor,
-                'group_id': self._get_group_id(line.partner_id.id),
+                'rfc': line.edi_vat_receptor,
+                'group_id': line.group_id.id,
                 'move_type': line.move_id.move_type,
                 'move_id': line.move_id.id,
                 'product_name': line.product_id.name,

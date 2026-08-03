@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+
+        <!--
+            Modifica la tabla de productos del PDF de cotización/orden:
+            1) Resumen a nivel documento (respeta promo_display_mode).
+            2) Nueva columna "Promoción Ganada" (texto por línea, en
+               tamaño normal — no embebido chiquito bajo el producto).
+            3) Oculta la columna de Impuestos.
+
+            IMPORTANTE: `discount_profiles` reemplaza (position="replace")
+            todo el contenido original de sale.report_saleorder_document,
+            así que no queda ningún anclaje "de fábrica" de Odoo para
+            engancharse ahí de forma independiente. Por eso TODOS los
+            xpaths de este archivo se anclan dentro de la plantilla
+            custom de ese módulo
+            (discount_profiles.report_saleorder_document_custom_header):
+            - el resumen de documento usa el bloque que ya insertan ellos
+              para `payment_discount_text` (`t-if="doc.payment_discount_text"`,
+              estable porque es el nombre real del campo, no un estilo).
+            - la columna nueva y el ocultamiento de Impuestos usan los
+              nombres/posiciones de las celdas de esa misma tabla de
+              productos (`th_subtotal`/`th_taxes`, y la celda de
+              Impuestos ubicada justo antes de la de Subtotal).
+
+            Esto crea una dependencia real hacia discount_profiles (ver
+            __manifest__.py) — es intencional y fue confirmado: no se
+            modifica ningún archivo de ese módulo, solo se depende de él
+            para poder anclar aquí de forma confiable.
+
+            `priority="20"` (mayor al default de discount_profiles, 16)
+            asegura que esta vista se componga DESPUÉS de la de
+            discount_profiles, para que estos anclajes ya existan cuando
+            se apliquen estos xpaths.
+        -->
+        <template id="report_saleorder_document_promo_ganada"
+                  inherit_id="sale.report_saleorder_document"
+                  priority="20">
+            <!-- Resumen a nivel documento (respeta promo_display_mode) -->
+            <!-- <xpath expr="//div[@t-if='doc.payment_discount_text']" position="after">
+                <div t-if="doc.promo_ganada_text" style="margin-bottom: 20px;">
+                    <div t-raw="doc.promo_ganada_text"></div>
+                </div>
+            </xpath> -->
+
+            <!-- Ocultar columna de Impuestos (encabezado) -->
+            <xpath expr="//th[@name='th_taxes']" position="attributes">
+                <attribute name="style">display:none;</attribute>
+            </xpath>
+
+            <!--
+                Ocultar columna de Impuestos (celda por línea). No tiene
+                `name` propio en la plantilla original, pero siempre
+                está justo antes de la celda de Subtotal
+                (`o_price_total`), sin importar si la columna de
+                Descuento está presente o no — por eso se ubica por
+                posición relativa en vez de por atributo.
+            -->
+            <xpath expr="//td[@class='text-end o_price_total']/preceding-sibling::td[1]" position="attributes">
+                <attribute name="style">display:none;</attribute>
+            </xpath>
+
+            <!-- Nueva columna "Promoción Ganada" (encabezado) -->
+            <xpath expr="//th[@name='th_subtotal']" position="after">
+                <th name="th_promo_ganada">
+                    Observaciones
+                </th>
+            </xpath>
+
+            <!--
+                Nueva columna "Promoción Ganada" (celda por línea, en
+                tamaño normal — hereda el font-size:20px de la tabla,
+                igual que el resto de las columnas, en vez del texto
+                chiquito embebido que se veía antes bajo el producto).
+                `line.promo_ganada_text` es texto plano (no HTML), así
+                que se usa t-esc (escapa automáticamente). El
+                `t-if="not line.display_type"` evita que se dupliquen
+                celdas en las filas de sección/nota, que ya usan
+                colspan="99".
+            -->
+            <xpath expr="//td[@class='text-end o_price_total']" position="after">
+                <td t-if="not line.display_type">
+                    <span t-if="line.promo_ganada_text" t-esc="line.promo_ganada_text"/>
+                </td>
+            </xpath>
+        </template>
+
+    </data>
+</odoo>

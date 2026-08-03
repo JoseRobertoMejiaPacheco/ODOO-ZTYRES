@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+
+        <!-- Cotización / Orden de venta -->
+        <record id="view_order_form_promo_ganada" model="ir.ui.view">
+            <field name="name">sale.order.form.promo.ganada</field>
+            <field name="model">sale.order</field>
+            <field name="inherit_id" ref="sale.view_order_form"/>
+            <field name="arch" type="xml">
+                <!-- Columna por línea, dentro de la propia tabla de líneas:
+                     el texto es lo que importa (visible); el monto
+                     existe para el cálculo interno pero se mantiene
+                     siempre oculto, nunca se muestra como columna. -->
+                <xpath expr="//field[@name='order_line']/tree" position="inside">
+                    <field name="promo_ganada_text" optional="show" string="Promoción Ganada"/>
+                    <field name="promo_ganada_amount" invisible="1"/>
+                </xpath>
+                <!-- Resumen/desglose debajo de la tabla -->
+                <xpath expr="//field[@name='order_line']" position="after">
+                    <div attrs="{'invisible': [('promo_ganada_text', '=', False)]}">
+                        <field name="promo_ganada_text" readonly="1" nolabel="1"/>
+                    </div>
+                </xpath>
+            </field>
+        </record>
+
+        <!-- Columna opcional en el listado de órdenes -->
+        <record id="view_order_tree_promo_ganada" model="ir.ui.view">
+            <field name="name">sale.order.tree.promo.ganada</field>
+            <field name="model">sale.order</field>
+            <field name="inherit_id" ref="sale.view_order_tree"/>
+            <field name="arch" type="xml">
+                <xpath expr="//tree" position="inside">
+                    <field name="promo_ganada_amount" optional="show" string="Promoción Ganada (NC)"/>
+                </xpath>
+            </field>
+        </record>
+
+        <!-- Factura -->
+        <record id="view_move_form_promo_ganada" model="ir.ui.view">
+            <field name="name">account.move.form.promo.ganada</field>
+            <field name="model">account.move</field>
+            <field name="inherit_id" ref="account.view_move_form"/>
+            <field name="arch" type="xml">
+                <!-- Columna por línea, dentro de la propia tabla de líneas:
+                     el texto es lo que importa (visible); el monto
+                     existe para el cálculo interno pero se mantiene
+                     siempre oculto, nunca se muestra como columna. -->
+                <xpath expr="//field[@name='invoice_line_ids']/tree" position="inside">
+                    <field name="promo_ganada_text" optional="show" string="Promoción Ganada"/>
+                    <field name="promo_ganada_amount" invisible="1"/>
+                </xpath>
+                <!-- Resumen/desglose debajo de la tabla -->
+                <xpath expr="//field[@name='invoice_line_ids']" position="after">
+                    <div attrs="{'invisible': [('promo_ganada_text', '=', False)]}">
+                        <field name="promo_ganada_text" readonly="1" nolabel="1"/>
+                    </div>
+                </xpath>
+            </field>
+        </record>
+
+        <!-- Columna opcional en el listado de facturas -->
+        <record id="view_move_tree_promo_ganada" model="ir.ui.view">
+            <field name="name">account.move.tree.promo.ganada</field>
+            <field name="model">account.move</field>
+            <field name="inherit_id" ref="account.view_invoice_tree"/>
+            <field name="arch" type="xml">
+                <xpath expr="//tree" position="inside">
+                    <field name="promo_ganada_amount" optional="show" string="Promoción Ganada (NC)"/>
+                </xpath>
+            </field>
+        </record>
+
+    </data>
+</odoo>

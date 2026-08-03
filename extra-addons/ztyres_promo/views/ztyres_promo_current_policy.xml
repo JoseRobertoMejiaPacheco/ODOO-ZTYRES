@@ -11,6 +11,7 @@
                 <field name="upper_limit"/>
                 <field name="min_qty"/>
                 <field name="discount"/>
+                <field name="fixed_amount"/>
                 <field name="notas_credito_id" invisible="1"/>
             </tree>
         </field>
@@ -30,6 +31,7 @@
                         <group>
                             <field name="min_qty"/>
                             <field name="discount"/>
+                            <field name="fixed_amount"/>
                         </group>
                     </group>
                     <field name="notas_credito_id" invisible="1"/>
@@ -48,6 +50,7 @@
                 <field name="upper_limit"/>
                 <field name="min_qty"/>
                 <field name="discount"/>
+                <field name="fixed_amount"/>
                 <field name="notas_credito_id" invisible="1"/>
             </tree>
         </field>
@@ -67,6 +70,7 @@
                         <group>
                             <field name="min_qty"/>
                             <field name="discount"/>
+                            <field name="fixed_amount"/>
                         </group>
                     </group>
                     <field name="notas_credito_id" invisible="1"/>

@@ -34,6 +34,10 @@ class AccountInvoiceReport(models.Model):
     delivery_state_id = fields.Many2one('res.country.state', string='Estado de Entrega', readonly=True)
     delivery_city = fields.Char(string='Ciudad de Entrega', readonly=True)
     
+    # --- Campos nuevos desde account move ---
+    edi_vat_receptor = fields.Char(string='RFC del receptor', readonly=True)
+    
+    
     # ---------------------------------------------------------------
     # SELECT
     # ---------------------------------------------------------------
@@ -61,7 +65,8 @@ template.ccc_id,
 template.tire,
 sp_lateral.city AS delivery_city,
 sp_lateral.state_id AS delivery_state_id,
-sp_lateral.country_id AS delivery_country_id
+sp_lateral.country_id AS delivery_country_id,
+move.edi_vat_receptor AS edi_vat_receptor
 """
         print(x)
         return x

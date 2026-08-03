@@ -8,12 +8,16 @@
             <field name="arch" type="xml">
                 <tree string="Líneas de Notas de Crédito" decoration-danger="sat_estatus != 'valid'">
                     <field name="partner_id" widget="many2one_avatar"/>
-                    <field name="group_id"/>
+                    <field name="group_name"/>
+                    <field name="group_id" optional="hide"/>
                     <field name="rfc"/>
                     <field name="quantity"/>
                     <field name="price_subtotal" string="Subtotal"/>
                     <field name="total_nc_untaxed" string="Total NC"/>
-                    <field name="reward_percent" string="% Recompensa"/>
+                    <field name="reward_type" string="Tipo de beneficio"/>
+                    <field name="reward_percent" string="% efectivo"/>
+                    <field name="reward_fixed_amount" string="Monto fijo" optional="hide"/>
+                    <field name="reward_detail" string="Detalle del beneficio"/>
                     <field name="nc_credit_id" string="Nota de Crédito"/>
                     <field name="sat_estatus" invisible="1"/>
                     <button name="action_view_details" string="Ver Detalles" type="object" class="oe_highlight" icon="fa-list"/>

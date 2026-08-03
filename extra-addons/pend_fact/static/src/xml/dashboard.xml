@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="pend_fact.Dashboard" owl="1">
+        <div class="o_pend_fact">
+
+            <div class="pf-topbar">
+                <h1>Pendiente de facturar</h1>
+                <div class="pf-topbar-right">
+                    <select t-on-change="onYearChange">
+                        <t t-foreach="years" t-as="y" t-key="y">
+                            <option t-att-value="y" t-att-selected="y === state.year"><t t-esc="y"/></option>
+                        </t>
+                    </select>
+                    <span class="pf-badge">
+                        <span class="pf-pulse"/>
+                        <t t-esc="state.countdown"/>s
+                    </span>
+                    <button class="pf-btn" t-on-click="loadData">↺ Actualizar</button>
+                </div>
+            </div>
+
+            <div class="pf-kpis">
+                <div class="pf-kpi">
+                    <div class="pf-kpi-label">Unidades pendientes</div>
+                    <div class="pf-kpi-val"><t t-esc="state.totalPend"/></div>
+                </div>
+                <div class="pf-kpi">
+                    <div class="pf-kpi-label">Órdenes afectadas</div>
+                    <div class="pf-kpi-val"><t t-esc="state.totalOrdenes"/></div>
+                </div>
+                <div class="pf-kpi">
+                    <div class="pf-kpi-label">Líneas de producto</div>
+                    <div class="pf-kpi-val"><t t-esc="state.totalLineas"/></div>
+                </div>
+            </div>
+
+            <div class="pf-toolbar">
+                <input type="text" placeholder="Buscar venta, cliente o producto..." t-on-input="onSearch"/>
+                <select t-on-change="onVendedorChange">
+                    <option value="">Todos los vendedores</option>
+                    <t t-foreach="state.vendedores" t-as="v" t-key="v">
+                        <option t-att-value="v"><t t-esc="v"/></option>
+                    </t>
+                </select>
+            </div>
+
+            <div class="pf-table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Venta</th>
+                            <th>Cliente</th>
+                            <th>Vendedor</th>
+                            <th>Producto</th>
+                            <th class="r">Entregado</th>
+                            <th class="r">Facturado</th>
+                            <th class="r">NC</th>
+                            <th class="r">Pendiente</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <t t-if="filteredRows.length === 0">
+                            <tr><td colspan="8" class="pf-empty">Sin pendientes · todo facturado ✓</td></tr>
+                        </t>
+                        <t t-foreach="filteredRows" t-as="row" t-key="row.venta + row.producto">
+                            <tr>
+                                <td class="muted"><t t-esc="row.venta"/></td>
+                                <td><t t-esc="row.cliente"/></td>
+                                <td class="muted"><t t-esc="row.vendedor"/></td>
+                                <td><t t-esc="row.producto"/></td>
+                                <td class="r num"><t t-esc="row.entrega"/></td>
+                                <td class="r num"><t t-esc="row.facturado"/></td>
+                                <td class="r num red"><t t-if="row.nc > 0">-<t t-esc="row.nc"/></t><t t-else="">—</t></td>
+                                <td class="r num amber"><t t-esc="row.pendiente"/></td>
+                            </tr>
+                        </t>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="pf-footer">
+                Última actualización: <t t-esc="state.lastUpdate"/> · próxima en <t t-esc="state.countdown"/>s
+            </div>
+
+        </div>
+    </t>
+</templates>

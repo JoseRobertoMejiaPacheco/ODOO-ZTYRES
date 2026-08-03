@@ -5,53 +5,58 @@
             <field name="name">ztyres.promo.coupon.excel.wizard.form</field>
             <field name="model">ztyres_promo.coupon_excel_wizard</field>
             <field name="arch" type="xml">
-                <form string="Importar Cupones desde Excel">
-                    <sheet>
-                        <group>
-                            <field name="notas_credito_id" 
-                                   string="Nota de Crédito"
-                                   required="1" 
-                                   invisible="1"
-                                   />
-                            <label for="file" string="Seleccione archivo Excel"/>
-                            <div class="o_row">
-                                <field name="file" 
-                                       string="Archivo Excel"
-                                       required="1"
-                                       widget="binary"
-                                       filename="file_name"
-                                       class="oe_no_button"/>
-                                <field name="file_name" 
-                                       readonly="1" 
-                                       class="oe_inline" 
-                                       invisible="1"
-                                       nolabel="1"/>
-                            </div>
-                        </group>
-                            <div class="alert alert-info" role="alert">
-                                <p><strong>Formato del archivo:</strong></p>
-                                <ul>
-                                    <li>Columna 'codigo': Código del producto</li>
-                                    <li>Columna 'monto': Monto del cupón</li>
-                                </ul>
-                            </div>
-                    </sheet>
+                <form string="Cargar cupones">
+                    <field name="notas_credito_id" invisible="1"/>
+
+                    <div class="alert alert-info" role="alert">
+                        <p class="mb-1">
+                            <strong>Formato del archivo (.xlsx)</strong>
+                        </p>
+                        <table class="table table-sm table-bordered bg-white mb-2" style="width:auto;">
+                            <thead>
+                                <tr>
+                                    <th class="text-center">codigo</th>
+                                    <th class="text-center">monto</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>LLA-DUN-19565R15-91H</td><td class="text-end">150</td></tr>
+                                <tr><td>LLA-FAL-20555R16-91V</td><td class="text-end">200</td></tr>
+                            </tbody>
+                        </table>
+                        <p class="mb-1">
+                            <b>codigo</b>: referencia interna del producto en Odoo.
+                            <b>monto</b>: pesos de nota de crédito por
+                            <b>cada pieza vendida</b> — no es porcentaje ni monto total.
+                        </p>
+                        <p class="mb-0">
+                            Cargar cupones define el alcance de la promoción como
+                            “Cupones por Producto”: los productos del archivo son
+                            los únicos participantes.
+                        </p>
+                    </div>
+
+                    <group>
+                        <field name="file" widget="binary" filename="file_name"
+                               string="Archivo Excel"/>
+                        <field name="file_name" invisible="1"/>
+                        <field name="mode" widget="radio"/>
+                    </group>
+
                     <footer>
-                        <button name="action_import" 
-                                string="Importar" 
-                                type="object" 
-                                class="oe_highlight"/>
-                        <button string="Cancelar" 
-                                class="btn-secondary" 
-                                special="cancel"/>
+                        <button name="action_import" string="Importar" type="object"
+                                class="btn-primary"
+                                attrs="{'invisible': [('file','=',False)]}"/>
+                        <button name="action_download_template" string="Descargar plantilla"
+                                type="object" class="btn-secondary" icon="fa-download"/>
+                        <button string="Cancelar" class="btn-link" special="cancel"/>
                     </footer>
                 </form>
             </field>
         </record>
 
-        <!-- Acción del wizard -->
         <record id="action_coupon_excel_wizard" model="ir.actions.act_window">
-            <field name="name">Importar Cupones desde Excel</field>
+            <field name="name">Cargar cupones desde Excel</field>
             <field name="res_model">ztyres_promo.coupon_excel_wizard</field>
             <field name="view_mode">form</field>
             <field name="target">new</field>

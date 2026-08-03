@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_sale_order_import_button" model="ir.ui.view">
+        <field name="name">sale.order.import.wizard.button</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//button[@name='action_confirm']" position="before">
+                <button name="%(sale_import_wizard.action_sale_import_wizard)d"
+                        type="action"
+                        class="btn-secondary"
+                        string="Importar desde Excel"
+                        attrs="{'invisible': [('state', 'not in', ['draft','sent'])]}"/>
+            </xpath>
+            <xpath expr="//page[@name='other_information']//group[1]" position="inside">
+                <field name="invoice_policy_override"
+                       attrs="{'invisible': [('invoice_policy_override', '=', 'none')]}"/>
+            </xpath>
+        </field>
+    </record>
+
+    <menuitem id="menu_sale_import_wizard"
+              name="Importar Pedido desde Excel"
+              parent="sale.sale_order_menu"
+              action="sale_import_wizard.action_sale_import_wizard"
+              sequence="99"/>
+
+</odoo>

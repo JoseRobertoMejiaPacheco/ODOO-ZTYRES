@@ -21,7 +21,15 @@ class ZtyresExata(models.Model):
         JENKINS_URL = f"http://ztyres.com:8080/job/EXATA%20UPLOAD%20GOODYEAR/buildWithParameters?{'DATE'}={self.fecha}"
         USER = "ztyres"
         API_TOKEN = "11d6d297c855d483b667039c9854f8194f"
-        response = requests.post(JENKINS_URL, auth=(USER, API_TOKEN))
+        # 1. obtener crumb
+        crumb_data = requests.get(
+            f"http://ztyres.com:8080/crumbIssuer/api/json",
+            auth=(USER, API_TOKEN)
+        ).json()
+        headers = {
+            crumb_data["crumbRequestField"]: crumb_data["crumb"]
+        }        
+        response = requests.post(JENKINS_URL, auth=(USER, API_TOKEN),headers=headers)
         if response.status_code == 201:
             self.jenkins_message = "Tarea ejecutada correctamente."
             print("Tarea ejecutada correctamente.")

@@ -185,6 +185,12 @@ class ZtyresMsSqlExcelReports(http.Controller):
         data = {"Mensaje": "Reporte actualizado correctamente"}
         return Response(json.dumps(data), content_type='application/json;charset=utf-8', status=200)
     
+    @http.route('/reportes_cxc/<string:mes>/<int:anio>', auth='public', methods=['GET'], website=True)
+    def reportes_cxc(self, mes, anio):
+        request.env['reportes_cobranza'].sudo().get_report(mes, anio)
+        data = {"Mensaje": "Reporte actualizado correctamente"}
+        return Response(json.dumps(data), content_type='application/json;charset=utf-8', status=200)
+    
     @http.route('/ventas/<string:vendedor_id>', auth='user', methods=['GET'], website=True)
     def ventas_por_vendedor_individual(self, vendedor_id):
         vendedor_id = int(vendedor_id)   
@@ -327,23 +333,23 @@ class ZtyresMsSqlExcelReports(http.Controller):
             }
         )
         
-    @http.route('/reportes_cxc/<string:mes>/<int:anio>', auth='user', methods=['GET'], website=True)
-    def reportes_cxc(self, mes, anio):
-        # Llamar a la función get_report para obtener los datos del reporte
-        report_data = request.env['reportes_cobranza'].sudo()
-        lista = report_data.get_report(mes, anio)
-        # Generar el archivo Excel
-        report_generator  = request.env['excel_ventas_por_vendedor'].sudo()
-        excel_file = report_generator.generate_excel_report(lista)
+    # @http.route('/reportes_cxc/<string:mes>/<int:anio>', auth='user', methods=['GET'], website=True)
+    # def reportes_cxc(self, mes, anio):
+    #     # Llamar a la función get_report para obtener los datos del reporte
+    #     report_data = request.env['reportes_cobranza'].sudo()
+    #     lista = report_data.get_report(mes, anio)
+    #     # Generar el archivo Excel
+    #     report_generator  = request.env['excel_ventas_por_vendedor'].sudo()
+    #     excel_file = report_generator.generate_excel_report(lista)
         
-        # Preparar la respuesta para descargar el archivo
-        return Response(
-            excel_file,
-            headers={
-                'Content-Disposition': 'attachment; filename="reportes_cxc.xlsx"',
-                'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-            }
-        )
+    #     # Preparar la respuesta para descargar el archivo
+    #     return Response(
+    #         excel_file,
+    #         headers={
+    #             'Content-Disposition': 'attachment; filename="reportes_cxc.xlsx"',
+    #             'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    #         }
+    #     )
         
     @http.route('/comportamiento', auth='user', methods=['GET'], website=True)
     def comportamiento_clientes(self):
@@ -362,3 +368,9 @@ class ZtyresMsSqlExcelReports(http.Controller):
                 'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
             }
         )
+        
+    @http.route('/resumen_ventas/<int:vendedor_id>', auth='public', methods=['GET'], website=True)
+    def reporte_direccion_ventas(self, vendedor_id):
+        request.env['reports_ventas'].sudo().generate_report(vendedor_id=vendedor_id)
+        data = {"message": "Dataframe inserted successfully"}
+        return Response(json.dumps(data), content_type='application/json;charset=utf-8', status=200)
