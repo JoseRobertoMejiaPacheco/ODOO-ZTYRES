@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="z_helpdesk.PriorityTenField" owl="1">
+        <div class="z_helpdesk_priority_ten" t-att-class="{'o_readonly_modifier': props.readonly}">
+            <span class="z_helpdesk_stars" t-att-title="label">
+                <t t-foreach="stars" t-as="star" t-key="star">
+                    <i t-att-class="star &lt;= value ? 'fa fa-star' : 'fa fa-star-o'"
+                       t-on-click="() => this.setPriority(star)"
+                       t-att-title="star + ' de 10'"
+                       role="button"/>
+                </t>
+            </span>
+            <span class="z_helpdesk_priority_label" t-esc="label"/>
+        </div>
+    </t>
+</templates>

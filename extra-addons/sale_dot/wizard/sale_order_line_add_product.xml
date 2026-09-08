@@ -7,20 +7,23 @@
                 <separator string="Seleccionar Producto" colspan="4"/>
                 
                 <div class="oe_structure"/>
+                <field name="order_id" invisible="1"/>
                  <field name="is_expo" invisible="1"/>
+                 <field name="blocked_brand_ids" invisible="1"/>
                 <div class="row">
                     <div class="col-12">
                         <field name="product_id" 
                                string="Productos Disponibles" 
                                class="o_field_widget o_input o_field_many2one" 
                                style="width: 100%; font-size: 18px;"
-                               domain="[ '|', ('qty_available', '>', 0), ('default_code', '=', 'MAN') ]"
-                               options="{'no_create': True}" attrs="{'invisible': [('is_expo', '=', False)]}"/>
+                               domain="[ '|', ('qty_available', '>', 0), ('default_code', '=', 'MAN')]"
+                               options="{'no_create': True}" 
+                               attrs="{'invisible': [('is_expo', '=', False)]}"/>
                         <field name="product_id" 
                                string="Productos Disponibles" 
                                class="o_field_widget o_input o_field_many2one" 
                                style="width: 100%; font-size: 18px;"
-                               domain="[]"
+                               domain="[('product_tmpl_id.brand_id', 'not in', blocked_brand_ids)]"
                                options="{'no_create': True}"  attrs="{'invisible': [('is_expo', '=', True)]}"/>
                     </div>
 

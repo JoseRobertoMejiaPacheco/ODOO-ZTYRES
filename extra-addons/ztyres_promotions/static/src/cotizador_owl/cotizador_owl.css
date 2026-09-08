@@ -2046,6 +2046,35 @@ to  { opacity: 1; transform: scale(1); }
   font-size: .9em;
   font-weight: 800;
 }
+
+/* Indicadores discretos junto al código: K = Key Size; B = política
+   automática de productos presentes en la lista Mayoreo. */
+.o_ztyres_cotizador .product-policy-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 13px;
+  height: 13px;
+  margin: 1px;
+  padding: 0 3px;
+  border-radius: 4px;
+  font-size: 9px;
+  font-weight: 800;
+  line-height: 1;
+  vertical-align: 1px;
+}
+/* La columna K/B se retiró del catálogo: el % de Key Size ya viaja
+   dentro del beneficio de la promoción y el −10% de Mayoreo ya viene
+   aplicado en la columna Precio. Se conservan .mark-key/.mark-mayoreo
+   por si se quieren reutilizar como distintivo en otra vista. */
+.o_ztyres_cotizador .mark-key {
+  color: #1f2937;
+  background: #fde68a;
+}
+.o_ztyres_cotizador .mark-mayoreo {
+  color: #fff;
+  background: #dc2626;
+}
 .o_ztyres_cotizador .flat-table .flat-th-dot,
 .o_ztyres_cotizador .flat-td-dot {
   width: 66px;
@@ -2182,21 +2211,43 @@ to  { opacity: 1; transform: scale(1); }
   overflow-y: auto;
   padding: 4px 0;
 }
+/* Rejilla de 3 columnas: valor · conteo · casilla.
+   La última columna es de ancho FIJO, así la casilla cae siempre en la
+   misma línea vertical aunque la marca sea "BF" o "BRIDGESTONE" (antes
+   iba primero en un flex y el texto la empujaba, se veía movida). */
 .o_ztyres_cotizador .xls-filter-opt {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto 16px;
   align-items: center;
   gap: 8px;
   padding: 6px 12px;
   font-size: 12.5px;
-  white-space: nowrap;
   cursor: pointer;
 }
 .o_ztyres_cotizador .xls-filter-opt:hover { background: var(--teal-soft); }
+.o_ztyres_cotizador .xls-filter-opt-val {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .o_ztyres_cotizador .xls-filter-opt-count {
-  margin-left: auto;
   color: var(--ink-soft);
   opacity: .5;
   font-size: 10.5px;
+  white-space: nowrap;
+}
+.o_ztyres_cotizador .xls-filter-opt-box {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  flex: none;
+  cursor: pointer;
+}
+.o_ztyres_cotizador .xls-filter-pop-done {
+  margin-left: auto;
+  color: var(--rubber-dark);
+  font-weight: 700;
 }
 .o_ztyres_cotizador .xls-filter-clear {
   margin-left: auto;
@@ -2336,10 +2387,14 @@ to  { opacity: 1; transform: scale(1); }
   /* Modelo va justo debajo de Marca, alineado con el mismo indent
      (no debajo de la imagen) — juntos arman el "nombre" completo del
      producto, igual que en la columna Marca de antes de este cambio. */
+  /* Sangría 0: la columna de imagen (.flat-td-img) ya no existe en la
+     fila, pero el margen de 56px que la compensaba se había quedado —
+     el modelo aparecía flotando a media tarjeta, sin nada arriba con
+     qué alinearse. */
   .o_ztyres_cotizador .flat-td-modelo {
     order: 3;
-    flex: 1 1 calc(100% - 56px);
-    margin-left: 56px;
+    flex: 1 1 100%;
+    margin-left: 0;
     margin-top: 1px;
     color: var(--ink-soft);
     font-size: .85em;
@@ -2372,14 +2427,21 @@ to  { opacity: 1; transform: scale(1); }
   .o_ztyres_cotizador .flat-td-disp,
   .o_ztyres_cotizador .flat-td-attr {
     order: 6;
-    flex: 1 1 33%;
+    /* 33% + margen daba 3 chips que NO caben (33·3 + 12px > 100%), así
+       que wrapeaba a 2 por renglón y flex-grow los estiraba a anchos
+       distintos: de ahí el mosaico desparejo. Con el margen descontado
+       del basis entran los 3 parejos. */
+    flex: 1 1 calc(33.333% - 5px);
+    min-width: 0;
     background: var(--card);
     border-radius: 6px;
-    padding: 5px 6px !important;
-    margin: 6px 4px 0 0;
-    font-size: .84em;
+    padding: 4px 5px !important;
+    margin: 5px 5px 0 0;
+    font-size: .8em;
     font-weight: 700;
     text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
   .o_ztyres_cotizador .flat-td-tier::before,
   .o_ztyres_cotizador .flat-td-tipo::before,
@@ -2403,7 +2465,7 @@ to  { opacity: 1; transform: scale(1); }
   /* Cierre de la tarjeta: precio grande + Agregar, separados del
      resto con una línea — es la zona de acción, tiene que notarse. */
   .o_ztyres_cotizador .flat-td-price {
-    order: 6;
+    order: 7;
     flex: 1 1 50%;
     margin-top: 10px;
     padding-top: 10px !important;
@@ -2415,7 +2477,7 @@ to  { opacity: 1; transform: scale(1); }
      derecha — el par lista/promo se lee de un vistazo, igual que
      las dos columnas contiguas del Excel. */
   .o_ztyres_cotizador .flat-td-promo {
-    order: 6;
+    order: 7;
     flex: 1 1 50%;
     margin-top: 10px;
     padding-top: 10px !important;
@@ -2448,7 +2510,7 @@ to  { opacity: 1; transform: scale(1); }
   .o_ztyres_cotizador .flat-td-promo:not(:has(.promo-price)) { display: none; }
   .o_ztyres_cotizador .flat-td-price:not(.has-promo) { flex: 1 1 100%; }
   .o_ztyres_cotizador .flat-td-action {
-    order: 7;
+    order: 8;
     flex: 1 1 100%;
     margin-top: 8px;
   }
@@ -2545,7 +2607,11 @@ to  { opacity: 1; transform: scale(1); }
     min-width: 0;
     max-width: none;
   }
-  .o_ztyres_cotizador .xls-filter-opt { padding: 9px 12px; } /* fila más alta, fácil de tocar */
+  .o_ztyres_cotizador .xls-filter-opt {
+    padding: 9px 12px; /* fila más alta, fácil de tocar */
+    grid-template-columns: minmax(0, 1fr) auto 20px;
+  }
+  .o_ztyres_cotizador .xls-filter-opt-box { width: 20px; height: 20px; }
   .o_ztyres_cotizador .xls-filter-clear { width: 100%; text-align: center; margin: 4px 0 0; }
 
   /* Selector de columnas: el desplegable no debe salirse de la
@@ -3072,6 +3138,63 @@ to  { opacity: 1; transform: scale(1); }
     width: 44px;
     padding-left: 3px;
     padding-right: 3px;
+  }
+}
+
+/* ============================================================
+   v4.3 — Rangos redactados como beneficios comerciales
+   ============================================================ */
+.o_ztyres_cotizador .side-left .promos-panel .facet-body {
+  gap: 6px;
+  padding: 6px 7px 9px;
+}
+
+.o_ztyres_cotizador .side-left .promos-panel .facet-tier,
+.o_ztyres_cotizador .side-left .promos-panel .facet-tier-complex {
+  align-items: flex-start;
+  gap: 7px;
+  padding: 7px 8px;
+  border: 1px solid color-mix(in srgb, var(--promo-b, #94A3B8) 35%, #FFFFFF);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--promo-t, #F8FAFC) 55%, #FFFFFF);
+  transition: border-color 120ms ease, background 120ms ease, box-shadow 120ms ease;
+}
+
+.o_ztyres_cotizador .side-left .promos-panel .facet-tier:hover,
+.o_ztyres_cotizador .side-left .promos-panel .facet-tier-complex:hover {
+  border-color: var(--promo-b, #94A3B8);
+  background: var(--promo-t, #F8FAFC);
+}
+
+.o_ztyres_cotizador .side-left .promos-panel .facet-tier:has(input:checked),
+.o_ztyres_cotizador .side-left .promos-panel .facet-tier-complex:has(input:checked) {
+  border-color: var(--promo-c, #475569);
+  background: var(--promo-t, #F8FAFC);
+  box-shadow: 0 0 0 1px var(--promo-c, #475569);
+}
+
+.o_ztyres_cotizador .side-left .promos-panel .facet-tier input,
+.o_ztyres_cotizador .side-left .promos-panel .facet-tier-complex input {
+  flex: 0 0 auto;
+  margin-top: 2px;
+}
+
+.o_ztyres_cotizador .side-left .promos-panel .promo-benefit-copy {
+  display: block;
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  color: var(--ink, #1F2937);
+  font-size: clamp(10.5px, 0.69vw, 12.5px);
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+@media (max-width: 1450px) {
+  .o_ztyres_cotizador .side-left .promos-panel .facet-tier,
+  .o_ztyres_cotizador .side-left .promos-panel .facet-tier-complex {
+    padding: 6px;
+    gap: 5px;
   }
 }
 
@@ -5797,3 +5920,686 @@ body:has(> #app-root) { margin: 0; }
     clip-path: inset(-10px -100vmax -6px -100vmax);
   }
 }
+
+/* ============================================================
+   v4.4 — Escritorio compacto para portatiles de 13 pulgadas
+   ============================================================
+   En 1280-1500px la columna de Promociones ya no se comprime a
+   cerca de 118px. Se reserva un ancho legible para las nuevas
+   descripciones y el espacio se recupera del Pedido, separaciones
+   y rellenos; el catalogo conserva el resto del ancho disponible.
+   Cada zona mantiene su propio scroll vertical para que ninguna
+   parte de la aplicacion quede fuera de la pantalla.             */
+@media (min-width: 1101px) and (max-width: 1500px) {
+  .o_ztyres_cotizador {
+    --gap: 6px;
+    --col-left: clamp(210px, 16.5vw, 245px);
+    --col-right: clamp(230px, 18vw, 270px);
+    --topbar-h: 36px;
+    --stack-gap: 4px;
+    --fs-table: 10px;
+    --fs-thead: 9px;
+    --fs-ui: 10px;
+    --fs-label: 9.5px;
+    --fs-title: 14px;
+    --fs-panel-h: 10.5px;
+    --row-py: 3px;
+    --row-px: 2px;
+  }
+
+  .o_ztyres_cotizador .wrap { padding: 4px 6px; }
+  .o_ztyres_cotizador .app-topbar { gap: 0 6px; }
+  .o_ztyres_cotizador .app-topbar .global-search {
+    min-width: 120px;
+    height: 30px;
+    padding-inline: 9px;
+  }
+  .o_ztyres_cotizador .app-topbar .client-panel-compact {
+    height: 30px;
+    padding-inline: 5px;
+  }
+  .o_ztyres_cotizador .client-panel-compact h2 {
+    margin-right: 5px;
+    padding: 2px 5px;
+  }
+  .o_ztyres_cotizador .client-panel-compact .client-row { gap: 4px; }
+  .o_ztyres_cotizador .client-panel-compact .client-field-profile { gap: 2px; }
+  .o_ztyres_cotizador .client-panel-compact .client-field select {
+    min-width: 44px;
+    height: 23px;
+    padding: 1px 3px;
+  }
+
+  .o_ztyres_cotizador .center-col .catalog-panel,
+  .o_ztyres_cotizador .side-left .promos-panel,
+  .o_ztyres_cotizador .side-right .order-panel { padding: 6px; }
+
+  /* Recupera el aspecto sencillo anterior: rangos limpios, sin una
+     segunda tarjeta dentro de cada promocion. */
+  .o_ztyres_cotizador .side-left .promos-panel .facet-body {
+    gap: 0;
+    padding: 2px 1px 5px;
+  }
+  .o_ztyres_cotizador .side-left .promos-panel .facet-tier,
+  .o_ztyres_cotizador .side-left .promos-panel .facet-tier-complex,
+  .o_ztyres_cotizador .side-left .promos-panel .facet-tier:hover,
+  .o_ztyres_cotizador .side-left .promos-panel .facet-tier-complex:hover,
+  .o_ztyres_cotizador .side-left .promos-panel .facet-tier:has(input:checked),
+  .o_ztyres_cotizador .side-left .promos-panel .facet-tier-complex:has(input:checked) {
+    align-items: flex-start;
+    gap: 5px;
+    padding: 4px 2px;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+  .o_ztyres_cotizador .side-left .promos-panel .facet-tier:has(input:checked),
+  .o_ztyres_cotizador .side-left .promos-panel .facet-tier-complex:has(input:checked) {
+    color: var(--promo-c, var(--ink));
+    box-shadow: inset 2px 0 0 var(--promo-c, #475569);
+    padding-left: 5px;
+  }
+  .o_ztyres_cotizador .side-left .promos-panel .promo-benefit-copy {
+    font-size: 10px;
+    font-weight: 500;
+    line-height: 1.24;
+    overflow-wrap: break-word;
+  }
+  .o_ztyres_cotizador .side-left .promos-panel .facet-head {
+    gap: 4px;
+    padding-block: 5px;
+  }
+  .o_ztyres_cotizador .side-left .promos-panel .facet-name {
+    font-size: 10.5px;
+    line-height: 1.2;
+  }
+
+  .o_ztyres_cotizador .catalog-panel .flat-table .add-btn {
+    padding: .34em .38em;
+    font-size: .78em;
+  }
+}
+
+/* Altura real habitual en portatiles de 13 pulgadas con escalado. */
+@media (min-width: 1101px) and (max-width: 1500px) and (max-height: 820px) {
+  .o_ztyres_cotizador {
+    --topbar-h: 34px;
+    --stack-gap: 3px;
+    --row-py: 2px;
+  }
+  .o_ztyres_cotizador .wrap { padding: 3px 5px; }
+  .o_ztyres_cotizador .center-col .catalog-panel,
+  .o_ztyres_cotizador .side-left .promos-panel,
+  .o_ztyres_cotizador .side-right .order-panel { padding: 5px; }
+  .o_ztyres_cotizador .side-left .promos-panel .facet-head { padding-block: 4px; }
+  .o_ztyres_cotizador .side-left .promos-panel .facet-tier,
+  .o_ztyres_cotizador .side-left .promos-panel .facet-tier-complex { padding-block: 3px; }
+  .o_ztyres_cotizador .catalog-panel .flat-table thead th { padding-block: 4px; }
+}
+
+/* ------------------------------------------------------------
+   9. CATÁLOGO AGRUPADO EN MÓVIL (Rin → Medida)
+   ------------------------------------------------------------
+   En escritorio la tabla es plana: 16 columnas alineadas, se barre
+   con la vista. En celular esa misma lista son miles de tarjetas
+   una tras otra, imposible de recorrer con el pulgar. Aquí vuelve
+   el acordeón de la versión vieja, pero con DOS niveles: primero
+   rin, dentro medida, y hasta abajo las llantas. El <tbody>
+   agrupado sólo se monta cuando isMobile es true.              */
+@media (max-width: 700px) {
+  /* --- Cabeceras de grupo: NO son tarjetas de producto --- */
+  .o_ztyres_cotizador .flat-table tbody tr.grp-row {
+    display: block;
+    width: 100%;
+    padding: 0;
+    margin: 0 0 6px;
+    border: none;
+    border-radius: var(--radius-sm);
+    box-shadow: none;
+    background: none;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .o_ztyres_cotizador .flat-table tbody tr.grp-row > td {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 11px 12px !important;
+    border-radius: var(--radius-sm);
+  }
+  .o_ztyres_cotizador .flat-table tbody tr.grp-row .grp-title {
+    font-weight: 800;
+    letter-spacing: .2px;
+  }
+  /* El conteo se pega a la derecha SIEMPRE, en la misma línea
+     vertical, no importa qué tan largo sea el nombre del grupo. */
+  .o_ztyres_cotizador .flat-table tbody tr.grp-row .grp-count {
+    margin-left: auto;
+    flex: none;
+    min-width: 26px;
+    text-align: center;
+    font-size: 11.5px;
+    font-weight: 800;
+    padding: 2px 7px;
+    border-radius: 999px;
+  }
+  .o_ztyres_cotizador .flat-table tbody tr.grp-row .grp-sub {
+    font-size: 11px;
+    font-weight: 600;
+    opacity: .7;
+    white-space: nowrap;
+  }
+  .o_ztyres_cotizador .flat-table tbody tr.grp-row .grp-caret {
+    flex: none;
+    width: 12px;
+    font-size: 10px;
+    line-height: 1;
+    transition: transform .15s ease;
+  }
+  .o_ztyres_cotizador .flat-table tbody tr.grp-row.open .grp-caret {
+    transform: rotate(90deg);
+  }
+
+  /* Nivel 1 · RIN — barra oscura, es el índice del catálogo.
+     Pegajosa arriba: al bajar dentro de un rin largo siempre se ve
+     en qué rin vas. */
+  .o_ztyres_cotizador .flat-table tbody tr.grp-rim {
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    margin-top: 10px;
+  }
+  .o_ztyres_cotizador .flat-table tbody tr.grp-rim:first-child { margin-top: 0; }
+  .o_ztyres_cotizador .flat-table tbody tr.grp-rim > td {
+    background: var(--rubber-dark);
+    color: #fff;
+    font-size: 14px;
+  }
+  .o_ztyres_cotizador .flat-table tbody tr.grp-rim .grp-count {
+    background: rgba(255, 255, 255, .18);
+    color: #fff;
+  }
+
+  /* Nivel 2 · MEDIDA — sangrada, tono suave, debajo del rin. */
+  .o_ztyres_cotizador .flat-table tbody tr.grp-medida {
+    margin-left: 10px;
+    width: calc(100% - 10px);
+  }
+  .o_ztyres_cotizador .flat-table tbody tr.grp-medida > td {
+    background: var(--card);
+    border: 1px solid var(--line);
+    color: var(--ink);
+    font-size: 13px;
+    padding: 9px 11px !important;
+  }
+  .o_ztyres_cotizador .flat-table tbody tr.grp-medida.open > td {
+    background: var(--teal-soft);
+    border-color: var(--teal-soft);
+  }
+  .o_ztyres_cotizador .flat-table tbody tr.grp-medida .grp-count {
+    background: var(--paper);
+    border: 1px solid var(--line);
+    color: var(--ink-soft);
+  }
+
+  /* Nivel 3 · las tarjetas cuelgan de la medida: sangría mayor y
+     una guía vertical, para que se lea la jerarquía sin pensarla. */
+  /* La guía va como sombra INTERIOR, no como border-left: el borde
+     del <tr> ya lo usan los estados in-cart (verde) e in-promo, y
+     pisarlo apagaba esas señales. */
+  .o_ztyres_cotizador .flat-table tbody.grouped-body tr:not(.grp-row) {
+    margin-left: 20px;
+    width: calc(100% - 20px);
+    box-shadow: inset 3px 0 0 var(--teal-soft), 0 1px 2px rgba(20, 22, 28, .05);
+  }
+
+  /* Los chips perdían su recuadro en las tarjetas teñidas: las reglas
+     de .in-cart / .in-promo pintan el fondo del <td> y son más
+     específicas. Un velo translúcido en vez de un gris fijo funciona
+     sobre cualquier tinte (blanco, verde de carrito, color de promo)
+     y se mantiene por encima de esas reglas.
+     flex-grow 0: el último renglón queda con chips del mismo ancho
+     que los de arriba en vez de estirarse a la mitad de la tarjeta. */
+  .o_ztyres_cotizador .flat-table tbody tr td.flat-td-tier,
+  .o_ztyres_cotizador .flat-table tbody tr td.flat-td-tipo,
+  .o_ztyres_cotizador .flat-table tbody tr td.flat-td-seg,
+  .o_ztyres_cotizador .flat-table tbody tr td.flat-td-capcara,
+  .o_ztyres_cotizador .flat-table tbody tr td.flat-td-velind,
+  .o_ztyres_cotizador .flat-table tbody tr td.flat-td-eqorig,
+  .o_ztyres_cotizador .flat-table tbody tr td.flat-td-dot,
+  .o_ztyres_cotizador .flat-table tbody tr td.flat-td-disp,
+  .o_ztyres_cotizador .flat-table tbody tr td.flat-td-attr {
+    background: rgba(20, 22, 28, .05);
+    flex-grow: 0;
+  }
+
+  /* Dentro de un grupo, la cabecera ya dice el rin y la medida —
+     repetirlos en cada tarjeta es ruido. La clave se queda con el
+     renglón completo. */
+  .o_ztyres_cotizador .flat-table tbody.grouped-body .flat-td-medida { display: none; }
+  .o_ztyres_cotizador .flat-table tbody.grouped-body .flat-td-clave { flex: 1 1 100%; }
+
+  .o_ztyres_cotizador .grp-foot {
+    display: flex;
+    justify-content: center;
+    padding: 4px 0 8px;
+  }
+  .o_ztyres_cotizador .grp-foot .btn-sec {
+    min-height: 40px;
+    font-size: 13px;
+  }
+}
+
+/* ==========================================================================
+   PANEL DE PROMOCIONES · ESCALERA DE INCENTIVO
+   --------------------------------------------------------------------------
+   Sustituye la lista de frases largas por peldaños: rango a la izquierda,
+   beneficio a la derecha. Va al FINAL de la hoja a propósito — arriba hay
+   varias capas de parches que redefinen .facet-head y .facet-tier, y una
+   consulta o regla colocada antes de ellas queda pisada por cascada.
+
+   Tres decisiones que resuelven el recorte que traía el panel:
+   (a) el panel scrollea en vez de ocultar (nada de overflow:hidden),
+   (b) el nombre se muestra completo en dos líneas, sin corte a media
+       palabra, apoyado en el nombre corto de la promoción, y
+   (c) el tramo deja de ser una oración y pasa a ser dato estructurado;
+       la oración completa vive en el title.
+   ========================================================================== */
+/* IMPORTANTE — el panel SÍ debe scrollear. Una versión anterior de esta
+   hoja ya había resuelto esto (bloque "PROMOS: header fijo, lista
+   scrolleable"): el panel es flex, se topa en max-height:100% y scrollea
+   con el h2 sticky adentro. Poner aquí overflow:visible lo desarmaba —
+   el max-height seguía aplicando desde aquel bloque, así que el
+   contenido se salía sin barra y las últimas promociones quedaban
+   inalcanzables. Se respeta el mecanismo original. */
+.o_ztyres_cotizador .side-left .promos-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow-y: auto;
+}
+.o_ztyres_cotizador .side-left .promos-panel h2 { flex: 0 0 auto; }
+
+/* --- Cabecera de la promoción --- */
+.o_ztyres_cotizador .promos-panel .facet {
+  margin: 0 0 6px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--paper);
+  overflow: hidden;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+.o_ztyres_cotizador .promos-panel .facet:has(.facet-head.active) {
+  border-color: var(--promo-c);
+  box-shadow: 0 0 0 1px var(--promo-c);
+}
+.o_ztyres_cotizador .promos-panel .facet-head {
+  display: grid;
+  grid-template-columns: 3px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 7px;
+  padding: 0;
+  cursor: pointer;
+  background:
+    linear-gradient(var(--promo-b), var(--promo-b)) left / 3px 100% no-repeat;
+}
+.o_ztyres_cotizador .promos-panel .promo-headline {
+  grid-column: 2;
+  min-width: 0;
+  padding: 7px 0;
+}
+.o_ztyres_cotizador .promos-panel .promo-eyebrow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 2px 5px;
+  margin-bottom: 2px;
+}
+.o_ztyres_cotizador .promos-panel .promo-period {
+  flex: 0 1 auto;
+  max-width: 100%;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--promo-t);
+  color: var(--promo-c);
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: .3px;
+  line-height: 1.5;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.o_ztyres_cotizador .promos-panel .promo-kind {
+  font-size: 8.5px;
+  font-weight: 700;
+  line-height: 1.4;
+  text-transform: uppercase;
+  letter-spacing: .35px;
+  color: var(--ink-soft);
+  opacity: .5;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* Sin recorte a 2 líneas: el nombre corto cabe, y si no cabe se parte
+   por palabra completa. Era el clamp lo que dejaba nombres a medias. */
+.o_ztyres_cotizador .promos-panel .facet-name {
+  display: block;
+  font-size: 11.5px;
+  font-weight: 800;
+  line-height: 1.25;
+  text-transform: uppercase;
+  letter-spacing: .1px;
+  -webkit-line-clamp: none;
+  overflow: visible;
+  overflow-wrap: break-word;
+  hyphens: auto;
+}
+.o_ztyres_cotizador .promos-panel .facet-head.active .facet-name { color: var(--promo-c); }
+.o_ztyres_cotizador .promos-panel .facet-caret {
+  display: block;
+  grid-column: 3;
+  padding: 0 8px;
+  font-size: 9px;
+  color: var(--ink-soft);
+  opacity: .45;
+}
+
+/* --- Cuerpo --- */
+.o_ztyres_cotizador .promos-panel .facet-body {
+  padding: 0 8px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.o_ztyres_cotizador .promos-panel .promo-compact-meta {
+  display: block;
+  margin: 0;
+  font-size: 9px;
+  line-height: 1.3;
+  color: var(--ink-soft);
+  opacity: .6;
+}
+
+/* --- La escalera --- */
+.o_ztyres_cotizador .promo-ladder {
+  position: relative;
+  padding-left: 13px;
+  display: flex;
+  flex-direction: column;
+}
+.o_ztyres_cotizador .promo-ladder::before {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 12px;
+  bottom: 12px;
+  width: 2px;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--promo-b) 35%, #fff);
+}
+.o_ztyres_cotizador .promo-step {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 6px;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+.o_ztyres_cotizador .promo-step::before {
+  content: "";
+  position: absolute;
+  left: -12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--paper);
+  border: 2px solid color-mix(in srgb, var(--promo-b) 55%, #fff);
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+.o_ztyres_cotizador .promo-step:hover {
+  background: color-mix(in srgb, var(--promo-t) 50%, #fff);
+}
+.o_ztyres_cotizador .promo-step.reached::before { border-color: var(--promo-c); }
+.o_ztyres_cotizador .promo-step.sel { background: var(--promo-t); }
+.o_ztyres_cotizador .promo-step.sel::before {
+  background: var(--promo-c);
+  border-color: var(--promo-c);
+}
+/* El radio sigue existiendo para teclado y lectores de pantalla; el
+   estado se comunica con el peldaño encendido, que en 118 px es lo
+   único que cabe. */
+.o_ztyres_cotizador .promo-step input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+.o_ztyres_cotizador .promo-step:focus-within {
+  outline: 2px solid var(--rubber-dark);
+  outline-offset: 1px;
+}
+.o_ztyres_cotizador .promo-step .step-body { min-width: 0; }
+.o_ztyres_cotizador .promo-step .step-range {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--ink);
+  overflow-wrap: break-word;
+}
+.o_ztyres_cotizador .promo-step .step-rule {
+  display: block;
+  margin-top: 1px;
+  font-size: 8.5px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--ink-soft);
+  opacity: .6;
+  overflow-wrap: break-word;
+}
+.o_ztyres_cotizador .promo-step .step-rims {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+  margin-top: 3px;
+}
+.o_ztyres_cotizador .promo-step .step-rim {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 0 4px;
+  border: 1px solid color-mix(in srgb, var(--promo-b) 45%, #fff);
+  border-radius: 5px;
+  background: var(--paper);
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+  font-weight: 700;
+  line-height: 1.6;
+}
+.o_ztyres_cotizador .promo-step .step-rim b { color: var(--promo-c); }
+.o_ztyres_cotizador .promo-step .step-value {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  font-weight: 800;
+  line-height: 1;
+  color: var(--promo-c);
+  white-space: nowrap;
+}
+.o_ztyres_cotizador .promo-step.sel .step-value { font-size: 14px; }
+
+/* En la columna mínima (118 px) el porcentaje baja bajo el rango en vez
+   de robarle la mitad del renglón — que era lo que partía las palabras. */
+@media (min-width: 1101px) and (max-width: 1500px) {
+  .o_ztyres_cotizador .promo-step { grid-template-columns: minmax(0, 1fr) auto; }
+  .o_ztyres_cotizador .promo-step .step-value { font-size: 11.5px; }
+  .o_ztyres_cotizador .promo-step.sel .step-value { font-size: 13px; }
+  .o_ztyres_cotizador .promos-panel .facet-name { font-size: 11px; }
+}
+
+/* ==========================================================================
+   COLUMNA TARJETA DE REGALO
+   --------------------------------------------------------------------------
+   La tarjeta es un valor que el cliente RECIBE, no un descuento sobre la
+   llanta (docs/TARJETA_REGALO.md). Por eso tiene columna propia y un color
+   distinto al de "Pr Promo": leer los dos números como si fueran lo mismo
+   era justo lo que hacía engañoso el precio con descuento potencial.
+   ========================================================================== */
+.o_ztyres_cotizador .flat-th-giftcard,
+.o_ztyres_cotizador .flat-td-giftcard {
+  width: 74px;
+  min-width: 74px;
+  text-align: right !important;
+  white-space: nowrap;
+}
+.o_ztyres_cotizador .giftcard-amount {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  color: #B95E15;
+}
+/* Configurada pero sin condición elegida todavía: se ve, pero apagada,
+   para que no se confunda con un beneficio ya simulado. */
+.o_ztyres_cotizador .giftcard-amount.pending {
+  color: var(--ink-soft);
+  opacity: .45;
+  font-weight: 600;
+}
+/* El precio base con Mayoreo aplicado lleva un guiño discreto: no es el
+   precio publicado, y el title explica de dónde sale. */
+.o_ztyres_cotizador .flat-td-price.is-mayoreo-price {
+  position: relative;
+  cursor: help;
+}
+.o_ztyres_cotizador .flat-td-price.is-mayoreo-price::after {
+  content: "•";
+  margin-left: 3px;
+  color: #B95E15;
+  font-weight: 700;
+}
+.o_ztyres_cotizador .giftcard-line {
+  color: #B95E15;
+}
+.o_ztyres_cotizador .giftcard-line small {
+  opacity: .7;
+  font-weight: 600;
+}
+
+/* --------------------------------------------------------------------------
+   Escalera · ajustes finos sobre el CSS heredado
+   -------------------------------------------------------------------------- */
+/* El `label` global del cotizador impone MAYÚSCULAS y 11px a todo lo que
+   sea <label>. El peldaño es un label (para que el radio siga siendo
+   accesible), así que hay que devolverle su propia tipografía: el rango
+   va en versalitas, pero la regla ("3 medidas × 20 pzas c/u") en
+   mayúsculas se vuelve ilegible y ocupa el doble. */
+.o_ztyres_cotizador .promo-step {
+  text-transform: none;
+  font-size: inherit;
+  margin-bottom: 0;
+  font-weight: 400;
+}
+.o_ztyres_cotizador .promo-step .step-range { text-transform: uppercase; }
+.o_ztyres_cotizador .promo-step .step-rule { text-transform: none; }
+
+/* La columna izquierda mide clamp(118px, 8.6vw, 200px): en un monitor de
+   1600 px son ~137 px reales. A ese ancho, el porcentaje a la derecha le
+   deja al rango unos 40 px y las palabras se parten letra por letra.
+   El panel se mide a sí mismo con container query y baja el porcentaje
+   bajo el rango, que es lo único que cabe.
+   Va al FINAL de la hoja: si se coloca antes de las reglas de la
+   escalera, esas reglas lo pisan por orden de cascada. */
+.o_ztyres_cotizador .promos-panel { container-type: inline-size; }
+
+@container (max-width: 165px) {
+  .o_ztyres_cotizador .promo-ladder { padding-left: 11px; }
+  .o_ztyres_cotizador .promo-step {
+    grid-template-columns: minmax(0, 1fr);
+    row-gap: 1px;
+    padding: 5px;
+  }
+  .o_ztyres_cotizador .promo-step .step-value {
+    font-size: 11.5px;
+    text-align: left;
+  }
+  .o_ztyres_cotizador .promo-step.sel .step-value { font-size: 12.5px; }
+  .o_ztyres_cotizador .promo-step .step-range { font-size: 9.5px; }
+  .o_ztyres_cotizador .promo-step .step-rule { font-size: 8px; }
+  .o_ztyres_cotizador .promos-panel .facet-name { font-size: 10.5px; }
+  .o_ztyres_cotizador .promos-panel .facet-body { padding: 0 6px 6px; }
+  .o_ztyres_cotizador .promos-panel .promo-compact-meta { display: none; }
+  /* Con política por rin, las fichas (R13–R15 3% · R16+ 5%) ya traen los
+     porcentajes: repetir el mayor como valor grande es ruido justo donde
+     menos espacio hay. */
+  .o_ztyres_cotizador .promo-step:has(.step-rims) .step-value { display: none; }
+}
+
+/* ==========================================================================
+   ESCALERA · desempate de especificidad
+   --------------------------------------------------------------------------
+   Las reglas de arriba escritas como `.side-left .promos-panel X` (4 clases)
+   le ganan a `.promos-panel X` (3 clases) sin importar el orden en la hoja.
+   Por eso el nombre seguía saliendo con clamp(11.5px, 0.78vw, 14px) —14px en
+   monitor grande— y se comía tres renglones mientras el resto del peldaño va
+   a 10px. Todo lo que necesite ganar ese pulso se repite aquí con la misma
+   especificidad de 4 clases.
+   ========================================================================== */
+
+/* El nombre vuelve a la escala del panel: es el rótulo de la promoción, no
+   un titular. Fijo, no fluido: la columna ya cambia de ancho con el clamp
+   del layout y encadenar dos escalas hacía que en monitor grande el nombre
+   creciera mientras el peldaño se quedaba igual. Conserva el color de la
+   promoción, que es lo que permite identificarla de un vistazo. */
+.o_ztyres_cotizador .side-left .promos-panel .facet-name {
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.25;
+  letter-spacing: .1px;
+  text-transform: uppercase;
+  color: var(--promo-c, var(--ink));
+  white-space: normal;
+  overflow: visible;
+  overflow-wrap: break-word;
+  -webkit-line-clamp: none;
+}
+
+/* La cabecera ya trae su propio padding en .promo-headline; el padding
+   vertical heredado lo duplicaba y estiraba cada tarjeta. */
+.o_ztyres_cotizador .side-left .promos-panel .facet-head {
+  align-items: center;
+  gap: 7px;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+.o_ztyres_cotizador .side-left .promos-panel .facet-body {
+  padding: 0 8px 8px;
+  gap: 5px;
+}
+
+/* El h2 sticky vive dentro del panel scrolleable: necesita fondo opaco
+   propio, si no las promociones se ven pasar por debajo del título. */
+.o_ztyres_cotizador .side-left .promos-panel h2 {
+  flex: 0 0 auto;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+/* El panel es un contenedor flex en columna, así que sus hijos son items
+   flex y por omisión SE ENCOGEN (flex-shrink: 1). Con muchas promociones
+   eso no producía scroll: producía tarjetas aplastadas —los peldaños se
+   comprimían unos contra otros y el contenido se recortaba sin barra—.
+   Fijando flex: 0 0 auto, cada promoción conserva su alto natural, el
+   contenido desborda y el panel scrollea, que es lo que se busca. */
+.o_ztyres_cotizador .side-left .promos-panel > * { flex: 0 0 auto; }

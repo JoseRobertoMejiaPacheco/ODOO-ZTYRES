@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="helpdesk_ticket_view_form_internal_requester" model="ir.ui.view">
+        <field name="name">helpdesk.ticket.form.internal.requester</field>
+        <field name="model">helpdesk.ticket</field>
+        <field name="inherit_id" ref="helpdesk.helpdesk_ticket_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//sheet" position="inside">
+                <field name="requester_locked" invisible="1"/>
+                <field name="requester_only_mode" invisible="1"/>
+                <field name="allowed_assignee_ids" invisible="1"/>
+            </xpath>
+
+            <xpath expr="//sheet//field[@name='team_id']" position="attributes">
+                <attribute name="required">0</attribute>
+                <attribute name="attrs">{'invisible': [('requester_locked', '=', True), ('team_id', '=', False)], 'readonly': [('requester_locked', '=', True)]}</attribute>
+            </xpath>
+
+            <xpath expr="//sheet//field[@name='user_id']" position="attributes">
+                <attribute name="domain">[('id', 'in', allowed_assignee_ids)]</attribute>
+                <attribute name="attrs">{'invisible': [('requester_locked', '=', True), ('user_id', '=', False)], 'readonly': [('requester_locked', '=', True)]}</attribute>
+            </xpath>
+
+            <xpath expr="//sheet//field[@name='ticket_type_id']" position="attributes">
+                <attribute name="attrs">{'invisible': [('requester_locked', '=', True), ('ticket_type_id', '=', False)], 'readonly': [('requester_locked', '=', True)]}</attribute>
+            </xpath>
+
+            <xpath expr="//sheet//field[@name='tag_ids']" position="attributes">
+                <attribute name="attrs">{'invisible': [('requester_locked', '=', True)]}</attribute>
+            </xpath>
+
+            <xpath expr="//sheet//field[@name='partner_id']" position="before">
+                <field name="requester_user_id"
+                       attrs="{'readonly': [('requester_locked', '=', True)]}"
+                       options="{'no_create': True, 'no_create_edit': True}"/>
+            </xpath>
+
+            <xpath expr="//sheet//field[@name='partner_id']" position="attributes">
+                <attribute name="attrs">{'readonly': [('requester_locked', '=', True)]}</attribute>
+            </xpath>
+
+            <xpath expr="//sheet//field[@name='partner_email']" position="attributes">
+                <attribute name="attrs">{'readonly': [('requester_locked', '=', True)]}</attribute>
+            </xpath>
+
+            <xpath expr="//sheet//label[@for='partner_phone']" position="attributes">
+                <attribute name="attrs">{'invisible': [('requester_locked', '=', True)]}</attribute>
+            </xpath>
+
+            <xpath expr="//sheet//field[@name='partner_phone']/.." position="attributes">
+                <attribute name="attrs">{'invisible': [('requester_locked', '=', True)]}</attribute>
+            </xpath>
+
+            <xpath expr="//sheet//field[@name='priority']" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+            <xpath expr="//sheet//field[@name='priority']" position="after">
+                <field name="priority_level" widget="priority_ten"/>
+            </xpath>
+
+            <xpath expr="//sheet/field[@name='description']" position="after">
+                <separator string="Archivos y capturas"/>
+                <group name="ztyres_evidence_files">
+                    <field name="evidence_attachment_ids"
+                           string="Adjuntar archivos"
+                           widget="many2many_binary"
+                           context="{'default_res_model': 'helpdesk.ticket', 'default_res_id': id}"/>
+                </group>
+                <label for="evidence_html"
+                       string="Pegue capturas directamente en el recuadro"/>
+                <field name="evidence_html"
+                       widget="html"
+                       class="oe-bordered-editor"
+                       nolabel="1"
+                       placeholder="Pegue aquí una captura de pantalla o escriba información adicional..."/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="helpdesk_ticket_view_kanban_priority_text" model="ir.ui.view">
+        <field name="name">helpdesk.ticket.kanban.priority.text</field>
+        <field name="model">helpdesk.ticket</field>
+        <field name="inherit_id" ref="helpdesk.helpdesk_ticket_view_kanban"/>
+        <field name="priority">90</field>
+        <field name="arch" type="xml">
+            <xpath expr="//kanban/templates" position="before">
+                <field name="priority_level"/>
+            </xpath>
+            <xpath expr="//templates//field[@name='priority']" position="replace">
+                <div class="z_helpdesk_kanban_priority">
+                    <strong>Prioridad: </strong>
+                    <field name="priority_level"/>
+                </div>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

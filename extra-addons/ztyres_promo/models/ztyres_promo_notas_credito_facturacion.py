@@ -15,12 +15,25 @@ class ZtyresPromoCreditNoteInvoicing(models.Model):
     _inherit = 'ztyres_promo.notas_credito'
 
     def _get_valid_invoices(self, invoice_type):
+        """Documentos que realmente originaron una recompensa.
+
+        ``state = valid/partial`` solo dice que una línea de producto fue
+        elegible para el cálculo. Para descargar facturas se cruza además
+        con el resultado final positivo por ``partner + RFC``; así no se
+        incluyen participantes que no alcanzaron ningún beneficio.
+        """
         self.ensure_one()
         if invoice_type == 'out_invoice':
+            winning_buckets = {
+                (line.partner_id.id, line.rfc or '')
+                for line in self._result_lines_visible()
+            }
             return self.detailed_line_ids.filtered(
                 lambda line: (
                     line.state in ('valid', 'partial')
                     and line.move_type == 'out_invoice'
+                    and (line.partner_id.id, line.rfc or '')
+                    in winning_buckets
                 )
             ).mapped('move_id')
         if invoice_type == 'out_refund':

@@ -268,7 +268,7 @@ export class CotizadorOwlApp extends Component {
           const promo = (promos || []).find((item) => String(item.id) === String(k));
           const selection = this.state.promoSim[k];
           const staleAuto = promo
-            && ['rim_quantity', 'monthly_volume'].includes(promo.promo_type)
+            && ['rim_quantity', 'monthly_volume', 'amount_rim'].includes(promo.promo_type)
             && selection && selection.auto && selection.tier == null;
           if (!validIds.has(String(k)) || staleAuto) {
             delete this.state.promoSim[k];

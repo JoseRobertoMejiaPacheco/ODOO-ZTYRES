@@ -5,25 +5,61 @@ ALLOW_STATES = [1413,507,516,489,485,496,499,498,502]
 
 class SaleOrder(models.Model):
     _inherit = 'sale.order'
+
     def quotation_action_confirm(self):
         # 🔒 Garantiza datos actualizados
         self.flush()
         self.order_line.flush()
+
         for order in self:
             partner_state = order.partner_id.state_id.id
+            # 🔒 Obtener nuevamente las marcas bloqueadas
+            block = self.env['ztyres_block_brands'].search(
+                [('partner_id', '=', order.partner_id.id)],
+                limit=1
+            )
+            blocked_brand_ids = block.restricted_brand_ids.ids if block else []
             for line in order.order_line:
                 brand_id = line.product_id.brand_id
+
+                # 🔒 Validar marca bloqueada para el cliente actual
+                if brand_id.id in blocked_brand_ids:
+
+                    raise ValidationError(
+                        f'No es posible confirmar el pedido.\n\n'
+                        f'El cliente "{order.partner_id.name}" '
+                        f'tiene bloqueada la marca "{brand_id.name}".\n\n'
+                        f'Producto: {line.product_id.display_name}'
+                    )
+
+                # Validación que ya tenías para la marca 7
                 if brand_id.id == 7 and partner_state not in ALLOW_STATES:
                     if line.order_id.partner_id.id not in (7101, 7009):
                         raise ValidationError(
-                            f'Solo se puede vender {brand_id.name} en Guanajuato, Querétaro, Zacatecas, Colima, Aguascalientes, Jalisco, Nayarit and Michoacán de Ocampo'
+                            f'Solo se puede vender {brand_id.name} en '
+                            f'Guanajuato, Querétaro, Zacatecas, Colima, '
+                            f'Aguascalientes, Jalisco, Nayarit y '
+                            f'Michoacán de Ocampo'
                         )
+
         # Si todo está bien, ahora sí confirmamos
         return super().quotation_action_confirm()
 
 class SaleOrderLineAddProductWizard(models.TransientModel):
     _name = 'sale.order.line.add.product.wizard'
     _description = 'Wizard para agregar productos a sale.order.line'
+
+    order_id = fields.Many2one(
+        'sale.order',
+        string='Pedido'
+    )
+
+    blocked_brand_ids = fields.Many2many(
+        'ztyres_products.brand',
+        string='Marcas bloqueadas',
+    )
+
+
     #Pasar por contexto
     product_id = fields.Many2one('product.product', string='Producto')
     
@@ -35,6 +71,58 @@ class SaleOrderLineAddProductWizard(models.TransientModel):
         compute="_compute_is_expo",
         store=False
     )
+    
+    @api.model
+    def default_get(self, fields_list):
+        print("========================================")
+        print(">>> SE EJECUTO default_get()")
+        print(">>> fields_list:", fields_list)
+
+        res = super().default_get(fields_list)
+
+        print(">>> Valores después de super().default_get():")
+        print(">>> res:", res)
+
+        order_id = res.get('order_id')
+
+        print(">>> order_id:", order_id)
+
+        if order_id:
+            order = self.env['sale.order'].browse(order_id)
+
+            print(">>> Pedido encontrado:", order)
+            print(">>> ID del pedido:", order.id)
+            print(">>> Cliente:", order.partner_id)
+            print(">>> Cliente ID:", order.partner_id.id)
+            print(">>> Cliente nombre:", order.partner_id.name)
+
+            block = self.env['ztyres_block_brands'].search(
+                [('partner_id', '=', order.partner_id.id)],
+                limit=1
+            )
+
+            print(">>> Registro de bloqueo:", block)
+            print(">>> ID bloqueo:", block.id if block else False)
+
+            if block:
+                print(">>> Marcas bloqueadas:", block.restricted_brand_ids)
+                print(">>> IDs marcas bloqueadas:", block.restricted_brand_ids.ids)
+
+                res['blocked_brand_ids'] = [
+                    (6, 0, block.restricted_brand_ids.ids)
+                ]
+
+                print(">>> res['blocked_brand_ids']:", res['blocked_brand_ids'])
+
+        else:
+            print(">>> NO SE ENCONTRO order_id EN LOS DEFAULTS")
+
+        print(">>> RES FINAL:", res)
+        print("========================================")
+
+        return res
+
+        
     
     def _compute_is_expo(self):
         """
@@ -167,39 +255,42 @@ class SaleOrderLineAddProductWizard(models.TransientModel):
     #Validar la cantidad cuando se escribe una línea para evitar que pongan llantas demás.
     
     def add_products_to_order_line(self):
-        # raise ValidationError('No es posible capturar pedidos en este monento por que se está realizando la migracion a la nueva política comercial\si ha capturado un pedido es probable que lo tenga que verificar después')       
-        # Obtener el contexto con la línea de pedido de venta
-        order_line_id = self.env.context.get('active_id')
-        if not order_line_id:
+        # Obtener el pedido
+        order_id = self.order_id
+        if not order_id:
             return
-        order_id = self.env['sale.order'].browse(order_line_id)
+
         can_sale = True
         if order_id.partner_shipping_id.state_id.id not in ALLOW_STATES:
             can_sale = False
+
         # Crear las líneas de pedido de venta para los productos seleccionados
         for line in self.lines:
             product = self.product_id
             if product.brand_id.id == 7 and not can_sale:
                 if order_id.partner_id.id not in (7101, 7009):
-                    raise ValidationError( f'Solo se puede vender {product.brand_id.name} en Guanajuato, Querétaro, Zacatecas, Colima, Aguascalientes, Jalisco, Nayarit y Michoacán de Ocampo, en México.' )
-            if product and line.qty>0 or product.id in [50959,58209]:                
+                    raise ValidationError(
+                        f'Solo se puede vender {product.brand_id.name} en Guanajuato, Querétaro, Zacatecas, Colima, Aguascalientes, Jalisco, Nayarit y Michoacán de Ocampo, en México.'
+                    )
+            if product and line.qty > 0 or product.id in [50959, 58209]:
                 # Creación de la línea de pedido
                 vals = {
                     'product_id': product.id,
-                    'order_id': order_line_id,
+                    'order_id': order_id.id,
                     'product_uom_qty': line.qty,
                     'lots_ids': [(6, 0, line.lots_ids.ids)],
                     'single_dot': line.single_dot,
-                    'dot_range':'',
+                    'dot_range': '',
                 }
-                order_id.with_context({'skip_shipping_price':True,'check_availability':False}).order_line = [(0, 0, vals)]
-                order_id.order_line.filtered(lambda l: l.product_id.id == product.id)._compute_price_unit()
-        #         created_line._compute_price_unit()
-        #         if product.id == 50959:
-                    
-        #             created_line.product_uom_qty =line.qty
-        #             created_line.price_unit=120
-        
+                order_id.with_context({
+                    'skip_shipping_price': True,
+                    'check_availability': False
+                }).order_line = [(0, 0, vals)]
+
+                order_id.order_line.filtered(
+                    lambda l: l.product_id.id == product.id
+                )._compute_price_unit()
+
         order_id.quotation_action_confirm()
 
 class SaleOrderLineAddProductWizardLine(models.TransientModel):
@@ -207,7 +298,7 @@ class SaleOrderLineAddProductWizardLine(models.TransientModel):
     
     # Relación con el wizard
     wizard_id = fields.Many2one('sale.order.line.add.product.wizard', string='Wizard')
-    
+
     product_id = fields.Many2one('product.product', string='Producto')
     qty_available = fields.Float(string='Disponible')
     qty = fields.Float(string='Cantidad')
@@ -218,8 +309,7 @@ class SaleOrderLineAddProductWizardLine(models.TransientModel):
     discount_price = fields.Float(string='Precio con Descuento', digits=(16, 2))
     subtotal = fields.Float(string='Subtotal', digits=(16, 2))
     location_id = fields.Many2one('stock.location', string='Ubicación')
-    
-    
+        
     @api.onchange('qty')
     def _check_qty(self):
         is_expo = self._context.get('is_expo',False)

@@ -2,11 +2,11 @@
 /* ============================================================
    Cotizador Owl · Ztyres — Componentes
    ============================================================ */
-import { Component, useState, useRef, onMounted, onPatched, onWillUnmount, xml } from "@odoo/owl";
+import { Component, useState, useRef, useExternalListener, onMounted, onPatched, onWillUnmount, xml } from "@odoo/owl";
 
 import { IconPlus, IconMinus, IconTrash } from './icons.js';
 import {
-  EXTRA_COLUMNS, SF_FIELDS, PROFILE_FIELDS, PROFILE_OPTIONS, money, formatDot, formatColumnValue, normalizeSearchText, setPromoSim, policyFactor, policyLabel, IVA_RATE, setShowIva, promoColorFor,
+  EXTRA_COLUMNS, SF_FIELDS, PROFILE_FIELDS, money, formatDot, formatColumnValue, normalizeSearchText, setPromoSim, policyFactor, policyLabel, IVA_RATE, setShowIva, promoColorFor,
 } from './constants.js';
 import { productImageUrl } from './api.js';
 
@@ -31,13 +31,66 @@ function promoPercentForProduct(promo, tier, productId) {
 function promoUnitDiscount(promo, tier, product, listPrice) {
   if (!product || !(promo.product_ids || []).includes(Number(product.product_id))) return 0;
   if (promo.promo_type === 'coupons') {
+    // Cupón / apoyo fijo por pieza: SÍ es un descuento sobre la llanta
+    // (tiene tope de piezas y se refleja en la NC del pedido).
     const coupon = (promo.coupons || []).find(
       (item) => item.tmpl_id === product.tmpl_id,
     );
     return coupon ? Number(coupon.amount || 0) : 0;
   }
+  /* Tarjeta de regalo: NO baja el precio de la llanta. El cliente se
+     lleva una tarjeta por ese valor (ver docs/TARJETA_REGALO.md — con
+     gift_card_delivery='none', que es el default, ni siquiera emite
+     NC). Descontarla del precio unitario hacía ver la llanta más barata
+     de lo que se cobra. Vive en su propia columna, vía
+     giftCardAmountFor. */
+  if (promo.reward_type === 'gift_card') return 0;
+  const percent = promoPercentForProduct(promo, tier, product.product_id);
+  const rawPms = (promo.pms_price_by_product || {})[String(product.product_id)];
+  if (rawPms != null) {
+    // Base PMS: el porcentaje se calcula sobre el precio PMS pactado,
+    // que es independiente de la lista y de Mayoreo. No se toca.
+    const roundMoney = (value) => Math.round((Number(value) + Number.EPSILON) * 100) / 100;
+    const unitReward = roundMoney(Number(rawPms || 0) * percent / 100);
+    return roundMoney(unitReward / Number(promo.pms_tax_factor || 1));
+  }
+  // Sobre LISTA, no sobre el precio base (ya con Mayoreo aplicado) —
+  // igual que _cotizador_promo_discount en sale_order.py (usa
+  // `lista`, no `base`). Si se calculara sobre base, Mayoreo y la
+  // promo se encadenarían (cascada) en vez de restarse cada una por
+  // su lado desde lista (directo), y el Excel del cotizador dejaría
+  // de cuadrar con lo que realmente cobra el motor de promociones.
+  return (Number(listPrice) || 0) * percent / 100;
+}
+
+function mayoreoUnitDiscount(product, listPrice) {
   return Number(listPrice || 0)
-    * promoPercentForProduct(promo, tier, product.product_id) / 100;
+    * (Number(product && product.mayoreo_discount || 0) / 100);
+}
+
+/* Precio BASE de una llanta: el de lista menos la política Mayoreo
+   (−10% en Bridgestone/Firestone que pertenecen a esa lista de precios).
+   Es el precio desde el que se calcula todo lo demás — política
+   comercial y promociones aplican SOBRE este número, no sobre el de
+   lista. Antes el −10% se restaba al final junto con los otros
+   descuentos, lo que hacía que la promo se calculara sobre un precio
+   que el cliente nunca iba a pagar.
+   `listPrice` permite pasar el precio de una línea del pedido, que
+   puede diferir del de catálogo. Mismo criterio en el servidor:
+   _cotizador_base_price en sale_order.py. */
+function basePriceOf(product, listPrice) {
+  const list = listPrice != null ? Number(listPrice) : Number(product && product.price || 0);
+  return Math.max(list - mayoreoUnitDiscount(product, list), 0);
+}
+
+/* Monto de tarjeta de regalo por pieza para un producto. Es un
+   beneficio aparte: el cliente recibe una tarjeta, la llanta no baja de
+   precio. Por eso vive en su propia columna y NO entra al precio. */
+function giftCardAmountFor(promo, product) {
+  if (promo.reward_type !== 'gift_card') return 0;
+  if (!product || !(promo.product_ids || []).includes(Number(product.product_id))) return 0;
+  const card = (promo.coupons || []).find((item) => item.tmpl_id === product.tmpl_id);
+  return card ? Number(card.amount || 0) : 0;
 }
 
 function selectedTierForPromo(state, promo, selected) {
@@ -89,7 +142,14 @@ export class CatalogRow extends Component {
   static template = xml`
     <tr t-att-class="{ 'in-cart': props.qty > 0, 'in-promo': !!props.color }"
         t-att-style="rowStyle()">
-      <td class="flat-td-clave" data-label="Código" t-att-title="props.product.code || ''" t-esc="props.product.code || '—'"/>
+      <td class="flat-td-clave" data-label="Código" t-att-title="props.product.code || ''">
+        <span t-esc="props.product.code || '—'"/>
+      </td>
+      <!-- La columna K/B se retiró: el % de Key Size ya viaja dentro del
+           beneficio de la promo y el −10% de Mayoreo ya viene aplicado en
+           el precio de la columna Precio. Marcarlos además con una letra
+           obligaba al vendedor a recalcular mentalmente algo que la
+           aritmética ya resolvió. -->
       <td class="flat-td-tier" data-label="Tier">
         <span t-if="props.product.tier" class="tier-badge" t-att-title="props.product.tier"
               t-attf-style="background:{{tierColor()}};color:{{tierTextColor()}}" t-esc="tierShort()"/>
@@ -107,11 +167,25 @@ export class CatalogRow extends Component {
       <td class="flat-td-attr" t-foreach="props.extraColumns" t-as="col" t-key="col.key" t-att-data-label="col.label"
           t-esc="formatColumnValue(col.key, props.product[col.key])"/>
       <td class="flat-td-disp" data-label="Inv" t-esc="props.product.free_qty != null ? props.product.free_qty : '—'"/>
-      <td class="flat-td-price" data-label="Precio"
-          t-att-class="{ 'has-promo': !!finalPrice() }" t-esc="money((props.product.price || 0) * props.iva)"/>
+      <!-- Precio base. En Bridgestone/Firestone de la lista Mayoreo ya
+           trae aplicado el −10%: es el precio desde el que se calcula
+           todo lo demás, no el de lista publicada. -->
+      <td class="flat-td-price" data-label="Precio" t-att-title="priceTitle()"
+          t-att-class="{ 'has-promo': !!finalPrice(), 'is-mayoreo-price': props.product.is_mayoreo }"
+          t-esc="money(basePrice() * props.iva)"/>
       <td class="flat-td-promo" data-label="Pr Promo" t-att-title="finalTitle()">
         <span t-if="finalPrice()" class="promo-price" t-esc="money(finalPrice() * props.iva)"/>
         <span t-else="" class="promo-empty" t-att-title="props.qty ? 'Sin promoción ni descuento aplicable' : 'Agrega al pedido o elige una promo/política para simular'">—</span>
+      </td>
+      <!-- Tarjeta de regalo: monto por pieza que el cliente recibe en
+           tarjeta. Va en su propia columna porque NO es un descuento
+           sobre el precio de la llanta. Se pinta en gris cuando la promo
+           que la otorga aún no está seleccionada en el simulador. -->
+      <td class="flat-td-giftcard" data-label="Tarjeta" t-att-title="giftCardTitle()">
+        <span t-if="props.giftCard" class="giftcard-amount"
+              t-att-class="{ pending: !props.giftCard.active }"
+              t-esc="money(props.giftCard.amount * props.iva)"/>
+        <span t-else="" class="promo-empty">—</span>
       </td>
       <td class="flat-td-action">
         <button t-if="!props.qty" class="add-btn" t-on-click="() => props.onAdd(props.product.product_id)">
@@ -154,6 +228,10 @@ export class CatalogRow extends Component {
     const winner = c.winner || c.palette[0];
     let vars = `--promo-c: ${winner.text}; --promo-b: ${winner.border}; --promo-t: ${winner.tint};`;
     if (c.palette.length > 1) {
+      /* Columnas que reciben tinte = todas menos la de acción. Se
+         quitó K/B y se agregó Tarjeta, así que el fijo queda igual en
+         15; si se añade o quita una columna hay que actualizar este
+         número o las bandas de color dejan de cubrir la fila. */
       const cols = 15 + (this.props.extraColumns ? this.props.extraColumns.length : 0);
       const n = c.palette.length;
       // Reparte columnas en bloques del MISMO tamaño posible;
@@ -201,15 +279,46 @@ export class CatalogRow extends Component {
      resuelta por el padre; su price viene calculado SOBRE el precio
      con política — ver _promoMaps). Si solo hay política, se muestra
      lista×factor. */
+  /* Precio base de la fila. Para Bridgestone/Firestone dentro de la
+     lista Mayoreo, el −10% ya está aplicado aquí: ese es el precio que
+     el vendedor cotiza y desde el que se calculan política y promos.
+     Antes el −10% se restaba solo al final, en Pr Promo, y la columna
+     Precio mostraba un precio de lista que nunca se cobraba. */
+  basePrice() {
+    return basePriceOf(this.props.product);
+  }
+  priceTitle() {
+    if (!this.props.product.is_mayoreo) return '';
+    const list = this.props.product.price || 0;
+    return `Ya incluye Mayoreo −10% · Precio de lista ${money(list * this.props.iva)}`;
+  }
   finalPrice() {
     if (this.props.promo) return this.props.promo.price;
-    if (this.props.factor < 0.9999) return (this.props.product.price || 0) * this.props.factor;
+    const base = this.basePrice();
+    // Política se calcula SOBRE LISTA (no sobre `base`, que ya trae
+    // Mayoreo restado) y se resta junto con Mayoreo — no en cascada.
+    // lista×0.9×0.98 (cascada) ≠ lista×(1−0.10−0.02) (directo); la
+    // cascada le cobra de más al cliente cuando hay Mayoreo + política.
+    if (this.props.factor < 0.9999) {
+      const list = this.props.product.price || 0;
+      const policyDisc = list * (1 - this.props.factor);
+      return Math.max(base - policyDisc, 0);
+    }
     return 0;
   }
   finalTitle() {
     if (this.props.promo) return this.props.promo.label;
     if (this.props.factor < 0.9999) return 'Política comercial: ' + this.props.policyText;
     return '';
+  }
+  giftCardTitle() {
+    const card = this.props.giftCard;
+    if (!card) return '';
+    const state = card.active
+      ? 'Condición seleccionada en el simulador'
+      : 'Requiere seleccionar la condición de esta promoción';
+    return `${card.promoName} · tarjeta de regalo por pieza. ${state}. `
+      + 'No descuenta el precio de la llanta.';
   }
 }
 
@@ -236,16 +345,56 @@ export class CatalogTable extends Component {
           <th class="flat-th-eqorig" title="Equipo original">Eq. Orig.</th>
           <th t-foreach="extraColumns" t-as="col" t-key="col.key" t-att-title="col.label" t-esc="col.short || col.label"/>
           <th class="flat-th-disp">Inv</th>
-          <th class="flat-th-price">Precio</th>
+          <th class="flat-th-price" title="Precio por pieza desde el que se calcula todo. En Bridgestone/Firestone de la lista Mayoreo ya incluye el −10%.">Precio</th>
           <th class="flat-th-promo" title="Precio efectivo por pieza considerando la promoción vigente (NC estimada del pedido actual)">Pr Promo</th>
+          <th class="flat-th-giftcard" title="Monto de tarjeta de regalo por pieza. Es un beneficio aparte: no baja el precio de la llanta.">Tarjeta</th>
           <th class="flat-th-action">Agregar</th>
         </tr>
       </thead>
-      <tbody>
+      <tbody t-if="ui.isMobile" class="grouped-body">
+        <t t-foreach="mobileGroups" t-as="rg" t-key="rg.key">
+          <tr class="grp-row grp-rim" t-att-class="{ open: open.rims[rg.key] }"
+              t-on-click="() => this.toggleRim(rg)">
+            <td colspan="99">
+              <span class="grp-caret">▸</span>
+              <span class="grp-title" t-esc="rg.label"/>
+              <span class="grp-sub"><t t-esc="rg.medidas.length"/> medidas</span>
+              <span class="grp-count" t-esc="rg.count"/>
+            </td>
+          </tr>
+          <t t-if="open.rims[rg.key]">
+            <t t-foreach="rg.medidas" t-as="mg" t-key="mg.key">
+              <tr class="grp-row grp-medida" t-att-class="{ open: open.meds[mg.key] }"
+                  t-on-click="() => this.toggleMed(mg)">
+                <td colspan="99">
+                  <span class="grp-caret">▸</span>
+                  <span class="grp-title" t-esc="mg.label"/>
+                  <span class="grp-count" t-esc="mg.count"/>
+                </td>
+              </tr>
+              <t t-if="open.meds[mg.key]">
+                <CatalogRow t-foreach="mg.products" t-as="product" t-key="product.product_id"
+                            product="product"
+                            qty="props.state.cart[product.product_id] or 0"
+                            promo="promoEntry(product)"
+                            giftCard="giftCardFor(product)"
+                            color="colorFor(product)"
+                            factor="factor"
+                            iva="iva"
+                            policyText="policyText"
+                            extraColumns="extraColumns"
+                            onAdd="props.onAdd" onInc="props.onInc" onDec="props.onDec" onSetQty="props.onSetQty"/>
+              </t>
+            </t>
+          </t>
+        </t>
+      </tbody>
+      <tbody t-else="">
         <CatalogRow t-foreach="rows" t-as="product" t-key="product.product_id"
                     product="product"
                     qty="props.state.cart[product.product_id] or 0"
                     promo="promoEntry(product)"
+                    giftCard="giftCardFor(product)"
                     color="colorFor(product)"
                     factor="factor"
                     iva="iva"
@@ -254,7 +403,10 @@ export class CatalogTable extends Component {
                     onAdd="props.onAdd" onInc="props.onInc" onDec="props.onDec" onSetQty="props.onSetQty"/>
       </tbody>
     </table>
-    <div class="load-more" t-if="hiddenCount > 0" t-ref="loadMoreBar">
+    <div class="grp-foot" t-if="ui.isMobile and anyGroupOpen">
+      <button type="button" class="btn-sec" t-on-click="() => this.collapseAll()">Contraer todo</button>
+    </div>
+    <div class="load-more" t-if="!ui.isMobile and hiddenCount > 0" t-ref="loadMoreBar">
       <span class="load-more-info">
         Mostrando <t t-esc="rows.length"/> de <t t-esc="totalRows"/> llantas · se cargan más al hacer scroll
       </span>
@@ -312,14 +464,17 @@ export class CatalogTable extends Component {
         const line = quote.lines.find((l) => String(l.product_id) === pidStr);
         const prod = this._byId.get(parseInt(pidStr, 10));
         const lista = line ? line.unit_price : (prod ? prod.price : 0);
-        // SIN cascada: la política y la NC se calculan CADA UNA sobre
-        // el precio de lista y se restan juntas.
+        // Mayoreo define el precio BASE que se muestra/cotiza, pero
+        // política y NC se calculan sobre LISTA (no sobre esa base) y
+        // se restan junto con Mayoreo — los tres de forma independiente,
+        // sin que uno cascadee sobre el resultado de otro.
+        const base = basePriceOf(prod, lista);
         const policyDisc = lista * (1 - policyFactor(st.profile));
-        const eff = Math.max(lista - policyDisc - nc / qty, 0);
-        if (eff < lista - 0.005) {
+        const eff = Math.max(base - policyDisc - nc / qty, 0);
+        if (eff < base - 0.005) {
           real.set(parseInt(pidStr, 10), {
             price: eff,
-            label: 'Precio efectivo real: lista − política comercial − NC de este pedido (cada descuento sobre lista)',
+            label: 'Precio efectivo real: precio base (ya con Mayoreo) − política comercial − NC de este pedido',
           });
         }
       }
@@ -366,11 +521,11 @@ export class CatalogTable extends Component {
         const lista = prod.price || 0;
         const disc = promoUnitDiscount(pr, tier, prod, lista);
         let partLabel = '';
-        if (pr.promo_type === 'coupons' && disc > 0) {
-          partLabel = `${pr.name} apoyo $${disc}`;
+        if ((pr.promo_type === 'coupons' || pr.reward_type === 'gift_card') && disc > 0) {
+          partLabel = `${pr.display_label || pr.name} Cupón $${disc.toFixed(2)}`;
         } else {
           const pct = promoPercentForProduct(pr, tier, pid);
-          if (pct > 0) partLabel = `${pr.name} ${pct}%`;
+          if (pct > 0) partLabel = `${pr.display_label || pr.name} ${pct}%`;
         }
         if (disc <= 0) continue;
         const bucket = accum.get(pid) || { discSum: 0, parts: [] };
@@ -383,15 +538,18 @@ export class CatalogTable extends Component {
     // Consolidar accum → sim (con el descuento total de política + promos)
     for (const [pid, bucket] of accum) {
       const prod = this._byId.get(pid);
-      const lista = prod.price || 0;
-      const policyDisc = lista * policyPctOff;
-      const final = Math.max(lista - policyDisc - bucket.discSum, 0);
-      if (!(final < lista - 0.005)) continue;
+      const base = basePriceOf(prod);
+      // Política sobre lista, no sobre `base` (ya con Mayoreo) — ver
+      // nota de policyFactor en constants.js: es aditivo, no cascada.
+      const policyDisc = (prod.price || 0) * policyPctOff;
+      const final = Math.max(base - policyDisc - bucket.discSum, 0);
+      if (!(final < base - 0.005)) continue;
       const partsTxt = bucket.parts.map((p) => p.label).join(' + ');
       const polTxt = policyTxt ? ` + Política ${policyTxt}` : '';
+      const mayoreoTxt = prod.is_mayoreo ? ' (base ya con Mayoreo −10%)' : '';
       sim.set(pid, {
         price: final,
-        label: `Simulado · ${partsTxt}${polTxt} — cada descuento sobre lista`,
+        label: `Simulado · ${partsTxt}${polTxt} — cada descuento sobre el precio base${mayoreoTxt}`,
         parts: bucket.parts,
       });
     }
@@ -432,7 +590,39 @@ export class CatalogTable extends Component {
   }
   promoEntry(product) {
     const maps = this._promoMaps;
-    return maps.real.get(product.product_id) || maps.sim.get(product.product_id) || null;
+    // Al elegir una condición, el vendedor está pidiendo ver ESA
+    // simulación (incluida su base PMS y % Key Size). La NC real del
+    // carrito queda como respaldo cuando no hay simulación seleccionada.
+    return maps.sim.get(product.product_id) || maps.real.get(product.product_id) || null;
+  }
+  /* Tarjeta de regalo por pieza. Se muestra siempre que el producto
+     tenga una configurada en alguna promo vigente — no solo cuando la
+     promo está simulada — porque el vendedor necesita saber que la
+     tarjeta existe antes de decidir. `active` distingue si ya eligió la
+     condición que la otorga; la fila la pinta en gris mientras no.
+     Si dos promos vigentes dan tarjeta al mismo producto, se suman los
+     montos de las activas; si ninguna está activa, se muestra la mayor
+     configurada como referencia. */
+  giftCardFor(product) {
+    const promos = this.props.state.promos || [];
+    let activeSum = 0;
+    let activeNames = [];
+    let best = null;
+    for (const promo of promos) {
+      const amount = giftCardAmountFor(promo, product);
+      if (!(amount > 0)) continue;
+      const sel = this.props.state.promoSim[promo.id];
+      if (sel && sel.on) {
+        activeSum += amount;
+        activeNames.push(promo.display_label || promo.name);
+      } else if (!best || amount > best.amount) {
+        best = { amount, promoName: promo.display_label || promo.name };
+      }
+    }
+    if (activeSum > 0) {
+      return { amount: activeSum, promoName: activeNames.join(' + '), active: true };
+    }
+    return best ? { ...best, active: false } : null;
   }
   // Factor y etiqueta de la Política comercial (cambian solo cuando
   // el vendedor mueve los % del cliente) — se pasan a cada fila.
@@ -497,6 +687,18 @@ export class CatalogTable extends Component {
     this.state = useState({ renderLimit: 150 });
     this._lastFilterStamp = null;
 
+    /* MÓVIL: el catálogo plano de miles de tarjetas es imposible de
+       recorrer con el pulgar. Ahí se vuelve a agrupar como en la
+       versión vieja — acordeón Rin → Medida → llantas — y por eso
+       tampoco hace falta la ventana de renderLimit: lo que acota el
+       DOM es que los grupos nacen cerrados. */
+    this.ui = useState({ isMobile: window.matchMedia('(max-width: 700px)').matches });
+    this.open = useState({ rims: {}, meds: {} });
+    const mq = window.matchMedia('(max-width: 700px)');
+    this._onMq = (ev) => { this.ui.isMobile = ev.matches; };
+    mq.addEventListener('change', this._onMq);
+    onWillUnmount(() => mq.removeEventListener('change', this._onMq));
+
     /* Scroll infinito con IntersectionObserver — el ROOT es el
        contenedor que sí scrollea (.table-scroll del SPA). Con root
        null (viewport por defecto), el observer NUNCA disparaba
@@ -560,6 +762,86 @@ export class CatalogTable extends Component {
     const limit = this.state.renderLimit;
     return all.length > limit ? all.slice(0, limit) : all;
   }
+  /* ---------- Agrupado de móvil: Rin → Medida → llantas ----------
+     Se arma sobre _allRows(), que YA viene ordenado rin → medida →
+     clave, así que basta recorrer una vez y respetar el orden de
+     inserción de los Map. Se cachea por la misma huella que las
+     filas: sólo se recalcula si cambian catálogo, búsqueda o
+     filtros. */
+  get mobileGroups() {
+    const st = this.props.state;
+    const stamp = st.search + '|' + JSON.stringify(st.sfFilters);
+    const c = this._mgCache;
+    if (c && c.catalog === st.catalog && c.stamp === stamp) return c.groups;
+
+    const byRim = new Map();
+    this._allRows().forEach((p) => {
+      const rim = (p.rim === null || p.rim === undefined || p.rim === '') ? '' : String(p.rim);
+      let rg = byRim.get(rim);
+      if (!rg) {
+        rg = { key: 'r:' + rim, label: rim ? 'Rin ' + rim : 'Sin rin', count: 0, medMap: new Map(), medidas: [] };
+        byRim.set(rim, rg);
+      }
+      rg.count++;
+      const med = String(p.medida || '—');
+      let mg = rg.medMap.get(med);
+      if (!mg) {
+        mg = { key: rg.key + '|' + med, label: med, count: 0, products: [] };
+        rg.medMap.set(med, mg);
+        rg.medidas.push(mg);
+      }
+      mg.count++;
+      mg.products.push(p);
+    });
+    const groups = [...byRim.values()];
+    groups.forEach((g) => { delete g.medMap; });
+    this._mgCache = { catalog: st.catalog, stamp, groups };
+    this._autoOpen(groups, stamp);
+    return groups;
+  }
+
+  /* Al cambiar búsqueda/filtros se recalcula qué nace abierto:
+     - resultado chico (≤40 llantas): todo abierto, no tiene caso
+       hacer tocar acordeones para ver 6 productos;
+     - un solo rin: se abre ese rin (y su medida, si es una sola);
+     - lo demás: todo cerrado, la lista arranca como índice. */
+  _autoOpen(groups, stamp) {
+    if (this._autoOpenStamp === stamp) return;
+    this._autoOpenStamp = stamp;
+    const total = groups.reduce((s, g) => s + g.count, 0);
+    const openAll = total > 0 && total <= 40;
+    const rims = {};
+    const meds = {};
+    if (openAll || groups.length === 1) {
+      groups.forEach((g) => {
+        rims[g.key] = true;
+        if (openAll || g.medidas.length === 1) g.medidas.forEach((m) => { meds[m.key] = true; });
+      });
+    }
+    this.open.rims = rims;
+    this.open.meds = meds;
+  }
+
+  get anyGroupOpen() {
+    return Object.values(this.open.rims).some(Boolean);
+  }
+
+  toggleRim = (rg) => {
+    const on = !this.open.rims[rg.key];
+    this.open.rims[rg.key] = on;
+    // Un rin con una sola medida no merece un segundo toque.
+    if (on && rg.medidas.length === 1) this.open.meds[rg.medidas[0].key] = true;
+  };
+
+  toggleMed = (mg) => {
+    this.open.meds[mg.key] = !this.open.meds[mg.key];
+  };
+
+  collapseAll = () => {
+    this.open.rims = {};
+    this.open.meds = {};
+  };
+
   _computeRows() {
     return [...this.filtered].sort((a, b) => {
       const rimA = parseInt(a.rim, 10) || 0;
@@ -620,7 +902,7 @@ export class ColumnsPicker extends Component {
    checkboxes de los valores distintos de esa columna. */
 export class TableFilters extends Component {
   static template = xml`
-    <div class="xls-filter-bar">
+    <div class="xls-filter-bar" t-ref="bar">
       <span class="xls-filter-label">Filtros:</span>
       <div class="xls-filter-field" t-foreach="groups" t-as="g" t-key="g.key">
         <button type="button" class="xls-filter-btn" t-att-class="{ active: g.active.length }"
@@ -631,13 +913,15 @@ export class TableFilters extends Component {
           <div class="xls-filter-pop-actions">
             <button type="button" t-on-click="() => setAll(g.key, true)">Todo</button>
             <button type="button" t-on-click="() => setAll(g.key, false)">Nada</button>
+            <button type="button" class="xls-filter-pop-done" t-on-click="close">Listo</button>
           </div>
           <div class="xls-filter-pop-list">
             <label class="xls-filter-opt" t-foreach="g.options" t-as="opt" t-key="opt.val">
-              <input type="checkbox" t-att-checked="g.active.includes(opt.val)"
-                     t-on-change="() => toggleValue(g.key, opt.val)"/>
-              <span t-esc="opt.val"/>
+              <span class="xls-filter-opt-val" t-att-title="opt.val" t-esc="opt.val"/>
               <span class="xls-filter-opt-count" t-esc="opt.count"/>
+              <input type="checkbox" class="xls-filter-opt-box"
+                     t-att-checked="g.active.includes(opt.val)"
+                     t-on-change="() => toggleValue(g.key, opt.val)"/>
             </label>
           </div>
         </div>
@@ -649,7 +933,26 @@ export class TableFilters extends Component {
 
   setup() {
     this.state = useState({ openKey: null });
+    this.barRef = useRef('bar');
+    // El desplegable ya NO se cierra al palomear un valor (antes sí, y
+    // obligaba a reabrirlo por cada marca). Se queda abierto para poder
+    // elegir varias; se cierra con "Listo", con Esc, volviendo a hacer
+    // clic en el botón del filtro, o haciendo clic fuera de la barra.
+    useExternalListener(window, 'mousedown', this.onOutsideDown);
+    useExternalListener(window, 'keydown', this.onKeyDown);
   }
+
+  onOutsideDown = (ev) => {
+    if (this.state.openKey === null) return;
+    const bar = this.barRef.el;
+    if (bar && !bar.contains(ev.target)) this.state.openKey = null;
+  };
+
+  onKeyDown = (ev) => {
+    if (ev.key === 'Escape' && this.state.openKey !== null) this.state.openKey = null;
+  };
+
+  close = () => { this.state.openKey = null; };
 
   get activeCount() {
     return Object.values(this.props.state.sfFilters).reduce((s, a) => s + (a ? a.length : 0), 0);
@@ -697,10 +1000,8 @@ export class TableFilters extends Component {
     if (i === -1) filters[field].push(val); else filters[field].splice(i, 1);
     if (!filters[field].length) delete filters[field];
     this.props.onChange();
-    // Autoocultar el desplegable apenas se elige un valor — el
-    // usuario ve de inmediato la tabla filtrada, sin tener que cerrar
-    // el popover a mano.
-    this.state.openKey = null;
+    // El popover se queda abierto a propósito: la tabla de atrás se
+    // filtra en vivo mientras se palomean varios valores seguidos.
   };
 
   setAll = (field, all) => {
@@ -730,44 +1031,56 @@ export class PromoStrip extends Component {
       <p class="facet-empty" t-if="!props.state.promos.length">Sin promociones vigentes</p>
       <div class="facet" t-foreach="props.state.promos" t-as="pr" t-key="pr.id"
            t-attf-style="--promo-c: {{colorFor(pr).text}}; --promo-b: {{colorFor(pr).border}}; --promo-t: {{colorFor(pr).tint}}">
-        <!-- Cabecera COLAPSABLE: clic en cualquier parte alterna el
-             despliegue de rangos. El caret ▸/▾ indica el estado;
-             el conteo muestra el número de CONDICIONES (tramos),
-             no el número de llantas — es lo que el vendedor necesita
-             saber al elegir. -->
+        <!-- Cabecera COLAPSABLE. El nombre se parte en tres piezas
+             (periodo · tipo · nombre corto) porque el nombre completo
+             repite el mismo prefijo en todas las promos y en la columna
+             angosta no llega a mostrar lo único que las distingue. El
+             nombre corto sale del campo cotizador_name de la promoción
+             (display_label) y cae al nombre completo si está vacío. -->
         <div class="facet-head" t-att-class="{ active: isOn(pr), open: isOpen(pr) }"
              t-att-title="pr.name + ' — ' + conditionCount(pr) + ' condiciones · clic para desplegar'"
-             t-attf-style="--promo-c: {{colorFor(pr).text}}; --promo-b: {{colorFor(pr).border}}; --promo-t: {{colorFor(pr).tint}}"
              t-on-click="() => this.toggleOpen(pr)">
-          <span class="facet-caret" aria-hidden="true" t-esc="isOpen(pr) ? '▾' : '▸'"/>
-          <span class="facet-name">
-            <t t-esc="pr.name"/><span class="facet-count" t-esc="'(' + conditionCount(pr) + ')'"/>
+          <span class="promo-headline">
+            <span class="promo-eyebrow">
+              <span class="promo-period" t-if="periodChip(pr)" t-esc="periodChip(pr)"/>
+              <span class="promo-kind" t-esc="pr.policy_label || typeLabel(pr)"/>
+            </span>
+            <span class="facet-name" t-esc="shortName(pr)"/>
           </span>
+          <span class="facet-caret" aria-hidden="true" t-esc="isOpen(pr) ? '▾' : '▸'"/>
         </div>
         <div class="facet-body" t-if="isOpen(pr)">
           <div class="promo-compact-meta">
-            <span t-esc="pr.policy_label || typeLabel(pr)"/>
-            <span>·</span>
             <span t-esc="participantLabel(pr)"/>
           </div>
-          <t t-if="pr.tiers.length">
-            <label class="facet-tier" t-att-class="{ 'facet-tier-complex': isComplexPolicy(pr) }"
-                   t-foreach="pr.tiers" t-as="tier" t-key="tier_index"
-                   t-att-title="tierTitle(pr, tier)">
+          <!-- ESCALERA: los tramos se leen como progresión, no como
+               frases sueltas. Cada peldaño muestra el rango a la
+               izquierda y el beneficio a la derecha; los peldaños hasta
+               el elegido quedan marcados para que se vea de un vistazo
+               cuánto falta para el siguiente porcentaje. La frase
+               completa sigue viva en el title (misma redacción que el
+               Excel, ver _cotizador_promo_detail). -->
+          <div class="promo-ladder" t-if="steps(pr).length">
+            <label class="promo-step"
+                   t-foreach="steps(pr)" t-as="step" t-key="step_index"
+                   t-att-class="{ sel: isStepSelected(pr, step_index), reached: isStepReached(pr, step_index) }"
+                   t-att-title="step.title">
               <input type="radio" t-att-name="'promo_tier_' + pr.id"
-                     t-att-checked="isOn(pr) and tierIndex(pr) === tier_index"
-                     t-on-click.stop="() => this.pickTier(pr, tier_index)"/>
-              <span t-esc="tierLabel(pr, tier)"/>
+                     t-att-checked="isStepSelected(pr, step_index)"
+                     t-on-click.stop="() => this.pickTier(pr, step_index)"/>
+              <span class="step-body">
+                <span class="step-range" t-esc="step.range"/>
+                <span class="step-rule" t-if="step.rule" t-esc="step.rule"/>
+                <span class="step-rims" t-if="step.rims.length">
+                  <span class="step-rim" t-foreach="step.rims" t-as="rim" t-key="rim_index">
+                    <t t-esc="rim.label"/> <b t-esc="rim.value"/>
+                  </span>
+                </span>
+              </span>
+              <span class="step-value" t-esc="step.value"/>
             </label>
-          </t>
-          <label class="facet-tier" t-if="pr.promo_type === 'coupons'"
-                 title="Simula el apoyo fijo configurado para cada producto participante. Clic de nuevo para quitar.">
-            <input type="radio" t-att-name="'promo_tier_' + pr.id"
-                   t-att-checked="isOn(pr)"
-                   t-on-click.stop="() => this.pickTier(pr, 0)"/>
-            <span t-esc="couponLabel(pr)"/>
-          </label>
-          <p class="facet-note" t-if="!pr.tiers.length and pr.promo_type !== 'coupons'">
+          </div>
+          <p class="facet-note" t-if="!steps(pr).length">
             Sin rangos para simular
           </p>
         </div>
@@ -803,18 +1116,126 @@ export class PromoStrip extends Component {
     const s = this.sim(pr);
     return s && s.tier != null ? s.tier : -1;
   }
-  isComplexPolicy(pr) {
-    return pr.promo_type === 'rim_quantity' || pr.promo_type === 'monthly_volume';
+
+  /* ---------- Escalera: nombre, periodo y peldaños ----------
+     El servidor manda `display_label` (campo cotizador_name de la
+     promoción). Mientras alguna promo no lo tenga capturado se sigue
+     viendo su nombre completo — nada se rompe por no llenar el campo. */
+  shortName(pr) {
+    return pr.display_label || pr.name || '';
   }
-  compactRims(value) {
-    const raw = String(value || '');
-    const numbers = [...raw.matchAll(/\d+(?:\.\d+)?/g)]
-      .map((match) => Number(match[0]))
-      .filter((number) => Number.isFinite(number));
-    const unique = [...new Set(numbers)].sort((a, b) => a - b);
-    if (!unique.length) return raw;
-    if (unique.length > 1) return `R${unique[0]}–R${unique[unique.length - 1]}`;
-    return `R${unique[0]}`;
+  // Folio/periodo que abre el nombre administrativo ("08-26 …",
+  // "B/F-0801PBS …"). Se muestra aparte para que no compita con el
+  // nombre; si el nombre corto ya no lo trae, no se pinta nada.
+  periodChip(pr) {
+    const raw = String(pr.name || '').trim();
+    const match = raw.match(/^(\d{2}-\d{2}|[A-Z]\/[A-Z]-\w+)\b/);
+    if (!match) return '';
+    // Si el nombre corto conserva el folio, no se duplica.
+    if (String(this.shortName(pr)).startsWith(match[1])) return '';
+    return match[1];
+  }
+
+  /* Peldaños de la escalera. Convierte cada tramo en las piezas que
+     la escalera pinta por separado (rango, regla, beneficio) en vez de
+     una sola frase. `title` conserva la frase completa de tierLabel —
+     misma redacción que el Excel, para que pantalla y archivo digan lo
+     mismo. Memorizado por identidad de tiers: el template lo llama una
+     vez por peldaño en cada render. */
+  steps(pr) {
+    if (!this._stepCache) this._stepCache = new Map();
+    const cached = this._stepCache.get(pr.id);
+    if (cached && cached.src === pr.tiers && cached.promo === pr) return cached.out;
+
+    const whole = (value) => Math.round(Number(value || 0));
+    const number = (value) => whole(value).toLocaleString('es-MX', { maximumFractionDigits: 0 });
+    const percent = (value) => `${Number(value || 0).toLocaleString(
+      'es-MX', { minimumFractionDigits: 0, maximumFractionDigits: 1 },
+    )}%`;
+    const money = (value) => `$${number(value)}`;
+
+    let out = [];
+    if (pr.promo_type === 'coupons') {
+      const limit = whole(pr.coupon_limit_qty);
+      out = [{
+        range: 'Por producto participante',
+        rule: limit > 1 ? `Tope ${number(limit)} pzas` : '',
+        value: 'Cupón',
+        rims: [],
+        title: this.couponLabel(pr),
+      }];
+    } else {
+      out = (pr.tiers || []).map((tier) => {
+        const max = whole(tier.max || 999999999);
+        const min = whole(tier.min);
+        const unlimited = max >= 999999999;
+        const isAmount = ['amount', 'amount_rim'].includes(pr.promo_type);
+        const range = isAmount
+          ? (unlimited ? `${money(min)} o más` : `${money(min)} – ${money(max)}`)
+          : (unlimited ? `${number(min)}+ pzas` : `${number(min)} – ${number(max)} pzas`);
+
+        // Regla secundaria: lo que hay que cumplir DENTRO del rango.
+        let rule = '';
+        if (pr.promo_type === 'monthly_volume') {
+          rule = `${number(tier.minimum_products)} medidas × `
+            + `${number(tier.minimum_qty_per_measure)} pzas c/u`;
+        } else {
+          const minQty = whole(tier.min_qty);
+          if (minQty > (isAmount ? 1 : min)) rule = `Mínimo ${number(minQty)} pzas`;
+        }
+
+        // Política por rin: cada rin cobra su propio porcentaje, así que
+        // no hay UN beneficio sino varios. Se listan como fichas y el
+        // valor grande del peldaño es el más alto.
+        const rims = (['rim_quantity', 'amount_rim'].includes(pr.promo_type))
+          ? (tier.rim_discounts || []).map((row) => {
+            if (pr.promo_type === 'amount_rim') {
+              return {
+                min: whole(row.rim_from),
+                max: whole(row.rim_to),
+                discount: Number(row.discount || 0),
+              };
+            }
+            const nums = [...String(row.rims || '').matchAll(/\d+(?:\.\d+)?/g)]
+              .map((m) => whole(m[0])).filter((v) => Number.isFinite(v));
+            return {
+              min: nums.length ? Math.min(...nums) : 0,
+              max: nums.length ? Math.max(...nums) : 0,
+              discount: Number(row.discount || 0),
+            };
+          }).filter((row) => row.min > 0).sort((a, b) => a.min - b.min)
+          : [];
+        const rimChips = rims.map((row, index) => ({
+          label: (index === rims.length - 1 && row.min >= 16)
+            ? `R${number(row.min)}+`
+            : (row.min === row.max
+              ? `R${number(row.min)}`
+              : `R${number(row.min)}–R${number(row.max)}`),
+          value: percent(row.discount),
+        }));
+        if (pr.promo_type === 'amount_rim' && Number(tier.key_size_discount || 0) > 0) {
+          rimChips.push({ label: 'Key Sizes', value: percent(tier.key_size_discount) });
+        }
+
+        let value;
+        if (pr.reward_type === 'gift_card') value = 'Tarjeta';
+        else if (pr.reward_type === 'fixed_amount') value = `${money(tier.fixed_amount)} NC`;
+        else if (rims.length) value = percent(Math.max(...rims.map((row) => row.discount)));
+        else value = percent(tier.discount);
+
+        return { range, rule, value, rims: rimChips, title: this.tierLabel(pr, tier) };
+      });
+    }
+    this._stepCache.set(pr.id, { src: pr.tiers, promo: pr, out });
+    return out;
+  }
+  isStepSelected(pr, index) {
+    return this.isOn(pr) && this.tierIndex(pr) === index;
+  }
+  // Peldaños por debajo del elegido: se marcan para leer la escalera
+  // como progresión ("ya vas en el segundo, te falta uno").
+  isStepReached(pr, index) {
+    return this.isOn(pr) && index < this.tierIndex(pr);
   }
   // Nº de CONDICIONES de la promo: cantidad de tramos configurados,
   // o 1 si son cupones (aporte fijo por pieza). Esto es lo que el
@@ -828,6 +1249,7 @@ export class PromoStrip extends Component {
     return {
       quantity: 'Por cantidad',
       amount: 'Por monto',
+      amount_rim: 'Monto por Rin / Key Sizes',
       monthly_volume: 'Volumen mensual',
       rim_quantity: 'Cantidad acumulada por rin',
       coupons: 'Cupones',
@@ -855,41 +1277,97 @@ export class PromoStrip extends Component {
     return pr.product_ids.reduce((n, id) => n + (this._catalogIds.has(id) ? 1 : 0), 0);
   }
   tierLabel(pr, tier) {
-    const compactNumber = (value) => {
-      const n = Number(value || 0);
-      if (n >= 1000000) return `${(n / 1000000).toFixed(n % 1000000 ? 1 : 0)}M`;
-      if (n >= 1000) return `${(n / 1000).toFixed(n % 1000 ? 1 : 0)}k`;
-      return n.toLocaleString('es-MX');
-    };
-    const reward = pr.reward_type === 'fixed_amount'
-      ? '$' + compactNumber(tier.fixed_amount || 0) + ' NC'
-      : (tier.discount || 0) + '%';
-    const max = Number(tier.max || 999999999);
-    const range = max >= 999999999
-      ? `${compactNumber(tier.min)}+`
-      : `${compactNumber(tier.min)}–${compactNumber(max)}`;
+    const whole = (value) => Math.round(Number(value || 0));
+    const number = (value) => whole(value).toLocaleString(
+      'es-MX', { maximumFractionDigits: 0 },
+    );
+    // Conservar una décima cuando exista (7.5%), sin agregar ".0"
+    // a los porcentajes enteros (8%).
+    const percent = (value) => `${Number(value || 0).toLocaleString(
+      'es-MX', { minimumFractionDigits: 0, maximumFractionDigits: 1 },
+    )}%`;
+    const max = whole(tier.max || 999999999);
+    const min = whole(tier.min);
+    const unlimited = max >= 999999999;
+    const qtyRange = unlimited
+      ? `${number(min)} pzas o más`
+      : `de ${number(min)} a ${number(max)} pzas`;
+    const amountRange = unlimited
+      ? `$${number(min)} o más`
+      : `de $${number(min)} a $${number(max)}`;
+    const reward = pr.reward_type === 'gift_card'
+      ? 'un cupón'
+      : (pr.reward_type === 'fixed_amount'
+        ? `$${number(tier.fixed_amount)} en nota de crédito`
+        : percent(tier.discount));
+
     if (pr.promo_type === 'amount') {
-      const qtyRule = tier.min_qty ? ` · mín ${tier.min_qty} pzas` : '';
-      return `$${range} → ${reward}${qtyRule}`;
+      const minQty = whole(tier.min_qty);
+      const qtyRule = minQty > 1 ? ` (mínimo ${number(minQty)} pzas)` : '';
+      return `Obtén ${reward} en compras ${amountRange}${qtyRule}.`;
     }
+
+    if (pr.promo_type === 'amount_rim') {
+      const rows = (tier.rim_discounts || []).map((row) => {
+        const from = whole(row.rim_from);
+        const to = whole(row.rim_to);
+        if (!from) return '';
+        const label = to >= 99
+          ? `R${number(from)}+`
+          : (from === to ? `R${number(from)}` : `R${number(from)} a R${number(to)}`);
+        return `${percent(row.discount)} en ${label}`;
+      }).filter(Boolean);
+      if (Number(tier.key_size_discount || 0) > 0) {
+        rows.push(`${percent(tier.key_size_discount)} en Key Sizes`);
+      }
+      return rows.length
+        ? `Compras ${amountRange}: ${rows.join(' · ')}.`
+        : `Compras ${amountRange}: porcentaje según el rin.`;
+    }
+
     if (pr.promo_type === 'monthly_volume') {
-      return `${range} pzas → ${tier.minimum_products || 0} med · ${tier.minimum_qty_per_measure || 0} c/u · ${reward}`;
+      const measures = whole(tier.minimum_products);
+      const perMeasure = whole(tier.minimum_qty_per_measure);
+      return `Obtén ${reward} comprando ${qtyRange} `
+        + `(${number(measures)} medidas × ${number(perMeasure)} pzas c/u).`;
     }
+
     if (pr.promo_type === 'rim_quantity') {
-      const breakdown = (tier.rim_discounts || [])
-        .map((row) => `${this.compactRims(row.rims)} ${row.discount}%`).join(' · ');
-      return `${range} pzas → ${breakdown || '% según rin'}`;
+      const rows = (tier.rim_discounts || []).map((row) => {
+        const rims = [...String(row.rims || '').matchAll(/\d+(?:\.\d+)?/g)]
+          .map((match) => whole(match[0]))
+          .filter((value) => Number.isFinite(value));
+        return {
+          min: rims.length ? Math.min(...rims) : 0,
+          max: rims.length ? Math.max(...rims) : 0,
+          discount: Number(row.discount || 0),
+        };
+      }).filter((row) => row.min > 0).sort((a, b) => a.min - b.min);
+      const breakdown = rows.map((row, index) => {
+        const isLastHighRange = index === rows.length - 1 && row.min >= 16;
+        const rimLabel = isLastHighRange
+          ? `R${number(row.min)}+`
+          : (row.min === row.max
+            ? `R${number(row.min)}`
+            : `R${number(row.min)} a R${number(row.max)}`);
+        return `${percent(row.discount)} en ${rimLabel}`;
+      }).join(' y ');
+      return breakdown
+        ? `Obtén ${breakdown} comprando ${qtyRange}.`
+        : `Obtén un porcentaje según el rin comprando ${qtyRange}.`;
     }
-    const qtyRule = tier.min_qty ? ` · mín ${tier.min_qty} pzas` : '';
-    return `${range} pzas → ${reward}${qtyRule}`;
-  }
-  tierTitle(pr, tier) {
-    return this.tierLabel(pr, tier)
-      + '. Escenario potencial sujeto al pedido completo; clic de nuevo para quitar.';
+
+    const minQty = whole(tier.min_qty);
+    // En políticas por cantidad, el inicio del rango ya comunica el
+    // mínimo. Solo se muestra min_qty si agrega una restricción mayor.
+    const qtyRule = minQty > min ? ` (mínimo ${number(minQty)} pzas)` : '';
+    const quantityPurchase = unlimited ? `de ${qtyRange}` : qtyRange;
+    return `Obtén ${reward} en la compra ${quantityPurchase}${qtyRule}.`;
   }
   couponLabel(pr) {
-    const limit = Number(pr.coupon_limit_qty || 0);
-    return 'Monto por producto' + (limit ? ` · tope ${limit} pzas` : '');
+    const limit = Math.round(Number(pr.coupon_limit_qty || 0));
+    return 'Obtén un cupón por cada producto participante'
+      + (limit > 1 ? ` (tope ${limit} pzas).` : '.');
   }
 
   // Elegir un rango ACTIVA la promo con ese tramo; clic sobre el
@@ -935,14 +1413,13 @@ export class ClientPanel extends Component {
         <div class="client-field client-field-profile" t-foreach="profileFields" t-as="pf" t-key="pf.key">
           <label t-esc="pf.label"/>
           <select t-model="props.state.profile[pf.key]">
-            <option t-foreach="profileOptions" t-as="opt" t-key="opt" t-att-value="opt" t-esc="opt + '%'"/>
+            <option t-foreach="pf.options" t-as="opt" t-key="opt" t-att-value="opt" t-esc="opt + '%'"/>
           </select>
         </div>
       </div>
     </div>`;
 
   profileFields = PROFILE_FIELDS;
-  profileOptions = PROFILE_OPTIONS;
 
   get selectedPartner() {
     return this.props.state.partners.find((p) => p.id === this.props.state.partnerId) || {};
@@ -1051,22 +1528,35 @@ export class OrderPanel extends Component {
                 <span class="sv-lbl">Política (−<t t-esc="policyPctTotal"/>%)</span>
                 <span class="sv-val" t-esc="'-' + money(policySavingAmt * iva)"/>
               </div>
+              <div class="sv-row sv-detail sv-mayoreo" t-if="mayoreoSavingAmt > 0.01">
+                <span class="sv-lbl">Política Mayoreo (−10%)</span>
+                <span class="sv-val" t-esc="'-' + money(mayoreoSavingAmt * iva)"/>
+              </div>
               <div class="sv-row sv-detail sv-promo" t-foreach="promoSavingsList" t-as="ps" t-key="ps.id">
                 <span class="sv-lbl" t-attf-style="color: {{ps.color}}" t-esc="ps.name"/>
                 <span class="sv-val" t-attf-style="color: {{ps.color}}" t-esc="'-' + money(ps.amount * iva)"/>
               </div>
               <div class="total-row total-row-secondary" t-if="hasPromotionDiscount">
                 <span class="label">Total si cumple las condiciones <small class="iva-mode" t-esc="props.state.showIva ? '(con IVA)' : '(sin IVA)'"/></span>
-                <span class="value" t-esc="money(props.state.quote.order_total * factor * iva)"/>
+                <span class="value" t-esc="money(conditionsTotal * iva)"/>
               </div>
               <div class="total-row">
                 <span class="label">
                   <t t-if="hasPromotionDiscount">Total con todos los descuentos</t>
-                  <t t-elif="policySavingAmt > 0.01">Total con política comercial</t>
+                  <t t-elif="policySavingAmt > 0.01 or mayoreoSavingAmt > 0.01">Total con política comercial</t>
                   <t t-else="">Total del pedido</t>
                   <small class="iva-mode" t-esc="props.state.showIva ? '(con IVA)' : '(sin IVA)'"/>
                 </span>
                 <span class="value" t-esc="money(grandTotal * iva)"/>
+              </div>
+              <!-- Tarjeta de regalo: va DESPUÉS del total y como línea
+                   aparte, no dentro del desglose de ahorros. El cliente
+                   se lleva una tarjeta por ese valor; el precio de las
+                   llantas no cambia. Sumarla al ahorro haría ver un
+                   total más bajo del que se va a cobrar. -->
+              <div class="bonus-line giftcard-line" t-if="giftCardTotal > 0.005">
+                🎁 Tarjeta de regalo<t t-if="giftCardList.length > 1"> — <t t-esc="giftCardList.length"/> promos</t>: <t t-esc="money(giftCardTotal * iva)"/>
+                <small t-if="!giftCardAllActive"> · falta elegir la condición</small>
               </div>
               <!-- Promoción ganada en NC (motor ztyres_promo): monto
                    INFORMATIVO que el cliente ganaría en Nota de
@@ -1125,9 +1615,23 @@ export class OrderPanel extends Component {
     const p = this.props.state.profile || {};
     return ((parseFloat(p.volumen) || 0) + (parseFloat(p.logistico) || 0) + (parseFloat(p.financiero) || 0)).toFixed(1).replace(/\.0$/, '');
   }
+  // La política comercial se calcula SOBRE LISTA (totalList), no sobre
+  // el precio ya rebajado por Mayoreo — igual que en el catálogo y el
+  // Excel. Calcularla sobre `totalList - mayoreoSavingAmt` encadenaría
+  // los dos descuentos (cascada: base×0.98) en vez de restarlos cada
+  // uno por su lado desde lista (directo: lista×0.02); eso mostraba
+  // -$71.70 de Política en vez de -$79.67 con Mayoreo activo. Si no
+  // hay llantas de Mayoreo el resultado es idéntico al anterior.
   get policySavingAmt() {
     const pct = parseFloat(this.policyPctTotal) || 0;
     return this.totalList * (pct / 100);
+  }
+  get mayoreoSavingAmt() {
+    if (!this.props.state.quote) return 0;
+    return this.props.state.quote.lines.reduce((sum, line) => {
+      const product = this.productFor(String(line.product_id));
+      return sum + mayoreoUnitDiscount(product, line.unit_price || 0) * (line.qty || 0);
+    }, 0);
   }
   get savingsPct() {
     if (!this.totalList) return '0';
@@ -1154,10 +1658,49 @@ export class OrderPanel extends Component {
         amount += disc * (cart[pid] || 0);
       }
       if (amount > 0.005) {
-        result.push({ id: pr.id, name: pr.name, amount, color: promoColorFor(pr.id).text });
+        result.push({
+          id: pr.id,
+          name: pr.display_label || pr.name,
+          amount,
+          color: promoColorFor(pr.id).text,
+        });
       }
     }
     return result;
+  }
+
+  /* Tarjeta de regalo del pedido: Σ (piezas × monto del código), como
+     lo define docs/TARJETA_REGALO.md. Es un valor que el cliente
+     RECIBE, no un descuento — por eso vive fuera de totalSavings y de
+     grandTotal, en su propia línea del ticket. */
+  get giftCardList() {
+    const { promos, promoSim, cart } = this.props.state;
+    if (!promos.length) return [];
+    const result = [];
+    for (const pr of promos) {
+      if (pr.reward_type !== 'gift_card') continue;
+      let amount = 0;
+      for (const [pidStr, qty] of Object.entries(cart || {})) {
+        const product = this.productFor(pidStr);
+        amount += giftCardAmountFor(pr, product) * (qty || 0);
+      }
+      if (amount > 0.005) {
+        const sel = promoSim[pr.id];
+        result.push({
+          id: pr.id,
+          name: pr.display_label || pr.name,
+          amount,
+          active: !!(sel && sel.on),
+        });
+      }
+    }
+    return result;
+  }
+  get giftCardTotal() {
+    return this.giftCardList.reduce((sum, item) => sum + item.amount, 0);
+  }
+  get giftCardAllActive() {
+    return this.giftCardList.every((item) => item.active);
   }
 
   get totalList() {
@@ -1165,7 +1708,7 @@ export class OrderPanel extends Component {
     return this.props.state.quote.lines.reduce((s, l) => s + l.unit_price * l.qty, 0);
   }
   get totalSavings() {
-    return Math.max(this.policySavingAmt + this.promoSavingsTotal, 0);
+    return Math.max(this.policySavingAmt + this.mayoreoSavingAmt + this.promoSavingsTotal, 0);
   }
   // v3.2.2 — El "Total si cumple las condiciones" solo restaba el
   // descuento de Política (order_total ya viene a precio de lista,
@@ -1180,10 +1723,22 @@ export class OrderPanel extends Component {
   get hasPromotionDiscount() {
     return this.promoSavingsTotal > 0.005;
   }
+  // Mayoreo, política y promos se restan CADA UNO por su lado desde
+  // lista — no en cascada. `baseTotal` (lista − Mayoreo) es el precio
+  // que se cotiza; `policySavingAmt` ya sale de lista arriba, así que
+  // aquí solo se resta, nunca se multiplica por `factor` (eso era la
+  // cascada: base×factor = lista×(1−Mayoreo%)×(1−política%)).
+  get baseTotal() {
+    if (!this.props.state.quote) return 0;
+    return Math.max(this.props.state.quote.order_total - this.mayoreoSavingAmt, 0);
+  }
   get grandTotal() {
     if (!this.props.state.quote) return 0;
-    const base = this.props.state.quote.order_total * this.factor;
-    return Math.max(base - this.promoSavingsTotal, 0);
+    return Math.max(this.baseTotal - this.policySavingAmt - this.promoSavingsTotal, 0);
+  }
+  get conditionsTotal() {
+    if (!this.props.state.quote) return 0;
+    return Math.max(this.baseTotal - this.policySavingAmt, 0);
   }
 
   /* Bloque "Promoción ganada (NC)" del quote — viene del puente con
@@ -1265,35 +1820,41 @@ export class OrderPanel extends Component {
     const product = this.productFor(id);
     const quoteLine = this.props.state.quote
       && this.props.state.quote.lines.find((l) => String(l.product_id) === String(id));
-    // La Política comercial descuenta directo el precio de la línea
-    // (en cascada, ver policyFactor); si el factor es 1.0 se muestra
-    // lista tal cual. La NC de ztyres_promo NO se resta aquí — es un
-    // beneficio aparte que ya se muestra como "NC +$" por línea.
+    // La Política comercial se calcula SOBRE LISTA (no en cascada
+    // sobre `base`, que ya trae Mayoreo restado); si el factor es 1.0
+    // no hay descuento de política. La NC de ztyres_promo NO se resta
+    // aquí — es un beneficio aparte que ya se muestra como "NC +$" por
+    // línea. Mayoreo, política y promos se calculan cada uno de forma
+    // independiente sobre lista y se restan juntos del precio base.
     const f = this.factor;
     if (quoteLine) {
       const list = quoteLine.unit_price || 0;
+      const base = basePriceOf(product, quoteLine.final_unit_price || 0);
+      const policyDisc = list * (1 - f);
       const unit = Math.max(
-        quoteLine.final_unit_price * f - this.promoDiscountPerUnit(id, list),
+        base - policyDisc - this.promoDiscountPerUnit(id, list),
         0,
       );
       return {
         unitPrice: unit,
-        listPrice: list,
-        hasPromo: unit < list - 0.005,
+        listPrice: basePriceOf(product, list),
+        hasPromo: unit < basePriceOf(product, list) - 0.005,
         subtotal: unit * qty,
         dotRange: quoteLine.dot_range,
         freeQty: quoteLine.free_qty,
       };
     }
     const list = product.price || 0;
+    const base = basePriceOf(product, list);
+    const policyDisc = list * (1 - f);
     const unit = Math.max(
-      list * f - this.promoDiscountPerUnit(id, list),
+      base - policyDisc - this.promoDiscountPerUnit(id, list),
       0,
     );
     return {
       unitPrice: unit,
-      listPrice: list,
-      hasPromo: unit < list - 0.005,
+      listPrice: base,
+      hasPromo: unit < base - 0.005,
       subtotal: unit * qty,
       dotRange: product.dot_range,
       freeQty: product.free_qty,

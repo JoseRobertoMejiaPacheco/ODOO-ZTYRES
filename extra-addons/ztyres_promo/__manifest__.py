@@ -11,7 +11,7 @@
     """,
     'author': 'ZTYRES',
     'category': 'Sales',
-    'version': '16.0.0.21.0',
+    'version': '16.0.0.34.0',
     # discount_profiles reemplaza el reporte de cotización; esta
     # dependencia garantiza que nuestras herencias QWeb carguen después.
     'depends': [
@@ -28,6 +28,8 @@
         'wizard/ztyres_promo_product_excel_wizard.xml',
         'wizard/ztyres_promo_coupon_excel_wizard.xml',
         'wizard/ztyres_promo_key_size_excel_wizard.xml',
+        'wizard/ztyres_promo_gift_card_excel_wizard.xml',
+        'wizard/ztyres_promo_pms_price_excel_wizard.xml',
         'views/ztyres_promo_current_policy.xml',
         'views/ztyres_promo_lines.xml',        
         'views/ztyres_promo_notas_credito_lines.xml',

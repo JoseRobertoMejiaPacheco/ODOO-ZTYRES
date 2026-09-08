@@ -13,13 +13,18 @@
                     <field name="rfc"/>
                     <field name="quantity"/>
                     <field name="price_subtotal" string="Subtotal"/>
-                    <field name="total_nc_untaxed" string="Total NC"/>
+                    <field name="price_total" string="Subtotal c/IVA"/>
+                    <field name="total_nc_untaxed" string="Total NC" sum="Total NC"/>
+                    <field name="total_nc_taxed" string="Total NC c/IVA" sum="Total NC c/IVA"/>
+                    <field name="gift_card_amount" string="Tarjeta de regalo" sum="Total tarjetas"
+                           optional="show"/>
                     <field name="reward_type" string="Tipo de beneficio"/>
                     <field name="reward_percent" string="% efectivo"/>
                     <field name="reward_fixed_amount" string="Monto fijo" optional="hide"/>
                     <field name="reward_detail" string="Detalle del beneficio"/>
                     <field name="nc_credit_id" string="Nota de Crédito"/>
                     <field name="sat_estatus" invisible="1"/>
+                    <field name="has_reward" invisible="1"/>
                     <button name="action_view_details" string="Ver Detalles" type="object" class="oe_highlight" icon="fa-list"/>
                 </tree>
             </field>
@@ -30,6 +35,7 @@
             <field name="name">Resumen NC</field>
             <field name="res_model">ztyres_promo.notas_credito_lines</field>
             <field name="view_mode">tree,form</field>
+            <field name="domain">[('has_reward', '=', True)]</field>
             <field name="help" type="html">
                 <p class="o_view_nocontent_smiling_face">
                     No hay líneas de notas de crédito registradas

@@ -27,7 +27,7 @@ class PaymentDiscountMixin(models.AbstractModel):
         BS = record.bs_nc_amount*1.16
         MT = record.amount_total
         ST = MT  - shipping_with_taxes
-        NL = record.logistic_nc_amount*1.16
+        NL = self._get_logistic_total_for_display(record)
         MF = ST * discount
         TOTAL_PAGAR = ST - NL - MF - BS+ shipping_with_taxes
         
@@ -38,6 +38,17 @@ class PaymentDiscountMixin(models.AbstractModel):
             fecha_vencimiento = record.date_order + timedelta(days=profile_line.upper_limit)
             return TOTAL_PAGAR, fecha_vencimiento
     
+    def _get_logistic_total_for_display(self, record):
+        """Monto logístico CON impuestos para el total a pagar.
+
+        Históricos: conserva logistic_nc_amount * 1.16.
+        Flujo Embarques: usa el importe fiscal calculado desde las líneas reales,
+        sin reactivar el perfil logístico anterior.
+        """
+        if getattr(record, 'use_embarque_logistic_nc', False):
+            return getattr(record, 'embarque_logistic_nc_total', 0.0) or 0.0
+        return (getattr(record, 'logistic_nc_amount', 0.0) or 0.0) * 1.16
+
     def compute_payment_discount_text(self, record):
         """
         Calcula el texto HTML para mostrar el descuento o monto a pagar en la factura/orden.

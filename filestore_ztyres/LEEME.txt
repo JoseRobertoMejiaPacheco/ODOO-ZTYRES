@@ -1,0 +1,31 @@
+DESCARGA DE ARCHIVOS DEL FILESTORE DE ZTYRES
+=============================================
+
+Contenedor configurado: odoo16_ee_ztyres_web
+Base de datos: ZTYRES
+Filestore: /var/lib/odoo/.local/share/Odoo/filestore/ZTYRES/filestore
+
+1. Descomprime este ZIP en el servidor donde se ejecuta Docker.
+2. Entra a la carpeta descomprimida.
+3. Ejecuta:
+
+   bash ejecutar.sh
+
+El resultado aparecerá en la misma carpeta donde están estos scripts, con
+un nombre similar a:
+
+   archivos_filestore_ZTYRES_20260806_120000.tar.gz
+
+Opcionalmente, para guardarlo en otra carpeta:
+
+   bash ejecutar.sh /ruta/de/salida
+
+El proceso únicamente lee y copia los archivos solicitados. No elimina,
+sobrescribe ni modifica archivos del filestore y no reinicia Odoo.
+
+No utiliza /tmp. Dentro del contenedor, el script y el archivo generado se
+ubican en /var/lib/odoo/scripts_filestore_ztyres. En el servidor host, el
+resultado se copia a la misma carpeta donde se encuentra ejecutar.sh.
+
+El script interno se ejecuta mediante bash como usuario odoo. No intenta
+cambiar permisos con chmod dentro del contenedor.

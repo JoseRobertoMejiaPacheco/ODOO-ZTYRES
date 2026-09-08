@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="action_my_helpdesk_tickets" model="ir.actions.act_window">
+        <field name="name">Mis tickets</field>
+        <field name="res_model">helpdesk.ticket</field>
+        <field name="view_mode">tree,kanban,form</field>
+        <!-- La visibilidad se controla con reglas de registro según el grupo. -->
+        <field name="domain">[]</field>
+        <field name="context" eval="{'z_requester_mode': True, 'active_test': False, 'default_stage_id': ref('z_helpdesk.helpdesk_stage_new')}"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Cree una solicitud de atención</p>
+            <p>El equipo de Sistemas la revisará y asignará al responsable.</p>
+        </field>
+    </record>
+
+    <record id="helpdesk_ticket_requester_tree" model="ir.ui.view">
+        <field name="name">helpdesk.ticket.requester.tree</field>
+        <field name="model">helpdesk.ticket</field>
+        <field name="active" eval="False"/>
+        <field name="mode">primary</field>
+        <field name="inherit_id" ref="helpdesk.helpdesk_tickets_view_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//tree" position="replace">
+                <tree string="Mis tickets" default_order="create_date desc, id desc" create="1" delete="0">
+                    <field name="ticket_ref" string="ID" readonly="1"/>
+                    <field name="priority_level" string="Prioridad" readonly="1"/>
+                    <field name="name" string="Solicitud"/>
+                    <field name="team_id" string="Equipo" readonly="1" optional="show"/>
+                    <field name="user_id" string="Asignado a" readonly="1" widget="many2one_avatar_user" optional="show"/>
+                    <field name="stage_id" string="Etapa" readonly="1"/>
+                    <field name="create_date" string="Fecha de creación" readonly="1" optional="show"/>
+                </tree>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="action_my_helpdesk_tickets_tree" model="ir.actions.act_window.view">
+        <field name="sequence" eval="1"/>
+        <field name="view_mode">tree</field>
+        <field name="view_id" ref="helpdesk.helpdesk_tickets_view_tree"/>
+        <field name="act_window_id" ref="z_helpdesk.action_my_helpdesk_tickets"/>
+    </record>
+
+    <record id="action_my_helpdesk_tickets" model="ir.actions.act_window">
+        <field name="view_mode">tree,kanban,form</field>
+        <field name="view_id" ref="helpdesk.helpdesk_tickets_view_tree"/>
+    </record>
+
+    <record id="helpdesk_ticket_requester_form" model="ir.ui.view">
+        <field name="name">helpdesk.ticket.requester.form</field>
+        <field name="model">helpdesk.ticket</field>
+        <field name="mode">primary</field>
+        <field name="inherit_id" ref="z_helpdesk.helpdesk_ticket_view_form_internal_requester"/>
+        <field name="arch" type="xml">
+            <xpath expr="//sheet//field[@name='team_id']" position="attributes">
+                <attribute name="attrs">{'invisible': [('team_id', '=', False)]}</attribute>
+                <attribute name="readonly">1</attribute>
+            </xpath>
+            <xpath expr="//sheet//field[@name='user_id']" position="attributes">
+                <attribute name="attrs">{'invisible': [('user_id', '=', False)]}</attribute>
+                <attribute name="readonly">1</attribute>
+            </xpath>
+            <xpath expr="//sheet//field[@name='ticket_type_id']" position="attributes">
+                <attribute name="attrs">{'invisible': [('ticket_type_id', '=', False)]}</attribute>
+                <attribute name="readonly">1</attribute>
+            </xpath>
+            <xpath expr="//sheet//field[@name='tag_ids']" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+            <xpath expr="//sheet//field[@name='requester_user_id']" position="attributes">
+                <attribute name="readonly">1</attribute>
+            </xpath>
+            <xpath expr="//sheet//field[@name='partner_id']" position="attributes">
+                <attribute name="readonly">1</attribute>
+            </xpath>
+            <xpath expr="//sheet//field[@name='partner_email']" position="attributes">
+                <attribute name="readonly">1</attribute>
+            </xpath>
+            <xpath expr="//sheet//label[@for='partner_phone']" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+            <xpath expr="//sheet//field[@name='partner_phone']/.." position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="action_my_helpdesk_tickets_form" model="ir.actions.act_window.view">
+        <field name="sequence" eval="30"/>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="z_helpdesk.helpdesk_ticket_requester_form"/>
+        <field name="act_window_id" ref="z_helpdesk.action_my_helpdesk_tickets"/>
+    </record>
+
+    <menuitem id="menu_my_helpdesk_tickets"
+              name="Mis tickets"
+              action="action_my_helpdesk_tickets"
+              sequence="45"
+              web_icon="z_helpdesk,static/description/icon.png"
+              groups="z_helpdesk.group_ticket_requester,z_helpdesk.group_ticket_all_access"/>
+</odoo>

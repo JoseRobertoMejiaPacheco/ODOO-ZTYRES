@@ -17,16 +17,13 @@ export const SF_FIELDS = [
   { key: 'model', label: 'Modelo' },
 ];
 
-/* Perfil de cliente: 3 categorías con un % cada una. Son valores de
-   ejemplo por ahora (0/2/4/5%) — no están conectados todavía al
-   motor de reglas/promociones, es solo para que el vendedor las vea
-   y las deje registradas junto con el resto de datos del cliente. */
+/* Política comercial: cada categoría tiene únicamente sus porcentajes
+   autorizados. El 0% permite indicar que esa categoría no aplica. */
 export const PROFILE_FIELDS = [
-  { key: 'volumen', label: 'Volumen' },
-  { key: 'logistico', label: 'Logístico' },
-  { key: 'financiero', label: 'Financiero' },
+  { key: 'volumen', label: 'Volumen', options: ['0', '1', '2', '3'] },
+  { key: 'logistico', label: 'Logístico', options: ['0', '2', '4'] },
+  { key: 'financiero', label: 'Financiero', options: ['0', '2', '3'] },
 ];
-export const PROFILE_OPTIONS = ['0', '2', '3', '4', '5'];
 
 export const NATIONALITY_LABELS = {
   national: 'Nacional',

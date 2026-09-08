@@ -3,29 +3,31 @@
     'name': "Ztyres Promociones",
 
     'summary': """
-        Motor de reglas de promoción estilo Nómina (condición y monto en
-        Python), con variables de entorno configurables y sin tablas de
-        alcance: todo el filtrado de marca/tier/rin/cliente vive en código.""",
+        Cotizador de llantas con promociones. Reutiliza el motor de
+        ztyres_promo (alcance + política) y expone el resultado dentro
+        de Odoo, en una página pública y en una API externa con key.""",
 
     'description': """
-Motor de promociones Ztyres
-============================
-Las promociones se calculan con el motor de ztyres_promo (Notas de Crédito).
-Su condición y su monto se escriben en Python corto, igual que las
-reglas salariales de hr.salary.rule, y puede leer el resultado de las
-reglas anteriores por su código.
+Cotizador de promociones Ztyres
+================================
+Las promociones se calculan con el motor de ztyres_promo (Notas de
+Crédito). Ahí una promoción se define con dos ejes declarativos:
+`promo_conditions` (ALCANCE: qué productos participan) y `promo_type`
+(POLÍTICA: cómo se calcula el beneficio). Este módulo no tiene motor
+propio — el suyo (ztyres_promotions.rule) fue eliminado; solo adapta
+sus orígenes de líneas al motor de ztyres_promo.
 
-Variables de entorno (ztyres_promotions.config.param) reemplazan los
-"números mágicos" en el código: umbrales de volumen, topes de
-descuento, RFCs de público en general, etc. — editables desde
-Promociones > Configuración > Parámetros del sistema sin tocar código.
+La API externa se protege con una key compartida, guardada en
+ir.config_parameter bajo ztyres_promotions.EXTERNAL_API_KEY y editable
+desde Ajustes > Técnico > Parámetros del sistema. Vacía = API externa
+deshabilitada.
     """,
 
     'author': "My Company",
     'website': "https://www.yourcompany.com",
 
     'category': 'Sales/Sales',
-    'version': '16.0.4.1.0',
+    'version': '16.0.4.7.3',
     'license': 'LGPL-3',
 
     # ztyres_promo deja de ser una integración opcional: el cotizador
@@ -40,8 +42,6 @@ Promociones > Configuración > Parámetros del sistema sin tocar código.
     'data': [
         'security/security.xml',
         'security/ir.model.access.csv',
-        'views/ztyres_promotions_params_views.xml',
-        'views/ztyres_promotions_menus.xml',
         'views/cotizador_owl_templates.xml',
         'views/cotizador_owl_menus.xml',
     ],

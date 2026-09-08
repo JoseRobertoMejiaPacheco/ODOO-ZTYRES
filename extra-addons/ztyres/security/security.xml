@@ -70,5 +70,10 @@
             <field name="category_id" ref="cancelaciones_ztyres" />
         </record>
 
+        <!--GRUPO PARA MANTENER PEDIDO DE VENTA-->
+        <record id="group_sale_order_keep" model="res.groups">
+            <field name="name">Mantener Pedido de Venta</field>
+        </record>
+
     </data>
 </odoo>

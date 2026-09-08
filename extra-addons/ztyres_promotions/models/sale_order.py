@@ -195,6 +195,7 @@ class SaleOrder(models.Model):
             today = fields.Date.context_today(self)
             Promo = self.env['ztyres_promo.notas_credito'].sudo()
             promos = Promo.search([
+                ('active', '=', True),
                 # Coincide con EVAL_VALID_STATUSES del motor real. El estado
                 # ``approve`` significa que las NC ya fueron aprobadas, no
                 # que la promoción deba ofrecerse en una cotización nueva.
@@ -258,6 +259,54 @@ class SaleOrder(models.Model):
                     tiers = [tier_dict(l) for l in promo.policy_line_qty_ids]
                 elif policy == 'amount':
                     tiers = [tier_dict(l) for l in promo.policy_line_amount_ids]
+                elif policy == 'amount_rim':
+                    # Tramo por MONTO, pero el porcentaje se determina por
+                    # producto: Key Size tiene prioridad y, si no lo es, se
+                    # busca el rango de RIN configurado en ese mismo tramo.
+                    # Se precalcula el mapa por product_id para que pantalla
+                    # y XLSX usen exactamente el mismo porcentaje.
+                    key_templates = set(promo.key_size_product_ids.ids)
+                    tiers = []
+                    for line in promo.policy_line_amount_ids:
+                        data = tier_dict(line)
+                        data['rim_discounts'] = []
+                        data['product_discounts'] = {}
+                        for rule in line.rim_discount_ids.sorted(
+                            lambda r: (r.rim_from, r.rim_to, r.id)
+                        ):
+                            data['rim_discounts'].append({
+                                'rim_from': rule.rim_from,
+                                'rim_to': rule.rim_to,
+                                'rims': 'R%s-R%s' % (
+                                    rule.rim_from,
+                                    '+' if rule.rim_to >= 99 else rule.rim_to,
+                                ),
+                                'discount': rule.discount,
+                            })
+                        for product_id, variant in matched_variants.items():
+                            tmpl = variant.product_tmpl_id
+                            if tmpl.id in key_templates:
+                                discount = line.key_size_discount or 0.0
+                            else:
+                                rim = variant.tire_measure_id.rim_id
+                                try:
+                                    rim_number = float(rim.number or 0.0) if rim else 0.0
+                                except (TypeError, ValueError):
+                                    rim_number = 0.0
+                                rule = line.rim_discount_ids.filtered(
+                                    lambda r: r.rim_from <= rim_number <= r.rim_to
+                                )[:1]
+                                discount = rule.discount if rule else 0.0
+                            data['product_discounts'][str(product_id)] = discount
+                        # No existe un porcentaje general en amount_rim;
+                        # este máximo solo sirve como valor resumen visual.
+                        candidates = [
+                            float(row.get('discount') or 0.0)
+                            for row in data['rim_discounts']
+                        ]
+                        candidates.append(float(data.get('key_size_discount') or 0.0))
+                        data['discount'] = max(candidates or [0.0])
+                        tiers.append(data)
                 elif policy == 'monthly_volume':
                     tiers = [
                         dict(
@@ -306,9 +355,27 @@ class SaleOrder(models.Model):
                         {'tmpl_id': c.product_id.id, 'amount': c.amount}
                         for c in promo.coupon_ids if c.product_id
                     ]
+                elif reward_type == 'gift_card':
+                    # Promo ZT: el tramo de monto solo habilita el beneficio;
+                    # el descuento unitario del cotizador sale del Excel
+                    # código→valor. ``amount`` se captura CON IVA, mientras
+                    # catálogo y simulador trabajan SIN IVA, por eso se baja
+                    # aquí. Al volver a mostrar con IVA, 84.07 seguirá siendo
+                    # exactamente 84.07 y no 97.52.
+                    engine = self.env['ztyres_promo.reward_engine']
+                    coupons = [
+                        {
+                            'tmpl_id': card.product_id.id,
+                            'amount': engine.untaxed(card.amount),
+                            'amount_with_tax': card.amount,
+                        }
+                        for card in promo.gift_card_ids
+                        if card.product_id and card.amount > 0
+                    ]
                 policy_labels = {
                     'quantity': 'Cantidad',
                     'amount': 'Monto',
+                    'amount_rim': 'Monto por Rin / Key Sizes',
                     'monthly_volume': 'Volumen mensual',
                     'rim_quantity': 'Cantidad acumulada por rin',
                     'coupons': 'Cupones',
@@ -316,6 +383,14 @@ class SaleOrder(models.Model):
                 out.append({
                     'id': promo.id,
                     'name': promo.nombre or promo.display_name,
+                    # Rótulo corto para pantalla y Excel. El `name`
+                    # administrativo se conserva porque sigue siendo el
+                    # que identifica la promo en tooltips y soporte.
+                    'display_label': (
+                        promo.cotizador_name
+                        or promo.nombre
+                        or promo.display_name
+                    ),
                     'promo_type': policy,
                     'promo_conditions': scope,
                     'policy_label': policy_labels.get(policy, policy or 'Sin política'),
@@ -332,6 +407,18 @@ class SaleOrder(models.Model):
                         v.id for v in matched_variants.values()
                         if v.product_tmpl_id in promo.key_size_product_ids
                     ],
+                    'uses_pms_base': promo._uses_pms_base(),
+                    'pms_price_by_product': {
+                        str(record.product_id.product_variant_id.id): (
+                            record.price or 0.0
+                        )
+                        for record in promo.pms_price_ids
+                        if record.product_id.product_variant_id and record.price > 0
+                    } if promo._uses_pms_base() else {},
+                    'pms_tax_factor': (
+                        promo._pms_tax_factor() if promo._uses_pms_base()
+                        else 1.0
+                    ),
                     'product_ids': matched,
                     'product_count': len(matched),
                 })
@@ -392,13 +479,26 @@ class SaleOrder(models.Model):
         return self.PROMO_XLSX_COLORS[n]  # Mismo que IVA_RATE del frontend (constants.js)
 
     @api.model
+    def _cotizador_policy_value(self, key, raw_value):
+        """Devuelve únicamente porcentajes autorizados por categoría."""
+        allowed = {
+            'volumen': {0.0, 1.0, 2.0, 3.0},
+            'logistico': {0.0, 2.0, 4.0},
+            'financiero': {0.0, 2.0, 3.0},
+        }
+        try:
+            value = float(raw_value or 0)
+        except (TypeError, ValueError):
+            return 0.0
+        return value if value in allowed.get(key, {0.0}) else 0.0
+
+    @api.model
     def _cotizador_policy_total_pct(self, profile):
         # ADITIVO, no cascada — coincide con policyFactor del frontend.
         p = profile or {}
-        return (
-            float(p.get('volumen') or 0)
-            + float(p.get('logistico') or 0)
-            + float(p.get('financiero') or 0)
+        return sum(
+            self._cotizador_policy_value(key, p.get(key))
+            for key in ('volumen', 'logistico', 'financiero')
         )
 
     @api.model
@@ -430,11 +530,30 @@ class SaleOrder(models.Model):
         if pid not in promo.get('product_ids', []):
             return 0.0
         lista = product_row.get('price') or 0.0
+        pms_price = promo.get('pms_price_by_product', {}).get(str(pid))
+
+        def percent_discount(percent):
+            if pms_price is None:
+                return lista * (percent / 100.0)
+            engine = self.env['ztyres_promo.reward_engine']
+            unit_reward = engine.percent_amount(pms_price, percent)
+            return engine.round_money(
+                unit_reward / (promo.get('pms_tax_factor') or 1.0)
+            )
         if promo['promo_type'] == 'coupons':
             tmpl_id = product_row.get('tmpl_id')
             for c in promo.get('coupons', []):
                 if c['tmpl_id'] == tmpl_id and c['amount'] > 0:
                     return c['amount']
+            return 0.0
+        # Tarjeta de regalo: NO es descuento sobre la llanta. El cliente
+        # recibe una tarjeta por ese valor (docs/TARJETA_REGALO.md); con
+        # gift_card_delivery='none', que es el default, ni siquiera se
+        # emite NC. Va en su propia columna del Excel, vía
+        # _cotizador_gift_card_amount. Misma regla en el frontend
+        # (promoUnitDiscount, components.js) — si cambia una, cambia la
+        # otra o el XLSX deja de cuadrar con la pantalla.
+        if promo.get('reward_type') == 'gift_card':
             return 0.0
         # Un monto fijo pertenece al pedido/NC completo. Repartirlo aquí
         # por pieza inventaría un descuento unitario sin conocer cantidades
@@ -443,7 +562,7 @@ class SaleOrder(models.Model):
             return 0.0
         if tier and tier.get('product_discounts'):
             discount = tier['product_discounts'].get(str(pid), 0.0)
-            return lista * (discount / 100.0)
+            return percent_discount(discount)
         # Key Size: en este nivel cobra su propia columna. Debe ir ANTES
         # del porcentaje general, y la misma regla vive en el frontend
         # (promoPercentForProduct, components.js).
@@ -452,45 +571,155 @@ class SaleOrder(models.Model):
             and tier.get('key_size_discount', 0) > 0
             and pid in promo.get('key_size_product_ids', [])
         ):
-            return lista * (tier['key_size_discount'] / 100.0)
+            return percent_discount(tier['key_size_discount'])
         if tier and tier.get('discount', 0) > 0:
-            return lista * (tier['discount'] / 100.0)
+            return percent_discount(tier['discount'])
+        return 0.0
+
+    @api.model
+    def _cotizador_base_price(self, product_row):
+        """Precio BASE de una llanta: lista menos Mayoreo. Es el precio
+        que realmente se cotiza (no lista "pelona", que el cliente
+        Bridgestone/Firestone nunca paga).
+
+        OJO: política comercial y promociones NO se calculan sobre este
+        número — se calculan sobre `lista`, cada una por su lado, y se
+        restan junto con Mayoreo al final (ver `_cotizador_build_xlsx`).
+        Calcularlas sobre `base` encadenaría Mayoreo con las demás
+        (cascada) en vez de sumarlas (directo), cobrando de más. Mismo
+        criterio que ``basePriceOf`` en components.js.
+        """
+        lista = float(product_row.get('price') or 0.0)
+        mayoreo = lista * (float(product_row.get('mayoreo_discount') or 0.0) / 100.0)
+        return max(lista - mayoreo, 0.0)
+
+    @api.model
+    def _cotizador_gift_card_amount(self, product_row, promo):
+        """Monto de tarjeta de regalo por pieza para este producto.
+
+        Beneficio aparte: el cliente recibe una tarjeta por ese valor y
+        el precio de la llanta no cambia. Por eso NO entra a
+        ``_cotizador_promo_discount`` y sí tiene columna propia.
+        """
+        if promo.get('reward_type') != 'gift_card':
+            return 0.0
+        if product_row.get('product_id') not in promo.get('product_ids', []):
+            return 0.0
+        tmpl_id = product_row.get('tmpl_id')
+        for card in promo.get('coupons', []):
+            if card['tmpl_id'] == tmpl_id and card['amount'] > 0:
+                return float(card['amount'])
         return 0.0
 
     @api.model
     def _cotizador_promo_detail(self, promo, tier):
-        """Descripción potencial consistente para pantalla y XLSX."""
+        """Descripción del tramo con la misma redacción del cotizador.
+
+        Mantener este método sincronizado con ``PromoStrip.tierLabel`` en
+        ``components.js``. El vendedor debe leer la misma frase en pantalla
+        y en cualquiera de los dos Excel.
+        """
+        def whole(value):
+            return int(round(float(value or 0)))
+
+        def number(value):
+            return f'{whole(value):,}'
+
+        def percent(value):
+            value = float(value or 0)
+            return f'{value:g}%'
+
         if promo['promo_type'] == 'coupons':
             limit = promo.get('coupon_limit_qty') or 0
-            suffix = f' (tope {limit} pza por producto/cliente)' if limit else ''
-            return 'monto por pieza según cada producto' + suffix
+            suffix = f' (tope {whole(limit)} pzas).' if whole(limit) > 1 else '.'
+            return 'Obtén un cupón por cada producto participante' + suffix
+        if promo.get('reward_type') == 'gift_card':
+            if not tier:
+                return 'Selecciona una condición para simular el cupón.'
         if not tier:
-            return 'sin escenario seleccionable'
+            return 'Selecciona una condición para simular la promoción.'
+
+        minimum = whole(tier.get('min'))
+        maximum = whole(tier.get('max') or 999999999)
+        unlimited = maximum >= 999999999
         if promo.get('reward_type') == 'fixed_amount':
-            benefit = f"NC fija potencial de ${tier.get('fixed_amount', 0):,.2f}"
-        elif promo['promo_type'] == 'rim_quantity':
-            breakdown = ' / '.join(
-                f"{row['rims']}: {row['discount']:g}%"
-                for row in tier.get('rim_discounts', [])
-            )
-            benefit = breakdown or 'porcentaje según rin'
+            reward = f"${number(tier.get('fixed_amount'))} en nota de crédito"
+        elif promo.get('reward_type') == 'gift_card':
+            reward = 'un cupón'
         else:
-            benefit = f"{tier.get('discount', 0):g}% potencial"
-            if tier.get('key_size_discount', 0) > 0:
-                benefit += f" ({tier['key_size_discount']:g}% en Key Sizes)"
-        unit = '$' if promo['promo_type'] == 'amount' else 'pza'
-        limits = f"{tier.get('min', 0):,} a {tier.get('max', 999999999):,} {unit}"
-        extras = []
-        if tier.get('min_qty'):
-            extras.append(f"mínimo {tier['min_qty']} pza")
-        if promo['promo_type'] == 'monthly_volume':
-            extras.append(
-                f"{tier.get('minimum_products', 0)} medidas con mínimo "
-                f"{tier.get('minimum_qty_per_measure', 0)} pza c/u"
-            )
-        return f"{limits} → {benefit}" + (
-            ' · ' + ' · '.join(extras) if extras else ''
+            reward = percent(tier.get('discount'))
+
+        qty_range = (
+            f'{number(minimum)} pzas o más' if unlimited
+            else f'de {number(minimum)} a {number(maximum)} pzas'
         )
+        amount_range = (
+            f'${number(minimum)} o más' if unlimited
+            else f'de ${number(minimum)} a ${number(maximum)}'
+        )
+
+        if promo['promo_type'] == 'amount':
+            min_qty = whole(tier.get('min_qty'))
+            qty_rule = f' (mínimo {number(min_qty)} pzas)' if min_qty > 1 else ''
+            return f'Obtén {reward} en compras {amount_range}{qty_rule}.'
+
+        if promo['promo_type'] == 'amount_rim':
+            rows = []
+            for row in tier.get('rim_discounts', []):
+                rim_from = whole(row.get('rim_from'))
+                rim_to = whole(row.get('rim_to'))
+                if rim_from <= 0:
+                    continue
+                rim_label = (
+                    f'R{number(rim_from)}+' if rim_to >= 99
+                    else (f'R{number(rim_from)}' if rim_from == rim_to
+                          else f'R{number(rim_from)} a R{number(rim_to)}')
+                )
+                rows.append(f"{percent(row.get('discount'))} en {rim_label}")
+            key_pct = float(tier.get('key_size_discount') or 0.0)
+            if key_pct > 0:
+                rows.append(f'{percent(key_pct)} en Key Sizes')
+            breakdown = ' · '.join(rows)
+            return (
+                f'Compras {amount_range}: {breakdown}. Cálculo sobre PMS por código.' if breakdown
+                else f'Compras {amount_range}: porcentaje según el rin, calculado sobre PMS por código.'
+            )
+
+        if promo['promo_type'] == 'monthly_volume':
+            measures = whole(tier.get('minimum_products'))
+            per_measure = whole(tier.get('minimum_qty_per_measure'))
+            return (
+                f'Obtén {reward} comprando {qty_range} '
+                f'({number(measures)} medidas × {number(per_measure)} pzas c/u).'
+            )
+
+        if promo['promo_type'] == 'rim_quantity':
+            import re
+            rows = []
+            for row in tier.get('rim_discounts', []):
+                rims = [whole(value) for value in re.findall(r'\d+(?:\.\d+)?', str(row.get('rims') or ''))]
+                if rims:
+                    rows.append((min(rims), max(rims), float(row.get('discount') or 0)))
+            rows.sort(key=lambda item: item[0])
+            parts = []
+            for index, (rim_min, rim_max, discount) in enumerate(rows):
+                if index == len(rows) - 1 and rim_min >= 16:
+                    rim_label = f'R{number(rim_min)}+'
+                elif rim_min == rim_max:
+                    rim_label = f'R{number(rim_min)}'
+                else:
+                    rim_label = f'R{number(rim_min)} a R{number(rim_max)}'
+                parts.append(f'{percent(discount)} en {rim_label}')
+            breakdown = ' y '.join(parts)
+            return (
+                f'Obtén {breakdown} comprando {qty_range}.' if breakdown
+                else f'Obtén un porcentaje según el rin comprando {qty_range}.'
+            )
+
+        min_qty = whole(tier.get('min_qty'))
+        qty_rule = f' (mínimo {number(min_qty)} pzas)' if min_qty > minimum else ''
+        purchase = f'de {qty_range}' if unlimited else qty_range
+        return f'Obtén {reward} en la compra {purchase}{qty_rule}.'
 
     @api.model
     def download_pricelist_xlsx(self, state):
@@ -581,6 +810,16 @@ class SaleOrder(models.Model):
             ws.title = 'Precios Con IVA' if show_iva else 'Precios Sin IVA'
         else:
             ws.title = 'Pedido Con IVA' if show_iva else 'Pedido Sin IVA'
+        ws.sheet_view.showGridLines = False
+        ws.sheet_properties.pageSetUpPr.fitToPage = True
+        ws.page_setup.orientation = 'landscape'
+        ws.page_setup.paperSize = ws.PAPERSIZE_LETTER
+        ws.page_setup.fitToWidth = 1
+        ws.page_setup.fitToHeight = 0
+        ws.page_margins.left = 0.25
+        ws.page_margins.right = 0.25
+        ws.page_margins.top = 0.45
+        ws.page_margins.bottom = 0.45
 
         # --- Columnas de la tabla --------------------------------------
         # Cambio de nombres para evitar la ambigüedad de "total con
@@ -589,19 +828,26 @@ class SaleOrder(models.Model):
             'Código', 'Tier', 'Medida', 'Marca', 'Modelo',
             'Cap/Cara', 'Vel/Ind', 'Seg', 'Tipo', 'DOT', 'Eq. Original',
         ]
+        # "Precio" (antes "Precio de lista") porque en Bridgestone/
+        # Firestone de la lista Mayoreo ya trae aplicado el −10%: es el
+        # precio desde el que se calcula todo, no el publicado.
+        # "Tarjeta de regalo" va en columna propia y NUNCA dentro del
+        # precio — el cliente recibe la tarjeta, la llanta no baja.
         if mode == 'list':
             headers += [
                 'Inv.',
-                'Precio de lista',
+                'Precio',
                 'Pr Promo',
+                'Tarjeta de regalo',
             ]
         else:
             headers += [
                 'Cant.',
-                'Precio de lista',
+                'Precio',
                 'Pr Promo',
                 '% Desc.',
                 'Subtotal',
+                'Tarjeta de regalo',
                 'NC estimada',
             ]
         n_cols = len(headers)
@@ -655,8 +901,8 @@ class SaleOrder(models.Model):
                                 value='Folio VTA-FO-03 · Versión 01 · Fecha ' +
                                       date.today().strftime('%d/%m/%Y'))
         subtitle_cell.font = subtitle_font
-        subtitle_cell.alignment = Alignment(vertical='center', horizontal='left',
-                                            indent=1, readingOrder=1)
+        subtitle_cell.alignment = Alignment(vertical='center', horizontal='right',
+                                            readingOrder=1)
 
         # --- Bloque de contexto (rows 4-6): cliente, RFC, IVA, política -
         r = 4
@@ -674,12 +920,22 @@ class SaleOrder(models.Model):
              self._cotizador_policy_summary(profile, policy_pct)),
         ]
         for lbl1, val1, lbl2, val2 in meta_rows:
+            # Altura explícita del archivo de referencia aprobado.
+            ws.row_dimensions[r].height = 15
             ws.cell(row=r, column=1, value=lbl1).font = label_font
             c = ws.cell(row=r, column=2, value=val1); c.font = value_font
             ws.merge_cells(start_row=r, start_column=2, end_row=r, end_column=6)
-            ws.cell(row=r, column=7, value=lbl2).font = label_font
-            c = ws.cell(row=r, column=8, value=val2); c.font = strong_font
-            ws.merge_cells(start_row=r, start_column=8, end_row=r, end_column=n_cols)
+            c = ws.cell(row=r, column=7, value=lbl2); c.font = label_font
+            c.alignment = Alignment(horizontal='right', vertical='center',
+                                    wrap_text=False, shrink_to_fit=False)
+            ws.merge_cells(start_row=r, start_column=7, end_row=r, end_column=8)
+            # Estructura del archivo de referencia aprobado por usuario:
+            # etiqueta combinada G:H y valor combinado desde I hasta la
+            # última columna, ambos alineados a la derecha.
+            c = ws.cell(row=r, column=9, value=val2); c.font = strong_font
+            c.alignment = Alignment(horizontal='right', vertical='center',
+                                    wrap_text=True, shrink_to_fit=False)
+            ws.merge_cells(start_row=r, start_column=9, end_row=r, end_column=n_cols)
             r += 1
 
         # --- Promociones (una por fila, con su color) ----
@@ -701,12 +957,14 @@ class SaleOrder(models.Model):
             for pr, tier in display_promos:
                 detail = self._cotizador_promo_detail(pr, tier)
                 color = self._cotizador_promo_color(pr['id'])
-                cell = ws.cell(row=r, column=1,
-                               value=f"• {pr['name']} — {detail}")
+                cell = ws.cell(
+                    row=r, column=1,
+                    value=f"• {pr.get('display_label') or pr['name']} — {detail}")
                 cell.font = Font(name='Arial', size=10, bold=True, color=color['text'])
                 cell.fill = PatternFill('solid', fgColor=color['fill'])
-                cell.alignment = Alignment(indent=1)
+                cell.alignment = Alignment(indent=1, wrap_text=True, vertical='center')
                 ws.merge_cells(start_row=r, start_column=1, end_row=r, end_column=n_cols)
+                ws.row_dimensions[r].height = 30 if len(detail) > 85 else 22
                 r += 1
         else:
             msg = ('Ninguna promoción aplica a este pedido' if mode == 'order'
@@ -720,17 +978,20 @@ class SaleOrder(models.Model):
         # --- Leyenda que EVITA ambigüedad --------------------------------
         r += 1
         legend_msg = (
-            'Los precios de la columna "Pr Promo" son los que quedarían '
-            'SI se cumplen las condiciones de las promociones '
-            'seleccionadas (tramo elegido) y se aplican los descuentos '
-            'de la política comercial.'
+            'La columna "Precio" ya incluye la política Mayoreo (−10%) en '
+            'las llantas que aplican; sobre ese precio se calculan la '
+            'política comercial y las promociones. La columna "Pr Promo" '
+            'es el precio que quedaría SI se cumplen las condiciones de '
+            'las promociones seleccionadas (tramo elegido). La "Tarjeta '
+            'de regalo" es un valor que el cliente recibe aparte: NO '
+            'descuenta el precio de las llantas ni el total del pedido.'
         )
         cell = ws.cell(row=r, column=1, value=legend_msg)
         cell.font = legend_font
         cell.fill = legend_fill
         cell.alignment = Alignment(wrap_text=True, vertical='center', indent=1)
         ws.merge_cells(start_row=r, start_column=1, end_row=r, end_column=n_cols)
-        ws.row_dimensions[r].height = 32
+        ws.row_dimensions[r].height = 48
         r += 2
 
         # --- Header de la tabla ----------------------------------------
@@ -759,23 +1020,33 @@ class SaleOrder(models.Model):
                 nc_per_product = {int(k): v for k, v in (nc_preview.get('per_product') or {}).items()}
 
         r = header_row + 1
-        order_totals_lists = {'lista': [], 'promo': [], 'sub': [], 'nc': []}
+        order_totals_lists = {'lista': [], 'promo': [], 'sub': [], 'nc': [], 'gift': [], 'policy': []}
         for i, p in enumerate(rows_data):
             # Descuento de promo: suma sobre lista de TODAS las promos
             # activas que aportan (misma lógica del simulador del UI).
             promo_disc = 0.0
+            gift_card = 0.0
             promos_hit_colors = []
             for pr, tier in active_promos:
                 d = self._cotizador_promo_discount(p, pr, tier)
+                gift_card += self._cotizador_gift_card_amount(p, pr)
                 if d > 0:
                     promo_disc += d
                     promos_hit_colors.append(self._cotizador_promo_color(pr['id']))
+            # Mayoreo, política y promos se calculan cada uno SOBRE
+            # LISTA (independientes entre sí) y se restan juntos una
+            # sola vez. Antes la política se calculaba sobre `base`
+            # (lista ya con Mayoreo aplicado), lo que encadenaba los
+            # dos descuentos (cascada: lista×0.9×0.98) en vez de
+            # sumarlos (directo: lista×(1-0.10-0.02)) — con Mayoreo
+            # +2% de política el cliente pagaba más de lo que debía.
             lista = float(p.get('price') or 0.0)
+            base = self._cotizador_base_price(p)
             policy_disc = lista * (policy_pct / 100.0)
-            final = max(lista - policy_disc - promo_disc, 0.0)
-            ahorro = max(lista - final, 0.0)
+            final = max(base - policy_disc - promo_disc, 0.0)
+            ahorro = max(base - final, 0.0)
 
-            base = [
+            cells = [
                 p.get('code') or '',
                 p.get('tier') or '',
                 p.get('medida') or '',
@@ -789,26 +1060,30 @@ class SaleOrder(models.Model):
                 p.get('original_equipment') or '',
             ]
             if mode == 'list':
-                row_values = base + [
+                row_values = cells + [
                     p.get('free_qty') if p.get('free_qty') is not None else '',
-                    lista * iva_factor,
+                    base * iva_factor,
                     final * iva_factor if ahorro > 0 else '',
+                    gift_card * iva_factor if gift_card > 0 else '',
                 ]
             else:
                 qty = cart.get(p['product_id']) or 0
                 subtotal = final * qty
                 nc = nc_per_product.get(p['product_id'], 0.0)
-                ahorro_unit = lista - final
-                pct_desc = (ahorro_unit / lista * 100) if lista > 0 else 0
-                row_values = base + [
-                    qty, lista * iva_factor,
+                ahorro_unit = base - final
+                pct_desc = (ahorro_unit / base * 100) if base > 0 else 0
+                row_values = cells + [
+                    qty, base * iva_factor,
                     final * iva_factor if ahorro_unit > 0.005 else '',
                     round(pct_desc, 1) if ahorro_unit > 0.005 else '',
                     subtotal * iva_factor,
+                    gift_card * qty * iva_factor if gift_card > 0 else '',
                     nc * iva_factor if nc > 0 else '',
                 ]
-                order_totals_lists['lista'].append(lista * qty)
+                order_totals_lists['lista'].append(base * qty)
                 order_totals_lists['sub'].append(subtotal)
+                order_totals_lists['gift'].append(gift_card * qty)
+                order_totals_lists['policy'].append(policy_disc * qty)
 
             # Reparto de tinte por celda si hay ≥1 promo aplicable en
             # esta fila — mismo criterio que el UI (bloques iguales de
@@ -826,10 +1101,16 @@ class SaleOrder(models.Model):
                 cell.border = border
                 if isinstance(v, (int, float)) and not isinstance(v, bool):
                     cell.alignment = Alignment(horizontal='right', vertical='center')
-                    if isinstance(v, float):
+                    column_name = headers[c - 1]
+                    if column_name in {'Precio', 'Pr Promo', 'Subtotal',
+                                       'NC estimada', 'Tarjeta de regalo'}:
                         cell.number_format = currency_fmt
-                    if isinstance(v, int):
-                        cell.number_format = '0'
+                    elif column_name == '% Desc.':
+                        cell.number_format = '0.0"%"'
+                    elif column_name == 'Cant.':
+                        cell.number_format = '#,##0.##'
+                    else:
+                        cell.number_format = '#,##0'
                 else:
                     cell.alignment = Alignment(horizontal='left', vertical='center')
                 if cell_fills:
@@ -870,14 +1151,19 @@ class SaleOrder(models.Model):
                     v_cell.border = thick_top
                 ws.row_dimensions[row].height = 28 if strong else 22
 
-            total_row(r, 'Total de lista (sin promociones)', lista_total * iva_factor, top_border=True)
+            total_row(r, 'Total a precio base (sin promociones)',
+                      lista_total * iva_factor, top_border=True)
             r += 1
             if desc_total > 0.005:
                 pct_total = (desc_total / lista_total * 100) if lista_total > 0 else 0
                 # Primero se muestra el desglose; "Ahorro potencial" va al
                 # final porque es la suma de política + promociones.
                 if policy_pct > 0:
-                    policy_saving = lista_total * (policy_pct / 100)
+                    # Suma real de lo aplicado renglón por renglón
+                    # (sobre lista, no sobre lista_total que ya trae
+                    # Mayoreo restado) — evita el mismo doble descuento
+                    # que se corrigió arriba.
+                    policy_saving = sum(order_totals_lists['policy'])
                     detail_start = max(n_cols - 4, 1)
                     detail_cell = ws.cell(
                         row=r, column=detail_start,
@@ -901,7 +1187,7 @@ class SaleOrder(models.Model):
                         detail_start = max(n_cols - 4, 1)
                         detail_cell = ws.cell(
                             row=r, column=detail_start,
-                            value=f'   {pr["name"]}')
+                            value=f'   {pr.get("display_label") or pr["name"]}')
                         detail_cell.font = Font(name='Arial', size=9, bold=True,
                                                 color=color['text'])
                         detail_cell.alignment = Alignment(horizontal='left', indent=1,
@@ -919,6 +1205,23 @@ class SaleOrder(models.Model):
             total_row(r, 'TOTAL SI SE CUMPLEN LAS CONDICIONES',
                       sub_total * iva_factor, strong=True, fill=True)
             r += 2
+
+            # Tarjeta de regalo: valor que el cliente RECIBE, no un
+            # descuento. Va después del total y con su propio recuadro
+            # para que nadie lo reste del precio de las llantas.
+            gift_total = sum(order_totals_lists['gift'])
+            if gift_total > 0.005:
+                gift_head = ws.cell(
+                    row=r, column=1,
+                    value=('Tarjeta de regalo — el cliente la recibe aparte; '
+                           'NO descuenta el precio de las llantas'))
+                gift_head.font = strong_font
+                gift_head.fill = PatternFill('solid', fgColor='FCE4C8')
+                ws.merge_cells(start_row=r, start_column=1, end_row=r, end_column=n_cols)
+                r += 1
+                total_row(r, 'Valor total de tarjeta de regalo',
+                          gift_total * iva_factor, strong=True)
+                r += 2
 
             if nc_preview and nc_preview.get('total', 0) > 0:
                 # Bloque de NC — aparte del total del pedido, con su
@@ -989,7 +1292,9 @@ class SaleOrder(models.Model):
                     cell = ws.cell(row=r, column=1, value=f"  • {pr['name']} — {detail}")
                     cell.font = Font(name='Arial', size=9, bold=True, color=color['text'])
                     cell.fill = PatternFill('solid', fgColor=color['fill'])
+                    cell.alignment = Alignment(wrap_text=True, vertical='center', indent=1)
                     ws.merge_cells(start_row=r, start_column=1, end_row=r, end_column=n_cols)
+                    ws.row_dimensions[r].height = 30 if len(detail) > 85 else 22
                     r += 1
             else:
                 cell = ws.cell(row=r, column=1, value='Sin promociones aplicables — los precios son de lista.')
@@ -1012,16 +1317,22 @@ class SaleOrder(models.Model):
         # --- Anchos de columna -----------------------------------------
         # Anchos de columna del archivo de referencia (VTA-FO-03)
         widths = {
-            'Código': 12, 'Tier': 6, 'Medida': 12, 'Marca': 17.85, 'Modelo': 22,
-            'Cap/Cara': 10, 'Vel/Ind': 9, 'Seg': 6, 'Tipo': 8, 'DOT': 8,
-            'Eq. Original': 18, 'Inv.': 8, 'Cant.': 8,
-            'Precio de lista': 15, 'Pr Promo': 14,
-            '% Desc.': 8, 'Subtotal': 14, 'NC estimada': 14,
+            'Código': 13, 'Tier': 7, 'Medida': 14, 'Marca': 16, 'Modelo': 22,
+            'Cap/Cara': 11, 'Vel/Ind': 10, 'Seg': 8, 'Tipo': 10, 'DOT': 8,
+            'Eq. Original': 18, 'Inv.': 9, 'Cant.': 9,
+            'Precio': 16, 'Pr Promo': 15,
+            '% Desc.': 10, 'Subtotal': 16,
+            'Tarjeta de regalo': 17, 'NC estimada': 15,
         }
         for c, name in enumerate(headers, start=1):
             ws.column_dimensions[get_column_letter(c)].width = widths.get(name, 12)
 
         ws.freeze_panes = ws.cell(row=header_row + 1, column=1)
+        if rows_data:
+            ws.auto_filter.ref = f'A{header_row}:{last_col_letter}{header_row + len(rows_data)}'
+        ws.print_title_rows = f'{header_row}:{header_row}'
+        ws.print_area = f'A1:{last_col_letter}{r}'
+        ws.sheet_view.zoomScale = 85
 
         buf = BytesIO()
         wb.save(buf)
@@ -1071,7 +1382,7 @@ class SaleOrder(models.Model):
         con el total al final. Si no hay ninguno, dice "sin descuentos"."""
         parts = []
         for k, lbl in [('volumen', 'Volumen'), ('logistico', 'Logístico'), ('financiero', 'Financiero')]:
-            pct = float(profile.get(k) or 0)
+            pct = self._cotizador_policy_value(k, profile.get(k))
             if pct > 0:
                 parts.append(f'{lbl} −{pct:g}%')
         if not parts:
@@ -1133,20 +1444,44 @@ class SaleOrder(models.Model):
             for r in results:
                 promo = r['promo']
                 promo_name = promo.nombre or promo.display_name
+                is_gift_card = promo._effective_reward_type() == 'gift_card'
+                # La tarjeta/cupón no genera NC, pero sí reduce el precio
+                # efectivo mostrado por producto. El motor la devuelve CON
+                # IVA en gift_card_by_line; este adaptador trabaja SIN IVA.
+                effective_amount = (
+                    self.env['ztyres_promo.reward_engine'].untaxed(
+                        r.get('gift_card_amount', 0.0)
+                    )
+                    if is_gift_card
+                    else r['ganado']
+                )
                 items.append({
                     'id': promo.id,
                     'name': promo_name,
                     'discount_percent': r['discount_percent'],
-                    'amount': r['ganado'],
+                    'amount': effective_amount,
                     # El texto lo redacta quien configuró la promoción
                     # (promo_ganada_message con {promocion}/{monto}/
                     # {porcentaje}) — mismo mensaje que verá después
                     # en la cotización/factura de Odoo.
                     'message': mixin._render_promo_message(
-                        promo, r['ganado'], r['discount_percent']
+                        promo,
+                        r['ganado'],
+                        r['discount_percent'],
+                        gift_card_amount=r.get('gift_card_amount', 0.0),
                     ),
                 })
-                for line_id, ganado in (r.get('line_ganado_map') or {}).items():
+                amount_by_line = r.get('line_ganado_map') or {}
+                if is_gift_card:
+                    amount_by_line = {
+                        line_id: self.env[
+                            'ztyres_promo.reward_engine'
+                        ].untaxed(amount)
+                        for line_id, amount in (
+                            r.get('gift_card_by_line') or {}
+                        ).items()
+                    }
+                for line_id, ganado in amount_by_line.items():
                     pid = id_to_product.get(line_id)
                     if pid and ganado > 0:
                         per_product[pid] = per_product.get(pid, 0.0) + ganado

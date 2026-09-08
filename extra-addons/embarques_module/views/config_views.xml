@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ── Etapas ──────────────────────────────────────────────────────────── -->
+    <record id="view_stage_tree" model="ir.ui.view">
+        <field name="name">embarques.stage.tree</field>
+        <field name="model">embarques.stage</field>
+        <field name="arch" type="xml">
+            <tree string="Etapas" editable="bottom">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="fold"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="action_stage" model="ir.actions.act_window">
+        <field name="name">Etapas</field>
+        <field name="res_model">embarques.stage</field>
+        <field name="view_mode">tree</field>
+    </record>
+
+    <!-- ── Etiquetas ───────────────────────────────────────────────────────── -->
+    <record id="view_tag_tree" model="ir.ui.view">
+        <field name="name">embarques.tag.tree</field>
+        <field name="model">embarques.tag</field>
+        <field name="arch" type="xml">
+            <tree string="Etiquetas" editable="bottom">
+                <field name="name"/>
+                <field name="color" widget="color_picker"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="action_tag" model="ir.actions.act_window">
+        <field name="name">Etiquetas</field>
+        <field name="res_model">embarques.tag</field>
+        <field name="view_mode">tree</field>
+    </record>
+
+    <!-- ── Rutas ───────────────────────────────────────────────────────────── -->
+    <record id="view_ruta_tree" model="ir.ui.view">
+        <field name="name">rutas_embarques.tree</field>
+        <field name="model">rutas_embarques</field>
+        <field name="arch" type="xml">
+            <tree string="Rutas" editable="bottom">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="active" optional="hide"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="action_ruta" model="ir.actions.act_window">
+        <field name="name">Rutas</field>
+        <field name="res_model">rutas_embarques</field>
+        <field name="view_mode">tree</field>
+    </record>
+
+    <!-- ── Zonas ───────────────────────────────────────────────────────────── -->
+    <record id="view_zona_tree" model="ir.ui.view">
+        <field name="name">embarques.zona.tree</field>
+        <field name="model">embarques.zona</field>
+        <field name="arch" type="xml">
+            <tree string="Zonas" editable="bottom">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="note"/>
+                <field name="active" optional="hide"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="action_zona" model="ir.actions.act_window">
+        <field name="name">Zonas</field>
+        <field name="res_model">embarques.zona</field>
+        <field name="view_mode">tree</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Define tus zonas logísticas</p>
+            <p>Cada destino pertenece a una zona; la zona y el rango numérico
+               alcanzado determinan el descuento.</p>
+            <p>El cobro de paquetería se configura directamente en cada
+               destino.</p>
+        </field>
+    </record>
+
+    <!-- ── Rangos numéricos de llantas ───────────────────────────────────── -->
+    <record id="view_unidad_tree" model="ir.ui.view">
+        <field name="name">embarques.unidad.tree</field>
+        <field name="model">embarques.unidad</field>
+        <field name="arch" type="xml">
+            <tree string="Rangos de Llantas" editable="bottom">
+                <field name="sequence" widget="handle"/>
+                <field name="capacidad_llantas"/>
+                <field name="active" optional="hide"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="action_unidad" model="ir.actions.act_window">
+        <field name="name">Rangos de Llantas</field>
+        <field name="res_model">embarques.unidad</field>
+        <field name="view_mode">tree</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Captura los rangos comerciales</p>
+            <p>La capacidad puede llenarla un cliente solo o la suma de dos
+               clientes del mismo embarque. El mínimo y la participación se
+               validan con la configuración capturada en ese embarque.</p>
+        </field>
+    </record>
+
+    <!-- Desactiva las vistas anteriores que dependían de Carta Porte. -->
+    <record id="vehicle_form_view_logistica_embarques" model="ir.ui.view">
+        <field name="name">Carta Porte · Configuración antigua de Embarques</field>
+        <field name="model">l10n_mx_edi.vehicle</field>
+        <field name="inherit_id" ref="l10n_mx_edi_stock.vehicle_form_view"/>
+        <field name="active" eval="False"/>
+        <field name="arch" type="xml">
+            <xpath expr="//sheet" position="inside">
+                <field name="embarques_display_name" invisible="1"/>
+                <field name="embarques_capacidad_m3" invisible="1"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_carta_porte_vehicle_embarques_tree" model="ir.ui.view">
+        <field name="name">l10n.mx.edi.vehicle.embarques.tree.inactive</field>
+        <field name="model">l10n_mx_edi.vehicle</field>
+        <field name="active" eval="False"/>
+        <field name="arch" type="xml">
+            <tree string="Vehículos de Carta Porte" create="false">
+                <field name="name"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Catálogo sencillo: sirve para unidades propias y externas. -->
+    <record id="view_vehicle_embarques_tree" model="ir.ui.view">
+        <field name="name">embarques.vehicle.tree</field>
+        <field name="model">embarques.vehicle</field>
+        <field name="arch" type="xml">
+            <tree string="Vehículos" editable="top">
+                <field name="name" placeholder="Ej. Unidad León 01 o Externo 01"/>
+                <field name="capacity_m3"/>
+                <field name="active" optional="hide"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="view_vehicle_embarques_form" model="ir.ui.view">
+        <field name="name">embarques.vehicle.form</field>
+        <field name="model">embarques.vehicle</field>
+        <field name="arch" type="xml">
+            <form string="Vehículo">
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="capacity_m3"/>
+                        <field name="active"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_carta_porte_vehicle_embarques" model="ir.actions.act_window">
+        <field name="name">Vehículos</field>
+        <field name="res_model">embarques.vehicle</field>
+        <field name="view_mode">tree,form</field>
+        <field name="view_id" ref="view_vehicle_embarques_tree"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Agrega un vehículo</p>
+            <p>Captura únicamente el nombre y su cubicaje. Puede ser una unidad
+               propia o externa y no necesita estar registrada en Carta Porte.</p>
+        </field>
+    </record>
+
+</odoo>

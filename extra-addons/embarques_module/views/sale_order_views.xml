@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_order_form_embarque" model="ir.ui.view">
+        <field name="name">sale.order.form.embarque</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='payment_term_id']" position="after">
+                <field name="destino_id" readonly="1" options="{'no_open': True}"/>
+                <field name="piezas_qty" readonly="1"/>
+                <field name="embarque_ids" widget="many2many_tags" readonly="1"
+                       attrs="{'invisible': [('embarque_ids','=',[])]}"/>
+                <field name="embarque_discount_percentage"
+                       attrs="{'invisible': [('embarque_discount_percentage','=',0)]}"/>
+            </xpath>
+
+            <xpath expr="//button[@name='action_quotation_send']" position="before">
+                <button name="action_recalcular_paqueteria" type="object"
+                        string="Recalcular paquetería" class="btn-secondary"
+                        attrs="{'invisible': [('state','not in',('draft','sent'))]}"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

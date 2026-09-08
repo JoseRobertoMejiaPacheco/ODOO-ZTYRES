@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 from odoo import models, fields, api,_
-from datetime import datetime
 from odoo.exceptions import UserError
 from datetime import datetime, timedelta
 from odoo.tools import (
@@ -20,6 +19,7 @@ class SaleOrder(models.Model):
     is_expo = fields.Boolean(string='Es exportación?', default=False)
     unlock_financial = fields.Boolean(string='Excepcion de pedido', default=False,tracking=True)
     pricelist_locked = fields.Boolean(string="Lista de precios bloqueada", default=False)
+    confirmation_date = fields.Datetime(string='Fecha de Confirmación', store=True, copy=False)
     
     @api.onchange('pricelist_id')
     def _check_pricelist_locked(self):
@@ -68,9 +68,20 @@ class SaleOrder(models.Model):
             return orders.mapped('name')
         else:
             return 0.0             
+    # def copy(self, default=None):
+    #     # Agregar codigo de validacion aca
+    #     raise UserError(_('No es posible duplicar un pedido de Venta'))
+    
     def copy(self, default=None):
-        # Agregar codigo de validacion aca
-        raise UserError(_('No es posible duplicar un pedido de Venta'))    
+        self.ensure_one()
+
+        new_order = super().copy(default)
+        for line in new_order.order_line:
+            if not line.product_id:
+                continue
+            line._compute_price_unit()
+
+        return new_order
     
     def _lock_credit_warning_message(self,updated_credit):
         updated_credit = self._get_amount_confirmed_invoices()+updated_credit
@@ -102,18 +113,62 @@ class SaleOrder(models.Model):
     
     def cancel_old_quotation_picking(self):
         now = fields.Datetime.now()
-        seven_days_ago = now - timedelta(days=10)
-
-        orders = self.search([
+        five_days_ago = now - timedelta(days=5)
+        
+        quotation_orders = self.search([
             ('keep', '!=', True),
-            ('create_date', '<=', seven_days_ago),
-        ])
-
+            ('state', 'in', ['draft']),
+            ('create_date', '<=', five_days_ago),
+        ])    
         cancelled = []
         unreserved = []
 
-        for order in orders:
+        for order in quotation_orders:
+            print (order.name)
+            pickings = order.picking_ids.filtered(
+                lambda p: (
+                    p.state not in ('done', 'cancel')
+                    and not (p.x_studio_related_field_Ksn7B or '').strip()
+                )
+            )
+            details = []
+            for p in pickings:
+                for m in p.move_ids:
+                    details.append({
+                        'product': m.product_id.display_name,
+                        'qty': m.product_uom_qty,
+                        'location': m.location_id.display_name,
+                    })
 
+            if pickings:
+                pickings.action_cancel()
+            
+            order.write({
+                'sale_reason_cancel_id': [(4, 3)],
+            })
+            
+            order._action_cancel()
+
+            cancelled.append({
+                'order': order.name,
+                'partner': order.partner_id.display_name,
+                'details': details,
+            })
+            
+        # 📧 Enviar correo si hubo cambios
+        if cancelled or unreserved:
+            self._send_cancel_unreserve_email(cancelled, unreserved)
+            
+        sale_orders = self.search([
+            ('keep', '!=', True),
+            ('state', '=', 'sale'),
+            ('confirmation_date', '!=', False),
+            ('confirmation_date', '<=', five_days_ago),
+        ])
+            
+        cancelled = []
+        unreserved = []
+        for order in sale_orders:
             product_lines = order.order_line.filtered(
                 lambda l: l.product_id.type == 'product'
             )
@@ -221,7 +276,7 @@ class SaleOrder(models.Model):
         mail_values = {
             'subject': 'Odoo — Cancelación y liberación de reservas (Cotizaciones vencidas)',
             'body_html': body,
-            'email_to': 'isscjrmpacheco@gmail.com, rene.banuelos@ztyres.com'#, @tuempresa.com',
+            'email_to': 'roberto.mejia@ztyres.com, rene.banuelos@ztyres.com, ricardodecoss@ztyres.com'#, @tuempresa.com',
         }
 
         self.env['mail.mail'].create(mail_values).send()
@@ -278,6 +333,10 @@ class SaleOrder(models.Model):
         self.x_studio_val_ventas = True
         self.x_studio_solicitud_de_embarques = 'Si'
         self.quotation_action_confirm()
+        
+        confirmation = datetime.now()
+        self.write({'confirmation_date': confirmation})
+        
         return super(SaleOrder, self).action_confirm()
 
     def action_draft(self):

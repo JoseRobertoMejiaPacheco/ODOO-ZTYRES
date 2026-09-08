@@ -17,6 +17,8 @@
                     <field name="dias_reservada" string="Días" widget="integer"/>
                     <field name="codigo" string="Código"/>
                     <field name="producto" string="Producto"/>
+                    <field name="marca" string="Marca"/>
+                    <field name="precio" string="Precio" widget="monetary"/>
                     <field name="picking" string="Transferencia"/>
                     <field name="pedido_venta" string="Pedido"/>
                     <field name="cliente" string="Cliente"/>
@@ -42,6 +44,8 @@
                     <!-- Búsquedas por texto -->
                     <field name="codigo" string="Código"/>
                     <field name="producto" string="Producto"/>
+                    <field name="marca" string="Marca"/>
+                    <field name="precio" string="Precio" widget="monetary"/>
                     <field name="pedido_venta" string="Pedido de Venta"/>
                     <field name="picking" string="Transferencia"/>
                     <field name="cliente" string="Cliente"/>

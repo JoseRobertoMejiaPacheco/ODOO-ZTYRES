@@ -13,7 +13,7 @@ class CouponExcelWizard(models.TransientModel):
     file = fields.Binary(
         string='Archivo Excel',
         required=True,
-        help='Dos columnas: "codigo" y "monto".',
+        help='Dos columnas: "codigo" y "monto" (el monto se captura CON IVA).',
     )
     notas_credito_id = fields.Many2one(
         'ztyres_promo.notas_credito',
@@ -175,9 +175,14 @@ class CouponExcelWizard(models.TransientModel):
                 'Columna "codigo" (obligatoria): referencia interna del '
                 'producto en Odoo. Debe coincidir exactamente.',
                 '',
-                'Columna "monto" (obligatoria): pesos de nota de crédito '
-                'por CADA pieza vendida de ese producto. No es un '
-                'porcentaje y no es el monto total del cupón.',
+                'Columna "monto" (obligatoria): pesos CON IVA por CADA pieza '
+                'vendida de ese producto. No es un porcentaje y no es el '
+                'monto total del cupón.',
+                '',
+                'El monto se captura CON IVA, como se le promete al '
+                'cliente. Al generar la nota de crédito el sistema le baja '
+                'el IVA, porque el timbrado vuelve a sumarlo: capturar 150 '
+                'genera una NC de 129.31 y el cliente recibe 150.',
                 '',
                 'Capture el monto como número, sin el signo $ ni comas. Se '
                 'aceptan decimales con punto (350.50).',
@@ -187,6 +192,9 @@ class CouponExcelWizard(models.TransientModel):
                 '',
                 'Los montos negativos detienen la carga. Un monto de 0 se '
                 'acepta: el producto participa pero no genera NC.',
+                '',
+                'Los encabezados alternos que se aceptan ("Importe", '
+                '"Monto NC") significan lo mismo: monto CON IVA.',
                 '',
                 'Tope de piezas: la promoción bonifica como máximo el '
                 'número de piezas configurado en "Tope de piezas por '

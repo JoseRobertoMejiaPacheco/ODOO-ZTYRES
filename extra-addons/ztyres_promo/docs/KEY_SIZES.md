@@ -60,7 +60,7 @@ Producto             pza       Subtotal        %   Key            NC
 ----------------------------------------------------------------------
 TOTAL                335     684,450.00                    30,347.10
 
-% efectivo del resumen  4.433794 %
+% efectivo del resumen  4.4338 %
 ```
 
 Sin la línea del Key Size el acumulado habría sido 595,550 y el cliente
@@ -70,18 +70,93 @@ se habría quedado en el nivel de 3.60%.
 
 Igual que en la política por rin, la columna **% efectivo** del resumen
 no es un porcentaje capturado en ningún lado: es NC ÷ subtotal, la
-mezcla de porcentajes de ese cliente. Un `4.43 %` es normal.
+mezcla de porcentajes de ese cliente. Un `4.4338 %` es normal.
 
 El importe que manda es `Total NC`, no ese porcentaje. El campo
-`reward_percent` se guarda con dos decimales y **solo se muestra**: si
-el total se reconstruyera multiplicando subtotal × ese porcentaje, se
-perderían pesos en cada cliente. Por eso `_recompute_nc_amounts()` no
-toca las promociones con Key Sizes, igual que ya no toca las de rin.
+`reward_percent` **solo se muestra**: si el total se reconstruyera
+multiplicando subtotal × ese porcentaje, se perderían pesos en cada
+cliente. Por eso `_recompute_nc_amounts()` no toca las promociones con
+Key Sizes, igual que ya no toca las de rin.
 
-La columna **Detalle del beneficio** desglosa de dónde salió:
+Se guarda con **cuatro** decimales. Antes eran dos, y un efectivo real
+de `4.433794 %` se leía como `4.43 %`: quien intentaba cuadrar la nota
+de crédito multiplicando por esa columna se quedaba corto en pesos y no
+encontraba por qué.
+
+## Cómo se redondea
+
+**Con base facturada, el redondeo es por grupo.** El convenio define un
+importe por grupo —"NC 13-16" y "NC Key Sizes"— y los suma; no redondea
+los grupos, redondea el total. Redondear renglón por renglón y sumar da
+un resultado distinto por centavos.
+
+El total redondeado se reparte después entre los renglones (el último de
+cada grupo absorbe el residuo) para que el detalle sume exactamente lo
+que se paga. Eso puede hacer que un grupo muestre un centavo más que ese
+mismo grupo calculado aislado: es el precio de que la columna cuadre.
+
+**Con base PMS el redondeo es por pieza**, porque ahí el convenio fija
+el descuento por llanta. Ver `PRECIOS_PMS.md`.
+
+
+Cada renglón se redondea a centavos **antes** de sumarse, y el
+`Total NC` es la suma exacta de esos renglones. Es lo que hace que el
+detalle que se le enseña al cliente sume el total que se le paga.
+
+Las piezas de los textos auditables se **redondean**, no se truncan: las
+cantidades vienen de sumas de floats (y las notas de crédito restan), así
+que un `274.99999` es lo normal. Antes se imprimía `274 pza` en el
+detalle de un cliente que había comprado 275.
+
+Todo esto vive en `IVA_Y_DECIMALES.md`.
+
+## Se puede cobrar sobre precios PMS
+
+Los Key Sizes deciden **qué porcentaje** cobra cada producto. Aparte de
+eso, la promoción puede decidir **sobre qué** se aplica ese porcentaje:
+el subtotal facturado (lo de siempre) o una tabla de precios de
+referencia por código.
+
+Las dos cosas se combinan sin conflicto: los Key Sizes cobran su columna
+y todos cobran sobre el precio PMS. Ver `PRECIOS_PMS.md`.
+
+## Para cuadrar la NC, use el detalle (no el porcentaje)
+
+El `% efectivo` se guarda con **8 decimales** justamente para que
+multiplicarlo por el subtotal devuelva el `Total NC` al centavo, en
+Excel o en la calculadora. Con la mezcla del ejemplo el efectivo real es
+`4.4337935569 %`:
+
+| Decimales guardados | Excel devuelve | Contra los $30,347.10 reales |
+|---|---:|---:|
+| 2 (`4.43`) | 30,321.13 | −25.97 |
+| 4 (`4.4338`) | 30,347.14 | +0.04 |
+| 8 (`4.43379356`) | 30,347.10 | cuadra |
+
+Si el reporte muestra el porcentaje redondeado, la comprobación vuelve
+a fallar: hay que multiplicar por el valor completo.
+
+Para ver de dónde salió cada peso —y no solo comprobar el total— está
+el **Detalle del beneficio**, que trae cada grupo
+por separado —piezas, porcentaje, **la base** sobre la que se aplicó y
+el importe que salió— y al final la suma:
 
 ```
-Acumulado $684,450.00 | Base: 275 pza x 4.20% + Key Sizes: 60 pza x 6.00%
+Acumulado $684,450.00
+  | Base:      275 pza x 4.20% sobre $595,550.00 = $25,013.10
+  + Key Sizes:  60 pza x 6.00% sobre  $88,900.00 =  $5,334.00
+  | Total $30,347.10
+```
+
+(en la columna va en un solo renglón; aquí se parte para leerlo)
+
+Cada línea se comprueba con una calculadora y las líneas suman el
+total. Con base PMS el texto además lo dice, porque si no dos
+promociones con el mismo porcentaje y distinto importe se verían
+idénticas:
+
+```
+... | Total $30,347.08 (bases tomadas del precio PMS, capturado sin IVA)
 ```
 
 ## Carga por Excel
@@ -109,6 +184,9 @@ esa columna, el asistente lo avisa al terminar.
   formulario lo avisa.
 - Solo aplican con Tipo de Beneficio **Porcentaje**. Un monto fijo por
   nivel no se puede diferenciar por producto.
+- La base de cálculo (subtotal facturado o precio PMS) es de la
+  promoción completa, no por producto: no se puede pagar unos códigos
+  sobre PMS y otros sobre lo facturado.
 - El aviso de "Key Size fuera del alcance" solo se puede comprobar con
   certeza cuando el alcance es *Productos / Códigos Específicos*. En los
   alcances por características habría que resolver el dominio contra

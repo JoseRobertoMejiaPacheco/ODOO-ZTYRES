@@ -37,7 +37,7 @@ class SaleOrder(models.Model):
             'res_model': 'sale.order.line.add.product.wizard',
             'view_mode': 'form',
             'target': 'new',
-            'context': {'active_id': self.id,'is_expo':self.is_expo},  # Pasa el ID de la línea activa al wizard
+            'context': {'default_order_id': self.id,'is_expo':self.is_expo},  # Pasa el ID de la línea activa al wizard
         }
 
     # def write(self, vals):

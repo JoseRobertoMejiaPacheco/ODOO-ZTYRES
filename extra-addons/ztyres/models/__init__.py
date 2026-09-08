@@ -11,3 +11,4 @@ from . import stock_valuation_layer_resume_line
 from . import stock_valuation_layer_resume_history
 from . import account_payment
 # from . import sale_make_invoice_advance
+from . import stock_move_line

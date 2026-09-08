@@ -1,0 +1,84 @@
+<?xml version='1.0' encoding='utf-8'?>
+<odoo>
+    <data>
+        <record id="view_pms_price_excel_wizard_form" model="ir.ui.view">
+            <field name="name">ztyres.promo.pms.price.excel.wizard.form</field>
+            <field name="model">ztyres_promo.pms_price_excel_wizard</field>
+            <field name="arch" type="xml">
+                <form string="Cargar precios PMS">
+                    <field name="notas_credito_id" invisible="1"/>
+
+                    <div class="alert alert-info" role="alert">
+                        <p class="mb-1">
+                            <strong>Formato del archivo (.xlsx)</strong>
+                        </p>
+                        <table class="table table-sm table-bordered bg-white mb-2" style="width:auto;">
+                            <thead>
+                                <tr>
+                                    <th class="text-center">codigo</th>
+                                    <th class="text-center">pms</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>10871003</td><td class="text-end">2141.11</td></tr>
+                                <tr><td>10492003</td><td class="text-end">2212.10</td></tr>
+                            </tbody>
+                        </table>
+                        <p class="mb-1">
+                            <b>codigo</b>: referencia interna del producto en Odoo.
+                            <b>pms</b>: precio de referencia de <b>una pieza</b>.
+                        </p>
+                        <p class="mb-0">
+                            La nota de crédito sale de
+                            <b>precio PMS × piezas × porcentaje del nivel</b>.
+                            El precio al que se facturó <b>no interviene</b>: dos
+                            clientes que compraron el mismo código a distinto
+                            precio reciben la misma NC por pieza.
+                        </p>
+                    </div>
+
+                    <group>
+                        <field name="file" widget="binary" filename="file_name"
+                               string="Archivo Excel"/>
+                        <field name="file_name" invisible="1"/>
+                        <field name="price_taxed" widget="radio"/>
+                        <field name="mode" widget="radio"/>
+                        <field name="set_as_base"/>
+                        <field name="add_to_scope"/>
+                    </group>
+
+                    <div class="alert alert-warning" role="alert">
+                        Revise <b>“Los precios del archivo vienen”</b>. La nota de
+                        crédito se emite sobre el <b>subtotal</b>: si los precios
+                        traen IVA y se marca “sin IVA”, la NC sale
+                        <b>16% más alta</b> de lo pactado. Las listas PMS de las
+                        marcas normalmente vienen <b>sin IVA</b>.
+                    </div>
+
+                    <div class="alert alert-warning" role="alert"
+                         attrs="{'invisible': [('set_as_base','=',True)]}">
+                        Sin esta opción los precios quedan cargados pero
+                        <b>no se usan</b>: el beneficio se seguirá calculando sobre
+                        el subtotal facturado.
+                    </div>
+
+                    <footer>
+                        <button name="action_import" string="Importar" type="object"
+                                class="btn-primary"
+                                attrs="{'invisible': [('file','=',False)]}"/>
+                        <button name="action_download_template" string="Descargar plantilla"
+                                type="object" class="btn-secondary" icon="fa-download"/>
+                        <button string="Cancelar" class="btn-link" special="cancel"/>
+                    </footer>
+                </form>
+            </field>
+        </record>
+
+        <record id="action_pms_price_excel_wizard" model="ir.actions.act_window">
+            <field name="name">Cargar precios PMS desde Excel</field>
+            <field name="res_model">ztyres_promo.pms_price_excel_wizard</field>
+            <field name="view_mode">form</field>
+            <field name="target">new</field>
+        </record>
+    </data>
+</odoo>

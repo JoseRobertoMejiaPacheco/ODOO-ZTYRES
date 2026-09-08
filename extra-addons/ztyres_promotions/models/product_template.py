@@ -72,6 +72,24 @@ class ProductTemplate(models.Model):
             }
         return out
 
+    def _mayoreo_template_ids(self, template_ids):
+        """Templates con un renglón propio en la lista Mayoreo.
+
+        No toma reglas globales, de categoría ni de otra lista (Outlet,
+        etc.): la B y el 10% requieren pertenencia explícita a Mayoreo.
+        """
+        if not template_ids:
+            return set()
+        items = self.env['product.pricelist.item'].sudo().search([
+            ('pricelist_id.name', '=ilike', 'Mayoreo'),
+            '|',
+            ('product_tmpl_id', 'in', template_ids),
+            ('product_id.product_tmpl_id', 'in', template_ids),
+        ])
+        return set(items.mapped('product_tmpl_id').ids) | set(
+            items.mapped('product_id.product_tmpl_id').ids
+        )
+
     @api.model
     def get_tire_catalog(self):
         """Valores que el cotizador (HTML/OWL) necesita para armar sus
@@ -103,6 +121,7 @@ class ProductTemplate(models.Model):
         products = self.search([('tire', '=', True)])
         variants = products.mapped('product_variant_id').filtered(lambda v: v)
         stock_price = self._batch_price_and_stock(variants)
+        mayoreo_template_ids = self._mayoreo_template_ids(products.ids)
         out = []
         for p in products:
             variant = p.product_variant_id
@@ -138,6 +157,18 @@ class ProductTemplate(models.Model):
                 'medida': p.tire_measure_id.name or '',
                 'rim': p.tire_measure_id.rim_id.number if p.tire_measure_id else 0,
                 'price': catalog_price,
+                # Las DOS condiciones son obligatorias: marca permitida
+                # Y pertenencia explícita a la lista Mayoreo.
+                'is_mayoreo': (
+                    (p.brand_id.name or '').strip().upper()
+                    in {'BRIDGESTONE', 'FIRESTONE'}
+                    and p.id in mayoreo_template_ids
+                ),
+                'mayoreo_discount': 10.0 if (
+                    (p.brand_id.name or '').strip().upper()
+                    in {'BRIDGESTONE', 'FIRESTONE'}
+                    and p.id in mayoreo_template_ids
+                ) else 0.0,
                 'free_qty': free_qty,
                 'dot_range': dot_range,
                 # variant.weight puede venir vacío si nunca se

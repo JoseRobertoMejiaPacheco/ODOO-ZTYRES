@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+
+        <record id="product_paqueteria" model="product.product">
+            <field name="name">Paquetería</field>
+            <field name="type">service</field>
+            <field name="invoice_policy">order</field>
+            <field name="purchase_ok" eval="False"/>
+            <field name="sale_ok" eval="True"/>
+            <field name="list_price">0.0</field>
+            <field name="description_sale">Envío por paquetería</field>
+        </record>
+
+    </data>
+</odoo>

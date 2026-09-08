@@ -1,0 +1,66 @@
+<?xml version='1.0' encoding='utf-8'?>
+<odoo>
+    <data>
+        <record id="view_gift_card_excel_wizard_form" model="ir.ui.view">
+            <field name="name">ztyres.promo.gift.card.excel.wizard.form</field>
+            <field name="model">ztyres_promo.gift_card_excel_wizard</field>
+            <field name="arch" type="xml">
+                <form string="Cargar valores Promo ZT">
+                    <field name="notas_credito_id" invisible="1"/>
+
+                    <div class="alert alert-info" role="alert">
+                        <p class="mb-1">
+                            <strong>Formato del archivo (.xlsx)</strong>
+                        </p>
+                        <table class="table table-sm table-bordered bg-white mb-2" style="width:auto;">
+                            <thead>
+                                <tr>
+                                    <th class="text-center">codigo</th>
+                                    <th class="text-center">monto (con IVA)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td>17756300</td><td class="text-end">84.07</td></tr>
+                            </tbody>
+                        </table>
+                        <p class="mb-1">
+                            <b>codigo</b>: referencia interna del producto en Odoo.
+                            <b>monto</b>: valor de tarjeta <b>con IVA</b> por
+                            <b>cada pieza vendida</b> — la columna “Promo ZT”.
+                            Por ejemplo, el código <b>17756300</b> genera
+                            <b>$84.07</b> por cada pieza. No hay tope de piezas.
+                        </p>
+                        <p class="mb-0">
+                            Los códigos del Excel son los productos participantes.
+                            La tarjeta solo se habilita cuando acumulan
+                            <b>$50,000 con IVA</b>.
+                        </p>
+                    </div>
+
+                    <group>
+                        <field name="file" widget="binary" filename="file_name"
+                               string="Archivo Excel"/>
+                        <field name="file_name" invisible="1"/>
+                        <field name="mode" widget="radio"/>
+                    </group>
+
+                    <footer>
+                        <button name="action_import" string="Importar" type="object"
+                                class="btn-primary"
+                                attrs="{'invisible': [('file','=',False)]}"/>
+                        <button name="action_download_template" string="Descargar plantilla"
+                                type="object" class="btn-secondary" icon="fa-download"/>
+                        <button string="Cancelar" class="btn-link" special="cancel"/>
+                    </footer>
+                </form>
+            </field>
+        </record>
+
+        <record id="action_gift_card_excel_wizard" model="ir.actions.act_window">
+            <field name="name">Cargar valores Promo ZT desde Excel</field>
+            <field name="res_model">ztyres_promo.gift_card_excel_wizard</field>
+            <field name="view_mode">form</field>
+            <field name="target">new</field>
+        </record>
+    </data>
+</odoo>

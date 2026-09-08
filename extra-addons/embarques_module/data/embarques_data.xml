@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <record id="embarques_sequence" model="ir.sequence">
+            <field name="name">Embarques</field>
+            <field name="code">embarques.embarques</field>
+            <field name="prefix">EMB/%(year)s/</field>
+            <field name="padding">4</field>
+            <field name="company_id" eval="False"/>
+        </record>
+
+        <record id="stage_nuevo" model="embarques.stage"><field name="name">Nuevo</field><field name="sequence">1</field></record>
+        <record id="stage_proceso" model="embarques.stage"><field name="name">En Proceso</field><field name="sequence">2</field></record>
+        <record id="stage_transito" model="embarques.stage"><field name="name">En Tránsito</field><field name="sequence">3</field></record>
+        <record id="stage_entregado" model="embarques.stage"><field name="name">Entregado</field><field name="sequence">4</field><field name="fold">True</field></record>
+
+        <!-- Zonas reales del archivo LOGISTICO- AGOSTO 2026. -->
+        <record id="zona_1" model="embarques.zona"><field name="name">BAJÍO 1</field><field name="sequence">10</field></record>
+        <record id="zona_2" model="embarques.zona"><field name="name">BAJÍO 2</field><field name="sequence">20</field></record>
+        <record id="zona_3" model="embarques.zona"><field name="name">BAJÍO 3</field><field name="sequence">30</field></record>
+        <record id="zona_occidente" model="embarques.zona"><field name="name">OCCIDENTE</field><field name="sequence">40</field></record>
+        <record id="zona_michoacan" model="embarques.zona"><field name="name">MICHOACÁN</field><field name="sequence">50</field></record>
+        <record id="zona_sureste" model="embarques.zona"><field name="name">SURESTE</field><field name="sequence">60</field></record>
+        <record id="zona_noreste" model="embarques.zona"><field name="name">NORESTE</field><field name="sequence">70</field></record>
+        <record id="zona_norte" model="embarques.zona"><field name="name">NORTE</field><field name="sequence">80</field></record>
+        <record id="zona_las_bajas" model="embarques.zona"><field name="name">LAS BAJAS</field><field name="sequence">90</field></record>
+
+        <!-- Rangos numéricos reales; el nombre se calcula con la cantidad. -->
+        <record id="unidad_trailer" model="embarques.unidad"><field name="capacidad_llantas">1200</field><field name="sequence">10</field></record>
+        <record id="unidad_hino_grande" model="embarques.unidad"><field name="capacidad_llantas">650</field><field name="sequence">20</field></record>
+        <record id="unidad_hino_chico_250" model="embarques.unidad"><field name="capacidad_llantas">250</field><field name="sequence">30</field></record>
+        <record id="unidad_hino_chico_120" model="embarques.unidad"><field name="capacidad_llantas">120</field><field name="sequence">40</field></record>
+        <record id="unidad_30" model="embarques.unidad"><field name="capacidad_llantas">30</field><field name="sequence">50</field></record>
+    </data>
+</odoo>

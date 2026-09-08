@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Acción para abrir la configuración de bloqueo de marcas -->
+    <record id="action_ztyres_block_brands" model="ir.actions.act_window">
+        <field name="name">Bloqueo de Marcas</field>
+        <field name="res_model">ztyres_block_brands</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+    <!-- Bloqueo de Marcas al mismo nivel que Volumen y Promociones -->
+    <menuitem id="menu_ztyres_block_brands" parent="ztyres_volumen.principal_menu" name="Bloqueo de Marcas" sequence="200"/>
+
+    <!-- Configuración dentro de Bloqueo de Marcas -->
+    <menuitem id="menu_ztyres_block_brands_config" parent="menu_ztyres_block_brands" name="Configuración" action="action_ztyres_block_brands" sequence="10"/>
+
+</odoo>

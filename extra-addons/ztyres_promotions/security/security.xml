@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <data>
+    <!-- Los grupos son configuración de seguridad persistente. Una vez
+         creados, una actualización del módulo no debe reescribir su
+         categoría, jerarquía ni asignaciones administradas en Odoo. -->
+    <data noupdate="1">
         <record id="module_category_ztyres_promotions" model="ir.module.category">
             <field name="name">Promociones Ztyres</field>
             <field name="sequence">20</field>

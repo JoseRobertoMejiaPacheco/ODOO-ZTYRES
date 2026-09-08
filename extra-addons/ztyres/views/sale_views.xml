@@ -18,7 +18,7 @@
 
                 <!-- Campos antes de delivery_status -->
                 <field name="delivery_status" position="before">
-                    <field name="keep" />
+                    <field name="keep" groups="ztyres.group_sale_order_keep"/>
                     <field name="is_expo" />
                 </field>
 

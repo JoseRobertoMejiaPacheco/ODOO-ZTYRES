@@ -1,0 +1,33 @@
+.z_helpdesk_priority_ten {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+
+    .z_helpdesk_stars {
+        display: inline-flex;
+        gap: 2px;
+        white-space: nowrap;
+    }
+
+    .fa-star,
+    .fa-star-o {
+        color: #f0ad4e;
+        cursor: pointer;
+        font-size: 18px;
+    }
+
+    &.o_readonly_modifier .fa-star,
+    &.o_readonly_modifier .fa-star-o {
+        cursor: default;
+    }
+
+    .z_helpdesk_priority_label {
+        font-weight: 600;
+    }
+}
+
+.o_kanban_view .z_helpdesk_kanban_priority {
+    color: #495057;
+    font-size: 0.9rem;
+}

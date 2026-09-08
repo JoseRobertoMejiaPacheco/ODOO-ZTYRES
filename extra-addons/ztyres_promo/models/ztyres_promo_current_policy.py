@@ -90,6 +90,17 @@ class CurrentPolicyQuantity(models.Model):
         ),
     )
     fixed_amount = fields.Float(string='Monto fijo en NC', digits=(16, 2))
+    gift_card_amount = fields.Float(
+        string='Promo ZT ($ con IVA)',
+        digits=(16, 2),
+        help=(
+            'Valor de la tarjeta de regalo que se entrega al alcanzar este '
+            'nivel. Solo se usa cuando el valor de la tarjeta es fijo por '
+            'nivel; si el valor sale de la plantilla por código, esta '
+            'columna se ignora y el nivel solo decide si el cliente '
+            'califica.'
+        ),
+    )
     notas_credito_id = fields.Many2one(
         'ztyres_promo.notas_credito',
         ondelete='cascade',
@@ -103,6 +114,35 @@ class CurrentPolicyAmount(models.Model):
     _name = 'ztyres_promo.current_policy_amount'
     _inherit = 'ztyres_promo.policy_tier_mixin'
     _description = 'Regla de descuento por monto'
+
+    # Los límites heredados del mixin ('Desde' / 'Hasta') se capturan
+    # CON IVA en esta tabla: es como el negocio expresa la meta
+    # ("llegar a 35,000 facturados"). El motor los baja a subtotal al
+    # comparar (ver reward_engine._tier_bounds), porque la NC se calcula
+    # sobre el subtotal. Con IVA al 16%, un tope de 35,000 se alcanza
+    # con 30,172.41 de subtotal.
+    lower_limit = fields.Integer(
+        string='Desde (con IVA)',
+        help=(
+            'Monto facturado mínimo, IVA incluido, para alcanzar este '
+            'nivel. La nota de crédito se calcula sobre el subtotal, no '
+            'sobre este monto.\n\n'
+            'Capture aquí la meta tal como está escrita en el convenio, '
+            'que normalmente ya viene facturada: "compra mínima de 50 mil '
+            'al mes" se captura como 50000. Ojo con la palabra "netos" de '
+            'los convenios: casi siempre significa neto de descuentos y '
+            'devoluciones, NO sin IVA. Solo si la meta fuera realmente '
+            'sin IVA habría que capturar el monto multiplicado por 1.16.'
+        ),
+    )
+    upper_limit = fields.Integer(
+        string='Hasta (con IVA)',
+        default=UNLIMITED,
+        help=(
+            'Monto facturado máximo de este nivel, IVA incluido. Use %s '
+            'cuando el nivel no tenga tope.' % UNLIMITED
+        ),
+    )
 
     min_qty = fields.Integer(
         string='Cantidad mínima de llantas',
@@ -121,7 +161,37 @@ class CurrentPolicyAmount(models.Model):
             'mismo porcentaje que los demás.'
         ),
     )
-    fixed_amount = fields.Float(string='Monto fijo en NC', digits=(16, 2))
+    # Campos legacy conservados para que una actualización no pierda datos.
+    # La política amount_rim nueva usa rim_discount_ids; estos ya no se
+    # muestran ni intervienen cuando hay rangos configurados.
+    r14_r16_discount = fields.Float(string='% R14-R16 (legacy)', digits=(16, 2))
+    r17_plus_discount = fields.Float(string='% R17+ (legacy)', digits=(16, 2))
+    rim_discount_ids = fields.One2many(
+        'ztyres_promo.amount_rim_discount', 'tier_id',
+        string='Porcentajes por rango de RIN', copy=True,
+    )
+    fixed_amount = fields.Float(
+        string='Monto fijo en NC ($ con IVA)',
+        digits=(16, 2),
+        help=(
+            'Se captura con IVA. Al generar la nota de crédito se le baja '
+            'el IVA, porque el timbrado vuelve a sumarlo: capturar 1,160 '
+            'entrega 1,160 al cliente, no 1,345.60.'
+        ),
+    )
+    gift_card_amount = fields.Float(
+        string='Promo ZT ($ con IVA)',
+        digits=(16, 2),
+        help=(
+            'Valor fijo de la tarjeta de regalo que se entrega al alcanzar '
+            'este nivel, sin importar cuántas piezas se compraron. Se '
+            'entrega tal cual se captura.\n\n'
+            'Solo se usa cuando el origen del valor es "Valor fijo del '
+            'nivel alcanzado". Si el valor sale de la plantilla por '
+            'código, esta columna se ignora: el nivel únicamente decide '
+            'si el cliente califica.'
+        ),
+    )
     notas_credito_id = fields.Many2one(
         'ztyres_promo.notas_credito',
         ondelete='cascade',
@@ -220,7 +290,14 @@ class CurrentPolicyCoupon(models.Model):
     _description = 'Cupón por producto'
 
     product_id = fields.Many2one('product.template', string='Producto')
-    amount = fields.Float(string='Monto')
+    amount = fields.Float(
+        string='Monto ($ con IVA)',
+        help=(
+            'Se captura con IVA, como se le promete al cliente. Al generar '
+            'la nota de crédito se le baja el IVA, porque el timbrado '
+            'vuelve a sumarlo.'
+        ),
+    )
     notas_credito_id = fields.Many2one(
         'ztyres_promo.notas_credito',
         ondelete='cascade',
@@ -232,6 +309,141 @@ class CurrentPolicyCoupon(models.Model):
             if coupon.amount < 0:
                 raise ValidationError(
                     _('El monto del cupón no puede ser negativo.')
+                )
+
+
+class GiftCardProductAmount(models.Model):
+    """Valor de tarjeta de regalo por código de producto ("Promo ZT").
+
+    Es la tabla que se carga con la plantilla de Excel. Se parece a
+    `ztyres_promo.coupon` —código y monto por pieza— pero no es lo
+    mismo y por eso vive aparte:
+
+    - El cupón ES la promoción: define el alcance y paga siempre que se
+      venda el producto. Aquí el alcance lo define la promoción como
+      cualquier otra (marcas, características, lista de códigos) y esta
+      tabla solo dice cuánto vale cada código.
+    - El cupón siempre genera nota de crédito. Esto normalmente no:
+      se entrega como tarjeta.
+    - El cupón tiene tope de piezas por producto. Aquí no hay tope: si
+      compró 10 llantas de un código de $5, son $50.
+
+    Mezclarlas en un solo modelo obligaba a que un mismo registro
+    significara dos cosas según un flag, que es justo como se llega a
+    pagar dos veces el mismo beneficio.
+    """
+
+    _name = 'ztyres_promo.gift_card'
+    _description = 'Valor de tarjeta de regalo por producto (Promo ZT)'
+    _order = 'product_id, id'
+
+    product_id = fields.Many2one(
+        'product.template',
+        string='Producto',
+        required=True,
+        ondelete='cascade',
+    )
+    amount = fields.Float(
+        string='Monto por pieza ($ con IVA)',
+        digits=(16, 2),
+        help=(
+            'Valor de tarjeta por CADA pieza vendida de este código, tal '
+            'como aparece en la columna Promo ZT. Si dice 5 y el cliente '
+            'compra 10 llantas, la tarjeta es de 50.'
+        ),
+    )
+    notas_credito_id = fields.Many2one(
+        'ztyres_promo.notas_credito',
+        string='Promoción',
+        required=True,
+        ondelete='cascade',
+        index=True,
+    )
+
+    _sql_constraints = [
+        (
+            'product_promo_uniq',
+            'unique(product_id, notas_credito_id)',
+            'Un código solo puede tener un valor de Promo ZT por '
+            'promoción. Corrija el archivo: hay un código repetido.',
+        ),
+    ]
+
+    @api.constrains('amount')
+    def _check_amount(self):
+        for card in self:
+            if card.amount < 0:
+                raise ValidationError(
+                    _('El monto de la tarjeta de regalo no puede ser negativo.')
+                )
+
+
+class PromotionPmsPrice(models.Model):
+    """Precio PMS por código: la base sobre la que se paga el porcentaje.
+
+    Es la tercera tabla "código + número" del módulo, y otra vez no es
+    ninguna de las otras dos. La diferencia está en qué papel juega el
+    número:
+
+    - `ztyres_promo.coupon`    -> el número ES la NC por pieza.
+    - `ztyres_promo.gift_card` -> el número ES el valor de tarjeta por pieza.
+    - aquí                     -> el número es un PRECIO. No se entrega
+      nada por él: se multiplica por las piezas para formar la base y
+      sobre esa base se aplica el porcentaje del nivel.
+
+    Por eso el importe de un cupón se captura siempre con IVA y este no
+    necesariamente: un cupón es dinero prometido, un PMS es un precio de
+    lista, y las listas de las marcas circulan de las dos formas. Cómo
+    viene capturado se dice UNA vez por promoción, en
+    `pms_price_taxed`, y no código por código: un archivo mezclado no
+    existe en la práctica y ofrecer la opción por renglón solo invita a
+    equivocarse.
+    """
+
+    _name = 'ztyres_promo.pms_price'
+    _description = 'Precio PMS por producto (base de cálculo de la promoción)'
+    _order = 'product_id, id'
+
+    product_id = fields.Many2one(
+        'product.template',
+        string='Producto',
+        required=True,
+        ondelete='cascade',
+    )
+    price = fields.Float(
+        string='Precio PMS',
+        digits='Product Price',
+        help=(
+            'Precio de referencia por UNA pieza de este código. La nota '
+            'de crédito se calcula como precio x piezas x porcentaje del '
+            'nivel, sin mirar a qué precio se facturó realmente.\n\n'
+            'Si viene con IVA o sin IVA se indica en la promoción, en '
+            '"El precio PMS se captura".'
+        ),
+    )
+    notas_credito_id = fields.Many2one(
+        'ztyres_promo.notas_credito',
+        string='Promoción',
+        required=True,
+        ondelete='cascade',
+        index=True,
+    )
+
+    _sql_constraints = [
+        (
+            'product_promo_uniq',
+            'unique(product_id, notas_credito_id)',
+            'Un código solo puede tener un precio PMS por promoción. '
+            'Corrija el archivo: hay un código repetido.',
+        ),
+    ]
+
+    @api.constrains('price')
+    def _check_price(self):
+        for record in self:
+            if record.price < 0:
+                raise ValidationError(
+                    _('El precio PMS no puede ser negativo.')
                 )
 
 
@@ -292,3 +504,50 @@ class PromotionMonthlyVolumeLine(models.Model):
                 raise ValidationError(_(
                     'El descuento debe ser mayor que cero y no superar 100%.'
                 ))
+
+
+class AmountRimDiscount(models.Model):
+    _name = 'ztyres_promo.amount_rim_discount'
+    _description = 'Porcentaje por rango de RIN y tramo de monto'
+    _order = 'rim_from, rim_to, id'
+
+    tier_id = fields.Many2one(
+        'ztyres_promo.current_policy_amount', required=True, ondelete='cascade',
+        index=True, string='Tramo de monto',
+    )
+    rim_from = fields.Integer(string='RIN desde', required=True)
+    rim_to = fields.Integer(
+        string='RIN hasta', required=True, default=99,
+        help='Use 99 para representar R17+, R20+, etc.',
+    )
+    discount = fields.Float(string='Descuento (%)', required=True, digits=(16, 2))
+    key_size_discount = fields.Float(
+        string='Key Size (%)', related='tier_id.key_size_discount',
+        readonly=False, digits=(16, 2),
+        help='Porcentaje Key Size del tramo. Es el mismo valor del nivel de monto.',
+    )
+
+    def name_get(self):
+        result = []
+        for rec in self:
+            end = '+' if rec.rim_to >= 99 else str(rec.rim_to)
+            result.append((rec.id, 'R%s-%s: %s%%' % (rec.rim_from, end, rec.discount)))
+        return result
+
+    @api.constrains('rim_from', 'rim_to', 'discount')
+    def _check_values(self):
+        for rec in self:
+            if rec.rim_from <= 0 or rec.rim_to < rec.rim_from:
+                raise ValidationError(_('El rango de RIN no es válido.'))
+            if rec.discount < 0 or rec.discount > 100:
+                raise ValidationError(_('El descuento debe estar entre 0 y 100.'))
+
+    @api.constrains('rim_from', 'rim_to', 'tier_id')
+    def _check_overlap(self):
+        for rec in self:
+            overlap = self.search_count([
+                ('id', '!=', rec.id), ('tier_id', '=', rec.tier_id.id),
+                ('rim_from', '<=', rec.rim_to), ('rim_to', '>=', rec.rim_from),
+            ])
+            if overlap:
+                raise ValidationError(_('Los rangos de RIN del mismo tramo no pueden traslaparse.'))

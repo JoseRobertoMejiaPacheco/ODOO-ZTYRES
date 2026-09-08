@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_company_form_paqueteria" model="ir.ui.view">
+        <field name="name">res.company.form.paqueteria</field>
+        <field name="model">res.company</field>
+        <field name="inherit_id" ref="base.view_company_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='general_info']" position="inside">
+                <group string="Embarques">
+                    <field name="paqueteria_product_id"
+                           options="{'no_quick_create': True}"/>
+                    <field name="embarque_logistic_nc_product_id"
+                           options="{'no_quick_create': True}"/>
+                    <div class="text-muted" colspan="2">
+                        Configura el producto de paquetería y el producto de servicio
+                        usado para la NC logística. La NC toma los mismos impuestos
+                        de las líneas facturadas.
+                    </div>
+                </group>
+            </xpath>
+        </field>
+    </record>
+</odoo>

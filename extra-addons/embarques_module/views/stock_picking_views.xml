@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_picking_form_embarque" model="ir.ui.view">
+        <field name="name">stock.picking.form.embarque</field>
+        <field name="model">stock.picking</field>
+        <field name="inherit_id" ref="stock.view_picking_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//form/sheet" position="inside">
+                <group string="Embarque">
+                    <group>
+                        <field name="embarque_ids" widget="many2many_tags"/>
+                        <field name="load_order"/>
+                        <field name="ciudad_envio_id"/>
+                        <field name="estado_envio_id"/>
+                    </group>
+                    <group>
+                        <field name="destino_id" options="{'no_open': True}"/>
+                        <field name="zona_id"/>
+                        <field name="llantas_qty"/>
+                        <field name="embarque_discount_percentage"/>
+                        <field name="requested_discount_percentage"/>
+                        <field name="discount_state" widget="badge"/>
+                        <field name="discount_request_note"/>
+                        <field name="discount_requested_by"/>
+                        <field name="discount_approved_by"/>
+                        <field name="discount_approval_date"/>
+                        <button name="action_approve_discount" type="object"
+                                string="Autorizar" class="btn-primary"
+                                groups="embarques_module.group_embarques_finance"
+                                attrs="{'invisible': [('discount_state','!=','to_approve')]}"/>
+                        <button name="action_reject_discount" type="object"
+                                string="Rechazar" class="btn-secondary"
+                                groups="embarques_module.group_embarques_finance"
+                                attrs="{'invisible': [('discount_state','!=','to_approve')]}"/>
+                    </group>
+                </group>
+                <div class="text-muted">
+                    El descuento se calcula para este traslado. Si se captura un
+                    <b>Descuento Solicitado</b>, sólo Finanzas puede autorizarlo o
+                    rechazarlo en este mismo picking.
+                </div>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_picking_tree_embarque" model="ir.ui.view">
+        <field name="name">stock.picking.tree.embarque</field>
+        <field name="model">stock.picking</field>
+        <field name="arch" type="xml">
+            <tree string="Traslados del Embarque" default_order="load_order,id"
+                  create="false" delete="false">
+                <field name="load_order" string="Orden"/>
+                <field name="partner_id"/>
+                <field name="ciudad_envio_id" string="Ciudad"/>
+                <field name="zona_id" string="Zona"/>
+                <field name="origin" string="Pedido"/>
+                <field name="name" string="Traslado"/>
+                <field name="llantas_qty" string="Llantas"/>
+                <field name="embarque_discount_percentage" string="% Desc."/>
+                <field name="requested_discount_percentage" string="% Solicitado"/>
+                <field name="discount_state" widget="badge"/>
+                <field name="state" widget="badge"/>
+            </tree>
+        </field>
+    </record>
+
+</odoo>

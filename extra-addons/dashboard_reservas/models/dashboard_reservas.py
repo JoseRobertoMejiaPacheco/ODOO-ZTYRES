@@ -12,6 +12,8 @@ class DashboardReservas(models.Model):
     # Campos del resultado
     codigo = fields.Char(string='Código', readonly=True)
     producto = fields.Char(string='Producto', readonly=True)
+    marca = fields.Char(string='Marca', readonly=True)
+    precio = fields.Float(string='Precio', readonly=True)
     picking = fields.Char(string='Transferencia', readonly=True)
     pedido_venta = fields.Char(string='Pedido de Venta', readonly=True)
     cliente = fields.Char(string='Cliente', readonly=True)
@@ -32,6 +34,8 @@ class DashboardReservas(models.Model):
                     ROW_NUMBER() OVER (ORDER BY (CURRENT_DATE - DATE(MAX(sm.date))) DESC) AS id,
                     pp.default_code                         AS codigo,
                     pt.name->>'es_MX'                       AS producto,
+                    rb.name                                 AS marca,
+                    sol.price_unit * SUM(sm.product_uom_qty) AS precio,
                     sp.name                                 AS picking,
                     so.name                                 AS pedido_venta,
                     rp.name                                 AS cliente,
@@ -51,6 +55,10 @@ class DashboardReservas(models.Model):
                     ON pp.id = sm.product_id
                 JOIN product_template pt
                     ON pt.id = pp.product_tmpl_id
+                LEFT JOIN ztyres_products_brand rb
+                    ON rb.id = pt.brand_id
+                LEFT JOIN sale_order_line sol
+                    ON sol.id = sm.sale_line_id
                 LEFT JOIN sale_order so
                     ON so.name = sp.origin
                 LEFT JOIN res_partner rp
@@ -70,6 +78,8 @@ class DashboardReservas(models.Model):
                 GROUP BY
                     pp.default_code,
                     pt.name,
+                    rb.name,
+                    sol.price_unit,
                     sp.name,
                     so.name,
                     rp.name,
@@ -113,7 +123,7 @@ class DashboardReservas(models.Model):
         domain = self._get_domain_filter()
         records = self.search_read(
             domain=domain,
-            fields=['codigo', 'producto', 'picking', 'pedido_venta', 'cliente',
+            fields=['codigo', 'producto', 'marca', 'precio', 'picking', 'pedido_venta', 'cliente',
                     'vendedor', 'cantidad_solicitada', 'fecha_programada',
                     'fecha_reserva_aprox', 'dias_reservada', 'estado'],
             order='dias_reservada desc'

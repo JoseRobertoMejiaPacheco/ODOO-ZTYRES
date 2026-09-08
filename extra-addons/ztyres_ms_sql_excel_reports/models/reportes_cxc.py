@@ -113,6 +113,7 @@ class reportescxc(models.TransientModel):
             vals = {
                 'factura': record.name,
                 'Cliente': record.partner_id.name,
+                'Estado': record.partner_id.state_id.name or '',
                 'Términos de pago del cliente': record.partner_id.property_payment_term_id.name,
                 'Vendedor': record.invoice_user_id.name or '',
                 'fecha factura': record.invoice_date,
@@ -146,6 +147,8 @@ class reportescxc(models.TransientModel):
         df['importe adeudado'] = df.apply(lambda row: self.convert_to_company_currency(row['divisa'], row['importe adeudado'], row['fecha factura']), axis=1)
 
         copy = df.copy()
+        
+        df.drop(columns=['Estado'], inplace=True)
         
         mask = (
                 (copy['Fecha límite'] >= mes_inicio) &
@@ -632,7 +635,7 @@ class reportescxc(models.TransientModel):
         #-------------------------------------------------------------------------------------------------------------------------------------------------
         df_vencidos = copy[(copy['dias de atraso'] >= 30) & (copy['importe adeudado'] > 0)]
         
-        columnas_deseadas = ['Cliente', 'Términos de pago del cliente', 'factura', 'Status', 'dias de atraso', 'por vencer', 'importe adeudado']
+        columnas_deseadas = ['Cliente', 'Términos de pago del cliente', 'factura', 'Status', 'dias de atraso', 'por vencer', 'importe adeudado', 'Estado', 'Vendedor']
         
         df_vencidos = df_vencidos[columnas_deseadas]
         

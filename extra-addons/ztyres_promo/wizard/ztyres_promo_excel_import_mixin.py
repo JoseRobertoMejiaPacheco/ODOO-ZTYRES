@@ -60,6 +60,17 @@ COLUMN_ALIASES = {
         'monto_del_cupon',
         'monto_por_pieza',
         'valor',
+        # La plantilla de tarjeta de regalo llega con el encabezado tal
+        # como viene del archivo de la marca ("Promo ZT"), no con la
+        # palabra "monto". Sin estos alias, el archivo original de
+        # Bridgestone/Firestone se rechazaba por columna faltante.
+        'promo_zt',
+        'promozt',
+        'valor_promo_zt',
+        'monto_promo_zt',
+        'tarjeta',
+        'monto_tarjeta',
+        'valor_tarjeta',
     ),
     'desde': (
         'desde',
@@ -78,6 +89,24 @@ COLUMN_ALIASES = {
         'hasta_monto',
         'hasta_cantidad',
         'fin',
+    ),
+    # Precio de referencia por pieza. Va aparte de 'monto' a propósito:
+    # un monto es dinero que se entrega (cupón, tarjeta) y un precio es
+    # una base sobre la que después se aplica un porcentaje. Si
+    # compartieran alias, un archivo con las dos columnas se cargaría
+    # con la equivocada y la NC saldría con el número correcto en el
+    # lugar incorrecto.
+    'pms': (
+        'pms',
+        'precio_pms',
+        'pms_price',
+        'precio',
+        'precio_unitario',
+        'precio_lista',
+        'precio_de_lista',
+        'lista',
+        'price',
+        'list_price',
     ),
     'porcentaje': (
         'porcentaje',

@@ -1,9 +1,11 @@
 <?xml version='1.0' encoding='utf-8'?>
 <odoo>
     <record id="group_apply_out_invoice_manager" model="res.groups">
-        <field name="name">Aplicacion de Pagos Multiple</field>
+        <field name="name">Aplicación de Pagos Múltiple</field>
+        <field name="category_id" ref="base.module_category_accounting_accounting"/>
+        <field name="implied_ids" eval="[(4, ref('account.group_account_invoice'))]"/>
     </record>
-    
+
     <record id="apply_out_invoice_manager_access" model="ir.model.access">
         <field name="name">Apply Out Invoice Manager Access</field>
         <field name="model_id" ref="model_apply_out_invoice_payments"/>
@@ -13,7 +15,7 @@
         <field name="perm_create" eval="1"/>
         <field name="perm_unlink" eval="1"/>
     </record>
-    
+
     <record id="apply_out_invoice_line_manager_access" model="ir.model.access">
         <field name="name">Apply Out Invoice Line Manager Access</field>
         <field name="model_id" ref="model_apply_out_invoice_payments_line"/>
@@ -22,5 +24,11 @@
         <field name="perm_write" eval="1"/>
         <field name="perm_create" eval="1"/>
         <field name="perm_unlink" eval="1"/>
+    </record>
+
+    <record id="apply_out_invoice_payments_company_rule" model="ir.rule">
+        <field name="name">Aplicación de Pagos Múltiple: multi-compañía</field>
+        <field name="model_id" ref="model_apply_out_invoice_payments"/>
+        <field name="domain_force">[('company_id', 'in', company_ids)]</field>
     </record>
 </odoo>

@@ -3,45 +3,55 @@
     'name': "multipayment_tool",
 
     'summary': """
-        Short (1 phrase/line) summary of the module's purpose, used as
-        subtitle on modules listing or apps.openerp.com""",
+        Detalle de aplicación de pagos por factura: pagos previos, notas de
+        crédito manuales (monto o porcentaje) y ajuste exacto de centavos.""",
 
     'description': """
-        Long description of module's purpose
+Extiende `apply_payments` con el formulario de detalle por factura
+(`multipayment_tool.payment_form`), donde se ven los pagos y notas de crédito
+previos y se capturan los nuevos.
+
+Novedades:
+
+* **Nota de crédito manual** por monto fijo o por porcentaje, además del
+  catálogo de descuentos preconfigurados. El motivo es obligatorio y se usa
+  como concepto del CFDI de egreso.
+* **Ajuste exacto de centavos**: la ventana fija de 0.01–0.05 se sustituye por
+  una tolerancia configurable, y ahora también se ajusta el residuo del pago,
+  no sólo el de la factura.
+* Los IDs que estaban en duro (producto, impuesto, forma de pago, diario y
+  cuenta de ajuste) pasan a configuración por compañía.
     """,
 
     'author': "My Company",
     'website': "https://www.yourcompany.com",
 
-    # Categories can be used to filter modules in modules listing
-    # Check https://github.com/odoo/odoo/blob/16.0/odoo/addons/base/data/ir_module_category_data.xml
-    # for the full list
-    'category': 'Uncategorized',
-    'version': '0.1',
+    'category': 'Accounting/Accounting',
+    'version': '16.0.2.0.0',
+    'license': 'LGPL-3',
 
-    # any module necessary for this one to work correctly
     'depends': ['apply_payments'],
-'assets': {
-    'web.assets_qweb': [        
-    #'multipayment_tool/static/src/xml/grouped_o2m_widget.xml'
-    ],
-    'web.assets_backend': [
-        #'multipayment_tool/static/src/xml/grouped_o2m_widget.xml',
-        # "multipayment_tool/static/src/css/multipayment_tool.css",
-        # "multipayment_tool/static/src/js/grouped_o2m_widget.js"
-        
-    ],
-},
-    # always loaded
+
+    'assets': {
+        'web.assets_qweb': [
+            # 'multipayment_tool/static/src/xml/grouped_o2m_widget.xml'
+        ],
+        'web.assets_backend': [
+            # 'multipayment_tool/static/src/xml/grouped_o2m_widget.xml',
+            # "multipayment_tool/static/src/css/multipayment_tool.css",
+            # "multipayment_tool/static/src/js/grouped_o2m_widget.js"
+        ],
+    },
+
     'data': [
-        # 'security/ir.model.access.csv',
         'security/security.xml',
         'views/views.xml',
         'views/templates.xml',
-        'views/apply_out_invoice_payments.xml'
+        'views/apply_out_invoice_payments.xml',
     ],
-    # only loaded in demonstration mode
     'demo': [
         'demo/demo.xml',
     ],
+    'installable': True,
+    'application': False,
 }

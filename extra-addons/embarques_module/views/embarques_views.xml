@@ -1,0 +1,347 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         TREE
+    ════════════════════════════════════════════════════════════════════════ -->
+    <record id="view_embarque_tree" model="ir.ui.view">
+        <field name="name">embarques.embarques.tree</field>
+        <field name="model">embarques.embarques</field>
+        <field name="arch" type="xml">
+            <tree string="Embarques">
+                <field name="company_id" invisible="1"/>
+                <field name="name"/>
+                <field name="date_start"/>
+                <field name="ruta_id"/>
+                <field name="vehicle_id" optional="show"/>
+                <field name="total_llantas" optional="show"/>
+                <field name="stop_count" optional="show"/>
+                <field name="volumen" optional="show"/>
+                <field name="ocupacion_m3" widget="progressbar" optional="show"/>
+                <field name="zona_id" optional="show"/>
+                <field name="piezas" optional="hide"/>
+                <field name="stage_id"/>
+                <field name="tag_ids" widget="many2many_tags"
+                       options="{'color_field': 'color'}" optional="hide"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         KANBAN
+    ════════════════════════════════════════════════════════════════════════ -->
+    <record id="view_embarque_kanban" model="ir.ui.view">
+        <field name="name">embarques.embarques.kanban</field>
+        <field name="model">embarques.embarques</field>
+        <field name="arch" type="xml">
+            <kanban default_group_by="stage_id" group_create="false">
+                <field name="company_id"/>
+                <field name="name"/>
+                <field name="stage_id"/>
+                <field name="kanban_state"/>
+                <field name="vehicle_id"/>
+                <field name="date_start"/>
+                <field name="tag_ids"/>
+                <field name="total_llantas"/>
+                <field name="volumen"/>
+                <field name="ocupacion_m3"/>
+                <templates>
+                    <t t-name="kanban-box">
+                        <div class="oe_kanban_global_click">
+                            <div class="oe_kanban_content">
+                                <div class="o_kanban_record_top">
+                                    <strong class="o_kanban_record_title">
+                                        <field name="name"/>
+                                    </strong>
+                                    <field name="kanban_state" widget="state_selection"/>
+                                </div>
+                                <div class="o_kanban_record_body">
+                                    <field name="date_start" widget="date"/>
+                                    <div t-if="record.vehicle_id.raw_value" class="text-muted">
+                                        <field name="vehicle_id"/> ·
+                                        <field name="volumen"/> m³ ·
+                                        <field name="ocupacion_m3"/>%
+                                    </div>
+                                </div>
+                                <div class="o_kanban_record_bottom">
+                                    <div class="oe_kanban_bottom_left">
+                                        <field name="tag_ids" widget="many2many_tags"
+                                               options="{'color_field': 'color'}"/>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         FORM
+    ════════════════════════════════════════════════════════════════════════ -->
+    <record id="view_embarque_form" model="ir.ui.view">
+        <field name="name">embarques.embarques.form</field>
+        <field name="model">embarques.embarques</field>
+        <field name="arch" type="xml">
+            <form string="Embarque" class="o_embarque_form">
+                <header>
+                    <button name="action_avanzar_embarque" type="object"
+                            string="Avanzar embarque" class="btn-primary"
+                            attrs="{'invisible': ['|', ('stage_id', '=', False),
+                                                       ('is_delivered', '=', True)]}"/>
+                    <button name="action_retry_logistic_nc_stamp" type="object"
+                            string="Generar / Timbrar NC Logística" class="btn-secondary"
+                            icon="fa-refresh"
+                            attrs="{'invisible': [('invoice_count', '=', 0)]}"/>
+                    <button name="action_xlsx_by_brand" type="object"
+                            string="Excel por marca" class="btn-secondary"
+                            icon="fa-file-excel-o"/>
+                    <button name="action_xlsx_by_brand_customer" type="object"
+                            string="Excel marca y cliente" class="btn-secondary"
+                            icon="fa-file-excel-o"/>
+                    <field name="stage_id" widget="statusbar"
+                           options="{'fold_field': 'fold'}"
+                           attrs="{'readonly': [('is_delivered', '=', True)]}"/>
+                </header>
+                <sheet attrs="{'readonly': [('is_delivered', '=', True)]}">
+                    <div name="button_box" class="oe_button_box">
+                        <button class="oe_stat_button" icon="fa-cubes"
+                                name="action_view_traslados" type="object">
+                            <field name="picking_count" widget="statinfo" string="Traslados"/>
+                        </button>
+                        <button class="oe_stat_button" icon="fa-pencil-square-o"
+                                name="action_view_facturas" type="object">
+                            <field name="invoice_count" widget="statinfo" string="Facturas"/>
+                        </button>
+                        <button class="oe_stat_button" icon="fa-shopping-cart"
+                                name="action_view_orders" type="object">
+                            <field name="order_count" widget="statinfo" string="Pedidos"/>
+                        </button>
+                    </div>
+
+                    <widget name="web_ribbon" text="Archivado" bg_color="bg-danger"
+                            attrs="{'invisible': [('active', '=', True)]}"/>
+                    <field name="active" invisible="1"/>
+                    <group string="NC Logística">
+                        <field name="logistic_nc_stamp_status" widget="badge" readonly="1"
+                               decoration-success="logistic_nc_stamp_status == 'stamped'"
+                               decoration-danger="logistic_nc_stamp_status == 'error'"
+                               decoration-warning="logistic_nc_stamp_status == 'pending'"
+                               decoration-muted="logistic_nc_stamp_status in ('no_invoice','not_required')"/>
+                        <field name="logistic_nc_count" readonly="1"/>
+                        <field name="logistic_nc_stamp_note" readonly="1"/>
+                    </group>
+                    <field name="is_delivered" invisible="1"/>
+                    <field name="discount_manual" invisible="1"/>
+                    <field name="invoice_count" invisible="1"/>
+                    <field name="currency_id" invisible="1"/>
+                    <field name="company_id" invisible="1"/>
+
+                    <div class="oe_title">
+                        <h1><field name="name" readonly="1"/></h1>
+                    </div>
+
+                    <field name="kanban_state" widget="state_selection"/>
+
+                    <group string="Resumen operativo">
+                        <group>
+                            <field name="no_clientes" class="o_embarque_number"/>
+                            <field name="invoice_count" class="o_embarque_number"/>
+                        </group>
+                        <group>
+                            <field name="order_count" class="o_embarque_number"/>
+                            <field name="total_llantas" class="o_embarque_number"/>
+                        </group>
+                    </group>
+
+                    <group string="Avance de almacén">
+                        <group>
+                            <field name="qty_ordered" string="Pedido"
+                                   class="o_embarque_number"/>
+                            <field name="qty_done" string="Hecho"
+                                   class="o_embarque_number"/>
+                        </group>
+                        <group>
+                            <field name="qty_reserved" string="Reservado"
+                                   class="o_embarque_number"/>
+                            <field name="preparation_state" widget="badge"
+                                   decoration-success="preparation_state == 'ready'"
+                                   decoration-warning="preparation_state == 'pending'"
+                                   decoration-muted="preparation_state == 'empty'"/>
+                        </group>
+                    </group>
+                    <div class="alert alert-warning" role="alert"
+                         attrs="{'invisible': [('preparation_state','!=','pending')]}">
+                        <field name="preparation_note" nolabel="1"/>
+                        Los reportes de separación se bloquearán hasta conciliar
+                        Pedido = Reservado + Hecho.
+                    </div>
+
+                    <group>
+                        <group string="Programación">
+                            <field name="date_start"/>
+                            <field name="ruta_id" options="{'no_create': True}" required="1"/>
+                            <field name="vehicle_id"
+                                   options="{'no_create': True, 'no_open': False}"/>
+                            <field name="tag_ids" widget="many2many_tags"
+                                   options="{'color_field': 'color'}"/>
+                        </group>
+                        <group string="Capacidad y ocupación">
+                            <field name="capacidad_m3"
+                                   attrs="{'invisible': [('vehicle_id','=',False)]}"/>
+                            <field name="volumen"/>
+                            <field name="ocupacion_m3" widget="progressbar"
+                                   options="{'max_value': 100}"/>
+                            <field name="volumen_faltante_m3"
+                                   attrs="{'invisible': [('vehicle_id','=',False)]}"/>
+                            <field name="total_llantas"/>
+                        </group>
+                    </group>
+
+                    <group string="Consolidación del embarque">
+                        <group>
+                            <field name="stop_count" readonly="1"
+                                   class="o_embarque_number"/>
+                            <field name="consolidation_stop_limit"/>
+                        </group>
+                        <group>
+                            <field name="consolidation_min_qty"/>
+                            <field name="consolidation_min_percentage"/>
+                        </group>
+                    </group>
+                    <div class="alert alert-warning" role="alert"
+                         attrs="{'invisible': [('stop_count','&lt;=',2)]}">
+                        Este embarque contiene más de 2 clientes. La ruta puede
+                        guardarse, pero no se autoriza consolidar sus cantidades
+                        para obtener descuento.
+                    </div>
+
+                    <field name="carta_porte_vehicle_id" invisible="1"/>
+
+                    <div class="alert alert-warning" role="alert"
+                         attrs="{'invisible': [('productos_sin_volumen','=',0)]}">
+                        Hay <field name="productos_sin_volumen"/> producto(s) sin
+                        volumen capturado. La estimación de ocupación en m³ puede ser
+                        menor a la real; esto no afecta el cálculo del descuento:
+                        <field name="productos_sin_volumen_texto"/>.
+                    </div>
+
+                    <!-- ── Traslados ────────────────────────────────────── -->
+                    <div class="alert alert-info" role="alert">
+                        Ordena los traslados arrastrándolos. Un cliente puede llenar el
+                        rango solo o consolidar con otro cliente del mismo embarque.
+                        La consolidación inicia en 250 llantas, admite máximo 2 clientes
+                        y ambos deben aportar por lo menos el porcentaje mínimo del rango.
+                        Cada uno recibe el porcentaje de su propio destino; nunca se
+                        toma el de otro cliente. Se revisan todos los rangos numéricos
+                        permitidos por el destino, de mayor a menor. El vehículo y los
+                        m³ no intervienen en el descuento.
+                    </div>
+                    <field name="pedidos_ids">
+                        <tree string="Traslados" editable="bottom" multi_edit="1"
+                              default_order="load_order,id">
+                            <field name="load_order" widget="handle"/>
+                            <field name="company_id" invisible="1"/>
+                            <field name="partner_id" readonly="1"/>
+                            <field name="ciudad_envio_id" string="Ciudad" readonly="1"/>
+                            <field name="estado_envio_id" string="Estado" readonly="1" optional="hide"/>
+                            <field name="zona_id" string="Zona" readonly="1"/>
+                            <field name="destino_id" string="Destino" readonly="1"
+                                   optional="hide" options="{'no_open': True}"/>
+                            <field name="origin" string="Origen" readonly="1"/>
+                            <field name="invoice_names" string="Facturas" readonly="1"/>
+                            <field name="pedimento_names" string="Pedimentos" readonly="1"
+                                   optional="show"/>
+                            <field name="source_location_names" string="Ubicaciones" readonly="1"
+                                   optional="show"/>
+                            <field name="name" string="Traslado" readonly="1" optional="hide"/>
+                            <field name="llantas_qty" string="Llantas" readonly="1"/>
+                            <field name="embarque_discount_percentage" string="Descuento (%)" readonly="1"/>
+                            <field name="discount_note" string="Detalle del cálculo" readonly="1"/>
+                            <field name="requested_discount_percentage" string="Descuento solicitado (%)"/>
+                            <field name="discount_request_note" string="Motivo"/>
+                            <field name="discount_state" widget="badge" readonly="1"
+                                   decoration-info="discount_state == 'to_approve'"
+                                   decoration-success="discount_state == 'approved'"
+                                   decoration-danger="discount_state == 'rejected'"/>
+                            <field name="discount_requested_by" readonly="1" optional="hide"/>
+                            <field name="discount_approved_by" readonly="1" optional="hide"/>
+                            <field name="discount_approval_date" readonly="1" optional="hide"/>
+                            <button name="action_approve_discount" type="object"
+                                    string="Autorizar" icon="fa-check"
+                                    groups="embarques_module.group_embarques_finance"
+                                    attrs="{'invisible': [('discount_state','!=','to_approve')]}"/>
+                            <button name="action_reject_discount" type="object"
+                                    string="Rechazar" icon="fa-times"
+                                    groups="embarques_module.group_embarques_finance"
+                                    attrs="{'invisible': [('discount_state','!=','to_approve')]}"/>
+                            <field name="scheduled_date" readonly="1" optional="hide"/>
+                            <field name="state" widget="badge" readonly="1"
+                                   decoration-success="state == 'done'"
+                                   decoration-info="state not in ('done','cancel')"/>
+                        </tree>
+                    </field>
+
+                    <group string="Resumen del embarque">
+                        <group string="Carga">
+                            <field name="piezas"/>
+                            <field name="volumen"/>
+                            <field name="peso"/>
+                        </group>
+                        <group string="Importe">
+                            <field name="amount_untaxed" class="oe_inline"/>
+                            <field name="calculated_logistic_cost" class="oe_inline"/>
+                            <field name="manual_logistic_cost" class="oe_inline"/>
+                            <field name="logistic_cost" class="oe_inline"/>
+                            <field name="preparation_note"/>
+                        </group>
+                    </group>
+
+                    <separator string="Recorrido por ciudades"/>
+                    <field name="ciudades_ruta_html" widget="html" nolabel="1"
+                           readonly="1"/>
+                </sheet>
+
+            </form>
+        </field>
+    </record>
+
+    <!-- ═══════════════════════════════════════════════════════════════════════
+         SEARCH
+    ════════════════════════════════════════════════════════════════════════ -->
+    <record id="view_embarque_search" model="ir.ui.view">
+        <field name="name">embarques.embarques.search</field>
+        <field name="model">embarques.embarques</field>
+        <field name="arch" type="xml">
+            <search string="Embarques">
+                <field name="name"/>
+                <field name="ruta_id"/>
+                <field name="zona_id"/>
+                <filter string="Archivados" name="archived" domain="[('active','=',False)]"/>
+                <separator/>
+                <filter string="Por autorizar" name="por_autorizar"
+                        domain="[('pedidos_ids.discount_state','=','to_approve')]"/>
+                <filter string="Con descuento" name="con_descuento"
+                        domain="[('pedidos_ids.embarque_discount_percentage','&gt;',0)]"/>
+                <filter string="Zonas mezcladas" name="zona_mixta"
+                        domain="[('zona_mixta','=',True)]"/>
+                <group expand="0" string="Agrupar por">
+                    <filter string="Etapa" name="group_stage" context="{'group_by': 'stage_id'}"/>
+                    <filter string="Ruta" name="group_ruta" context="{'group_by': 'ruta_id'}"/>
+                    <filter string="Zona" name="group_zona" context="{'group_by': 'zona_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_embarque" model="ir.actions.act_window">
+        <field name="name">Embarques</field>
+        <field name="res_model">embarques.embarques</field>
+        <field name="view_mode">tree,kanban,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Crea tu primer embarque</p>
+        </field>
+    </record>
+
+</odoo>

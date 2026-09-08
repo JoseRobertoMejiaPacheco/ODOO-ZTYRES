@@ -4,10 +4,10 @@
 
 Una promoción se define con dos decisiones que no se pueden mezclar:
 
-| Eje | Campo | Pregunta que responde | Qué NO hace |
-|---|---|---|---|
-| **Alcance** | `promo_conditions` | ¿QUÉ productos participan? | Nunca decide cuánto se otorga |
-| **Política** | `promo_type` | ¿CÓMO se calcula el beneficio? | Nunca agrega ni quita productos |
+| Eje                 | Campo                | Pregunta que responde            | Qué NO hace                    |
+| ------------------- | -------------------- | -------------------------------- | ------------------------------- |
+| **Alcance**   | `promo_conditions` | ¿QUÉ productos participan?     | Nunca decide cuánto se otorga  |
+| **Política** | `promo_type`       | ¿CÓMO se calcula el beneficio? | Nunca agrega ni quita productos |
 
 Regla dura:
 
@@ -22,23 +22,23 @@ definió. Nunca lo amplía y nunca lo sustituye.
 
 ### Alcances (`promo_conditions`)
 
-| Valor almacenado | Etiqueta | Cómo se arma el universo |
-|---|---|---|
-| `tire feature` | Característica de Llanta (OR) | `expression.OR` de los criterios marcados; mínimo uno |
+| Valor almacenado          | Etiqueta                               | Cómo se arma el universo                                 |
+| ------------------------- | -------------------------------------- | --------------------------------------------------------- |
+| `tire feature`          | Característica de Llanta (OR)         | `expression.OR` de los criterios marcados; mínimo uno  |
 | `attribute_combination` | Combinación de Características (AND) | `expression.AND` de los criterios marcados; mínimo dos |
-| `specific_products` | Productos / Códigos Específicos | Solo `product_ids` |
-| `coupons` | Cupones por Producto | Solo los productos de `coupon_ids` |
-| `rim_quantity` | Rines de las Políticas (heredado) | Los rines de `rim_policy_line_ids`, de cualquier marca |
+| `specific_products`     | Productos / Códigos Específicos      | Solo`product_ids`                                       |
+| `coupons`               | Cupones por Producto                   | Solo los productos de`coupon_ids`                       |
+| `rim_quantity`          | Rines de las Políticas (heredado)     | Los rines de`rim_policy_line_ids`, de cualquier marca   |
 
 ### Políticas (`promo_type`)
 
-| Valor | Tabla de tramos | Restringe el universo |
-|---|---|---|
-| `quantity` | `policy_line_qty_ids` | No |
-| `amount` | `policy_line_amount_ids` | No |
-| `monthly_volume` | `monthly_volume_line_ids` | No |
-| `rim_quantity` | `rim_policy_line_ids` | Sí: solo rines con tramo |
-| `coupons` | `coupon_ids` | No (el alcance ya es el mismo) |
+| Valor              | Tabla de tramos             | Restringe el universo          |
+| ------------------ | --------------------------- | ------------------------------ |
+| `quantity`       | `policy_line_qty_ids`     | No                             |
+| `amount`         | `policy_line_amount_ids`  | No                             |
+| `monthly_volume` | `monthly_volume_line_ids` | No                             |
+| `rim_quantity`   | `rim_policy_line_ids`     | Sí: solo rines con tramo      |
+| `coupons`        | `coupon_ids`              | No (el alcance ya es el mismo) |
 
 ### Combinaciones válidas
 
@@ -50,6 +50,41 @@ fuente de verdad, y una `@api.constrains` la hace cumplir:
 - Alcance `rim_quantity` (heredado) ⇒ política `rim_quantity`.
 - Los otros tres alcances admiten cualquiera de las cuatro políticas no
   exclusivas.
+
+### Tipo de beneficio (`reward_type`)
+
+Un tercer eje, que solo existe en las políticas de tramos
+(Cantidad / Monto) y responde: alcanzado el nivel, ¿qué se entrega?
+
+| Valor            | Qué entrega                                                     | ¿Genera NC?                         |
+| ---------------- | ---------------------------------------------------------------- | ------------------------------------ |
+| `percentage`   | Porcentaje sobre el subtotal                                     | Sí                                  |
+| `fixed_amount` | Monto fijo del nivel (capturado con IVA, se le baja al facturar) | Sí                                  |
+| `gift_card`    | Tarjeta de regalo ("Promo ZT")                                   | Solo si`gift_card_delivery = 'nc'` |
+
+La tarjeta tiene a su vez dos orígenes de valor (`gift_card_source`):
+el valor fijo del nivel, o el monto por pieza de una plantilla cargada
+por código. Ver [TARJETA_REGALO.md](TARJETA_REGALO.md).
+
+### Base de cálculo (`key_size_base`)
+
+Un cuarto eje, aplicable solo cuando el beneficio es `percentage`.
+Responde: el porcentaje del nivel, ¿sobre qué se multiplica?
+
+| Valor        | Base de cada línea                                                 |
+| ------------ | ------------------------------------------------------------------- |
+| `invoiced` | `price_subtotal` de la línea — lo que se facturó               |
+| `pms`      | `precio PMS del código × piezas`, de la tabla `pms_price_ids` |
+
+La base **no interviene en la elección del nivel**: el acumulado se
+sigue midiendo con lo facturado. Un participante sin precio PMS
+capturado cae de vuelta a su subtotal facturado, nunca a cero. Ver
+[PRECIOS_PMS.md](PRECIOS_PMS.md).
+
+`percentage` + base `pms` y los Key Sizes son ortogonales y se combinan:
+los Key Sizes deciden *qué* porcentaje, la base decide *sobre qué*.
+Cualquiera de los dos hace que el cálculo baje a renglón por renglón, y
+esa pregunta se hace en un solo lugar: `_uses_key_size_engine()`.
 
 ## Convención de límites
 
@@ -87,8 +122,13 @@ leyendo un `0` como infinito por si queda algún dato sin migrar.
 
 - `tier_reward` — tramos de cantidad y monto;
 - `rim_discount` / `rim_amounts` / `format_rim_breakdown` — por rin;
+- `key_size_amounts` / `format_key_size_breakdown` — Key Sizes y base PMS;
 - `monthly_volume_discount`;
-- `coupon_amounts`.
+- `coupon_amounts`;
+- `untaxed` — baja el IVA a un monto capturado;
+- `round_money` / `percent_amount` / `format_quantity` — la regla de
+  redondeo del módulo, en un solo lugar. Ver
+  [IVA_Y_DECIMALES.md](IVA_Y_DECIMALES.md).
 
 Lo usan tanto el cálculo masivo como la evaluación en vivo
 (`..._eval.py`), así que una cotización y la NC final no pueden divergir.

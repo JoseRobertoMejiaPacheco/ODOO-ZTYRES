@@ -31,15 +31,14 @@
                         <button name="action_confirmar_nc" type="object" string="Confirmar NC" class="btn-default"
                                 attrs="{'invisible': [('status', 'not in', ['approve'])]}"/>
                         <button name="check_sat_status" type="object" string="Verificar estatus timbrado SAT" class="btn-default"
-                                attrs="{'invisible': [('status', 'in', ['done'])]}"/>
+                                attrs="{'invisible': [('status', '!=', 'done')]}"/>
                         <field name="status" widget="statusbar"/>
-                        <button name="download_zip_xmls" string="XMLs Facturas" type="object"
-                                context="{'move_type': 'out_invoice'}"/>
-                        <button name="download_zip_xmls" string="XMLs Notas de Crédito" type="object"
-                                context="{'move_type': 'out_refund'}"/>
                     </header>
 
                     <sheet>
+                        <field name="active" invisible="1"/>
+                        <widget name="web_ribbon" text="Archivada" bg_color="bg-danger"
+                                attrs="{'invisible': [('active', '=', True)]}"/>
                         <div class="oe_button_box" name="button_box">
                             <button name="action_open_line_ids" type="object" class="oe_stat_button" icon="fa-file-text">
                                 <field name="count_line_ids" widget="statinfo" string="Resumen NC"/>
@@ -53,6 +52,33 @@
                             <h1>
                                 <field name="nombre" placeholder="Nombre de la promoción"/>
                             </h1>
+                            <!-- Nombre corto para el cotizador: se captura
+                                 junto al nombre para que quede claro que son
+                                 dos rótulos de la MISMA promoción, uno
+                                 administrativo y otro de cara al vendedor. -->
+                            <h3 class="text-muted">
+                                <field name="cotizador_name"
+                                       placeholder="Nombre en el cotizador (opcional)"/>
+                            </h3>
+                        </div>
+
+                        <!-- Las descargas no van en <header>: en portátiles,
+                             Odoo oculta acciones del flujo cuando ya no caben.
+                             Esta fila usa wrap y mantiene siempre visibles
+                             Calcular/Aprobar/Confirmar en la cabecera. -->
+                        <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+                            <span class="fw-bold me-1">Descargas:</span>
+                            <button name="download_zip_xmls" string="XMLs Facturas"
+                                    type="object" class="btn btn-secondary"
+                                    icon="fa-file-code-o"
+                                    context="{'move_type': 'out_invoice'}"/>
+                            <button name="download_zip_pdfs" string="PDFs Facturas"
+                                    type="object" class="btn btn-secondary"
+                                    icon="fa-file-pdf-o"/>
+                            <button name="download_zip_xmls" string="XMLs Notas de Crédito"
+                                    type="object" class="btn btn-secondary"
+                                    icon="fa-file-code-o"
+                                    context="{'move_type': 'out_refund'}"/>
                         </div>
 
                         <group>
@@ -63,7 +89,7 @@
                             <group string="Cómo se aplica">
                                 <field name="apply_on_groups"/>
                                 <field name="apply_volume"
-                                       attrs="{'invisible': [('promo_type','not in',['quantity'])]}"/>
+                                       attrs="{'invisible': [('promo_type','not in',['quantity','monthly_volume','rim_quantity'])]}"/>
                                 <field name="generic_edi"/>
                             </group>
                         </group>
@@ -96,7 +122,7 @@
                                  2. RESULTADOS
                                  ========================================== -->
                             <page string="Resultados (NC)" name="resultados">
-                                <field name="line_ids" domain="[('total_nc_untaxed','&gt;',0)]" readonly="1">
+                                <field name="winning_line_ids" readonly="1">
                                     <tree>
                                         <field name="partner_id"/>
                                         <field name="rfc"/>
@@ -104,13 +130,18 @@
                                         <field name="group_id" invisible="1"/>
                                         <field name="quantity" sum="Piezas"/>
                                         <field name="price_subtotal" sum="Subtotal"/>
+                                        <field name="price_total" sum="Subtotal c/IVA"/>
                                         <field name="reward_type" optional="hide"/>
                                         <field name="reward_percent" string="% efectivo"/>
                                         <field name="reward_fixed_amount" optional="hide"/>
+                                        <field name="gift_card_amount" sum="Total tarjetas"
+                                               attrs="{'column_invisible': [('parent.reward_type','!=','gift_card')]}"/>
                                         <field name="total_nc_untaxed" sum="Total NC"/>
+                                        <field name="total_nc_taxed" sum="Total NC c/IVA"/>
                                         <field name="reward_detail" optional="show"/>
                                         <field name="nc_credit_id" optional="show"/>
                                         <field name="sat_estatus" optional="hide"/>
+                                        <field name="has_reward" invisible="1"/>
                                         <field name="definitive_nc_id" invisible="1"/>
                                         <button name="action_view_details" type="object"
                                                 string="Ver detalles" class="btn-link" icon="fa-search"/>
@@ -202,11 +233,11 @@
                                             <field name="name"/>
                                         </tree>
                                     </field>
-                                    <div class="alert alert-warning mt-2" role="alert"
+                                    <!-- <div class="alert alert-warning mt-2" role="alert"
                                          attrs="{'invisible': [('not_found','=',False)]}">
                                         <strong>Códigos no encontrados en el catálogo</strong>
                                         <field name="not_found" nolabel="1" readonly="1"/>
-                                    </div>
+                                    </div> -->
                                 </div>
 
                                 <separator string="2. Política · ¿cómo se calcula el beneficio?"/>
@@ -240,7 +271,7 @@
 
                                 <!-- Política: por cantidad -->
                                 <div class="alert alert-info" role="alert"
-                                     attrs="{'invisible': [('promo_type','not in',['quantity','amount'])]}">
+                                     attrs="{'invisible': [('promo_type','not in',['quantity','amount','amount_rim'])]}">
                                     El tramo aplica cuando el acumulado cae entre <b>Desde</b> y <b>Hasta</b>,
                                     ambos inclusive. Use <b>999999999</b> en “Hasta” para el último tramo.
                                     El porcentaje admite decimales (2.10). El monto fijo genera una NC por el
@@ -259,22 +290,69 @@
                                                attrs="{'column_invisible': [('parent.reward_type','!=','percentage')]}"/>
                                         <field name="fixed_amount"
                                                attrs="{'column_invisible': [('parent.reward_type','!=','fixed_amount')]}"/>
+                                        <field name="gift_card_amount"
+                                               attrs="{'column_invisible': ['|', ('parent.reward_type','!=','gift_card'), ('parent.gift_card_source','!=','tier')]}"/>
                                     </tree>
                                 </field>
 
                                 <!-- Política: por monto -->
+                                <!-- Los límites se capturan CON IVA (como
+                                     el negocio expresa la meta) y la NC se
+                                     calcula sobre el SUBTOTAL. El aviso de
+                                     abajo está aquí porque la etiqueta sola
+                                     no alcanza: quien captura 35,000 tiene
+                                     que saber sobre qué se le va a pagar. -->
+                                <div class="alert alert-info" role="alert"
+                                     attrs="{'invisible': [('promo_type','not in',['amount','amount_rim'])]}">
+                                    Los montos <b>Desde</b> y <b>Hasta</b> se
+                                    capturan <b>con IVA</b>, tal como se
+                                    factura. La nota de crédito, en cambio,
+                                    se calcula sobre el <b>subtotal</b>.
+                                    <br/>
+                                    Ejemplo con IVA al 16%: un nivel que
+                                    inicia en <b>$35,000</b> se alcanza con
+                                    <b>$30,172.41</b> de subtotal, y sobre
+                                    esos $30,172.41 se genera la NC.
+                                    <br/>
+                                    <b>Capture la meta tal como viene en el
+                                    convenio</b>, que normalmente ya está
+                                    facturada: “compra mínima de 50 mil al
+                                    mes” se captura como <b>50000</b>. Ojo con
+                                    la palabra <b>“netos”</b> de los convenios:
+                                    casi siempre quiere decir neto de descuentos
+                                    y devoluciones, <b>no</b> sin IVA.
+                                </div>
+                                <div class="alert alert-primary" role="alert"
+                                     attrs="{'invisible': [('promo_type','!=','amount_rim')]}">
+                                    El <b>monto total participante</b> elige el tramo. Dentro de cada
+                                    tramo configura libremente los <b>rangos de RIN</b> y su porcentaje.
+                                    Los productos cargados como <b>Key Sizes</b> usan su porcentaje propio,
+                                    sin importar su rin, y también cuentan para alcanzar el monto.
+                                </div>
+                                <!-- Monto normal conserva exactamente su tabla editable anterior. -->
                                 <field name="policy_line_amount_ids" nolabel="1"
                                        attrs="{'invisible': [('promo_type','!=','amount')]}">
                                     <tree editable="bottom">
-                                        <field name="lower_limit" string="Desde ($)"/>
-                                        <field name="upper_limit" string="Hasta ($)"/>
+                                        <field name="lower_limit" string="Desde ($ con IVA)"/>
+                                        <field name="upper_limit" string="Hasta ($ con IVA)"/>
                                         <field name="min_qty" string="Mínimo de llantas"/>
-                                        <field name="discount" string="Porcentaje (%)"
-                                               attrs="{'column_invisible': [('parent.reward_type','!=','percentage')]}"/>
-                                        <field name="key_size_discount" string="% Key Sizes"
-                                               attrs="{'column_invisible': [('parent.reward_type','!=','percentage')]}"/>
-                                        <field name="fixed_amount"
-                                               attrs="{'column_invisible': [('parent.reward_type','!=','fixed_amount')]}"/>
+                                        <field name="discount" string="Porcentaje (%)" attrs="{'column_invisible': [('parent.reward_type','!=','percentage')]}"/>
+                                        <field name="key_size_discount" string="% Key Sizes" attrs="{'column_invisible': [('parent.reward_type','!=','percentage')]}"/>
+                                        <field name="fixed_amount" attrs="{'column_invisible': [('parent.reward_type','!=','fixed_amount')]}"/>
+                                        <field name="gift_card_amount" attrs="{'column_invisible': ['|', ('parent.reward_type','!=','gift_card'), ('parent.gift_card_source','!=','tier')]}"/>
+                                    </tree>
+                                </field>
+
+                                <!-- En Monto por Rin cada tramo se abre para configurar N rangos de RIN. -->
+                                <field name="policy_line_amount_ids" nolabel="1"
+                                       attrs="{'invisible': [('promo_type','!=','amount_rim')]}"
+                                       context="{'form_view_ref': 'ztyres_promo.view_amount_rim_tier_form'}">
+                                    <tree create="1" edit="1">
+                                        <field name="lower_limit" string="Desde ($ con IVA)"/>
+                                        <field name="upper_limit" string="Hasta ($ con IVA)"/>
+                                        <field name="min_qty" string="Mínimo de llantas"/>
+                                        <field name="key_size_discount" string="Key Sizes (%)"/>
+                                        <field name="rim_discount_ids" widget="many2many_tags" string="Rangos RIN"/>
                                     </tree>
                                 </field>
 
@@ -295,7 +373,7 @@
                                      propósito, igual que la lista de productos:
                                      dentro de un group un x2many queda como una
                                      tira angosta. -->
-                                <div attrs="{'invisible': ['|', ('promo_type','not in',['quantity','amount']), ('reward_type','!=','percentage')]}">
+                                <div attrs="{'invisible': ['|', ('promo_type','not in',['quantity','amount','amount_rim']), '&amp;', ('promo_type','!=','amount_rim'), ('reward_type','!=','percentage')]}">
                                     <separator string="Key Sizes · productos que cobran la columna &quot;% Key Sizes&quot;"/>
                                     <div class="alert alert-info" role="alert">
                                         Los productos de esta lista cobran, en cada nivel, el porcentaje
@@ -326,6 +404,75 @@
                                             <field name="name"/>
                                         </tree>
                                     </field>
+                                </div>
+
+                                <!-- Base de cálculo: subtotal facturado o precio PMS.
+                                     Va después de los Key Sizes porque responde la
+                                     pregunta que sigue: ya sabemos qué porcentaje
+                                     cobra cada producto, ahora sobre qué. -->
+                                <div attrs="{'invisible': ['|', ('promo_type','not in',['quantity','amount','amount_rim']), ('reward_type','!=','percentage')]}">
+                                    <separator string="Base de cálculo · ¿sobre qué se aplica el porcentaje?"/>
+                                    <group>
+                                        <field name="key_size_base" widget="radio" nolabel="1"/>
+                                    </group>
+
+                                    <div class="alert alert-info" role="alert"
+                                         attrs="{'invisible': [('key_size_base','!=','invoiced')]}">
+                                        Cada línea cobra sobre <b>lo que realmente se
+                                        vendió</b>. Es el comportamiento de siempre.
+                                    </div>
+
+                                    <div attrs="{'invisible': [('key_size_base','!=','pms')]}">
+                                        <div class="alert alert-info" role="alert">
+                                            El porcentaje se aplica sobre
+                                            <b>precio PMS × piezas</b>, no sobre lo
+                                            facturado: la NC por pieza es la misma para
+                                            todos, sin importar el precio de venta ni los
+                                            descuentos que se hayan dado.
+                                            <br/>
+                                            El <b>nivel alcanzado no cambia</b>: el acumulado
+                                            se sigue midiendo con lo facturado (piezas o
+                                            subtotal real).
+                                            <br/>
+                                            En <b>Monto por Rin / Key Sizes</b>, al elegir
+                                            <b>Precio PMS × piezas</b>, solo participan los códigos
+                                            que tengan PMS cargado. El monto facturado de esos códigos
+                                            sirve para alcanzar el tramo y la NC se calcula con
+                                            PMS × piezas × % del RIN/Key Size.
+                                            En las políticas anteriores se conserva el comportamiento
+                                            existente para códigos sin PMS.
+                                        </div>
+
+                                        <group>
+                                            <field name="pms_price_taxed"/>
+                                        </group>
+
+                                        <div class="alert alert-warning" role="alert">
+                                            La nota de crédito se emite sobre el
+                                            <b>subtotal</b>. Si los precios se capturaron
+                                            <b>con IVA</b> pero aquí dice “sin IVA”, la NC
+                                            sale <b>16% más alta</b> de lo pactado (y al
+                                            revés, 16% más baja). Compare un código contra
+                                            su factura antes de aprobar.
+                                        </div>
+
+                                        <div class="mb-2">
+                                            <button name="action_open_pms_price_excel_import" type="object"
+                                                    string="Cargar precios PMS (.xlsx)" class="btn-primary"
+                                                    icon="fa-upload"/>
+                                            <button name="clear_pms_price_lines" type="object"
+                                                    string="Limpiar precios PMS" class="btn-secondary"
+                                                    icon="fa-trash"
+                                                    confirm="¿Está seguro que desea eliminar todos los precios PMS?"
+                                                    attrs="{'invisible': [('pms_price_ids','=',[])]}"/>
+                                        </div>
+                                        <field name="pms_price_ids" nolabel="1" colspan="2">
+                                            <tree editable="bottom">
+                                                <field name="product_id"/>
+                                                <field name="price" string="Precio PMS por pieza"/>
+                                            </tree>
+                                        </field>
+                                    </div>
                                 </div>
 
                                 <!-- Política: cupones -->
@@ -370,13 +517,69 @@
                                 <field name="coupon_ids" nolabel="1">
                                     <tree editable="bottom">
                                         <field name="product_id"/>
-                                        <field name="amount" string="Monto de NC por pieza" sum="Total"/>
+                                        <field name="amount" string="Monto por pieza ($ con IVA)" sum="Total"/>
                                     </tree>
                                 </field>
-                                <div class="alert alert-warning mt-2" role="alert"
+                                <!-- <div class="alert alert-warning mt-2" role="alert"
                                      attrs="{'invisible': [('not_found','=',False)]}">
                                     <strong>Códigos no encontrados en el catálogo</strong>
                                     <field name="not_found" nolabel="1" readonly="1"/>
+                                </div> -->
+                            </page>
+
+                            <!-- ==========================================
+                                 4B. TARJETA DE REGALO (PROMO ZT)
+                                 ========================================== -->
+                            <page string="Tarjeta de regalo" name="tarjeta_regalo"
+                                  attrs="{'invisible': ['|', ('reward_type','!=','gift_card'), ('promo_type','not in',['quantity','amount'])]}">
+
+                                <div class="alert alert-info" role="alert">
+                                    El <b>nivel de la política</b> decide únicamente
+                                    <b>quién califica</b> (por ejemplo, la compra mínima
+                                    mensual). Aquí se decide <b>cuánto vale</b> la tarjeta.
+                                    <br/>
+                                    La compra mínima se captura en la tabla de niveles
+                                    <b>con IVA</b>, tal como viene en el convenio: una
+                                    “compra mínima de 50 mil netos al mes” se captura
+                                    como <b>50000</b>, porque ahí <b>“netos”</b> significa
+                                    neto de descuentos y devoluciones, no sin IVA.
+                                </div>
+
+                                <field name="gift_card_source" invisible="1"/>
+                                <field name="gift_card_delivery" invisible="1"/>
+                                <div class="alert alert-success" role="status">
+                                    Este beneficio se muestra como <b>Cupón</b> y reduce el
+                                    precio efectivo en el cotizador. <b>No genera ni timbra
+                                    nota de crédito.</b>
+                                </div>
+
+                                <div attrs="{'invisible': [('gift_card_source','!=','product')]}">
+                                    <separator string="Valores Promo ZT por código"/>
+                                    <div class="alert alert-info" role="alert">
+                                        El <b>monto</b> es el valor de tarjeta por
+                                        <b>cada pieza vendida</b> de ese código. Si la columna
+                                        dice <b>5</b> y el cliente compra <b>10</b> llantas,
+                                        la tarjeta es de <b>50</b>. <b>No hay tope de piezas.</b>
+                                        <br/>
+                                        Los códigos cargados son los productos participantes.
+                                        Entre todos deben acumular al menos <b>$50,000 con IVA</b>
+                                        para habilitar la tarjeta.
+                                    </div>
+                                    <div class="mb-2">
+                                        <button name="action_open_gift_card_excel_import" type="object"
+                                                string="Cargar plantilla Promo ZT (.xlsx)" class="btn-primary"
+                                                icon="fa-upload"/>
+                                        <button name="clear_gift_card_lines" type="object"
+                                                string="Limpiar valores" class="btn-secondary" icon="fa-trash"
+                                                confirm="¿Está seguro que desea eliminar todos los valores de Promo ZT?"
+                                                attrs="{'invisible': [('gift_card_ids','=',[])]}"/>
+                                    </div>
+                                    <field name="gift_card_ids" nolabel="1" colspan="2">
+                                        <tree editable="bottom">
+                                            <field name="product_id"/>
+                                            <field name="amount" string="Monto por pieza ($ con IVA)"/>
+                                        </tree>
+                                    </field>
                                 </div>
                             </page>
 
@@ -411,13 +614,14 @@
             <field name="name">ztyres.promo.notas.credito.tree</field>
             <field name="model">ztyres_promo.notas_credito</field>
             <field name="arch" type="xml">
-                <tree string="Promociones">
+                <tree string="Promociones" decoration-muted="not active">
                     <field name="nombre"/>
                     <field name="start_date"/>
                     <field name="end_date"/>
                     <field name="promo_conditions" string="Alcance"/>
                     <field name="promo_type" string="Política"/>
                     <field name="status"/>
+                    <field name="active" optional="hide"/>
                 </tree>
             </field>
         </record>
@@ -428,6 +632,11 @@
             <field name="arch" type="xml">
                 <search string="Promociones">
                     <field name="nombre"/>
+                    <field name="active"/>
+                    <separator/>
+                    <filter name="filter_archived" string="Archivadas"
+                            domain="[('active','=',False)]"
+                            context="{'active_test': False}"/>
                     <filter name="filter_vigentes" string="Aprobadas"
                             domain="[('status','in',('approve_p','approve'))]"/>
                     <group expand="0" string="Agrupar por">
@@ -443,6 +652,7 @@
             <field name="name">Promociones</field>
             <field name="res_model">ztyres_promo.notas_credito</field>
             <field name="view_mode">tree,form</field>
+            <field name="context">{'active_test': True}</field>
         </record>
 
     </data>

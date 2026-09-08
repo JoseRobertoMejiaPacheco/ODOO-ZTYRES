@@ -17,71 +17,55 @@ from pytz import timezone
 import openpyxl
 import base64
 import io
+import re
 from datetime import date
 
 
 codes_pirelli = [
-#(51521, "3%"), (48712, "3%"), (28800, "2%"), (48713, "3%"), (61691, "2%"), (49637, "2%")
 ]
 
 codes_goodyear = [
-    48900, 66851, 19595, 66850, 19580, 62637, 50389, 66208, 51552, 48733, 19576, 50139, 61007, 57684, 57685, 59263, 64894, 48906, 
-    47593, 58934, 51474, 49037, 57522, 59757, 51250, 59247, 9820, 66852, 58478, 63169, 62648, 57681, 66854, 64893, 48869, 48979, 
-    48980, 66855, 50147, 59758, 50204, 63370, 58473, 57686, 51612, 57245, 62640, 48747, 57246, 59265, 51623, 66853, 62646, 59250, 
-    48692
+66851, 66850, 50389, 19576, 57684, 64894, 48906, 63169, 62648, 57681, 66854, 64893, 48869, 48980, 66855, 63370, 58473, 57686, 57245, 57246, 59265, 62646, 59250
 ]
 
 codes_kumho = [
-#    (62397, "3%")
+57496, 63371, 57495, 59091, 57497, 59762, 63372, 63373
 ]
 
 codes_jinyu = [
-    64885, 65037, 65040, 65048, 65044, 64880, 65042, 64884, 64877, 65051, 65045, 64886, 64879, 65041, 65043, 65047, 65038, 
-    65039, 65035, 64878, 65036, 65050, 66835, 66836, 65049, 65046, 64887, 64882, 66837
 ]
 
-#(ID, PMS, APLICA_CUPON (5%), APLICA_BONO_TARJETA(4%, 5%, 6%))
-codes_bridgestone_promo = [ 
-    (22569, 1229.95, "NO", "SI"), (22075, 1485.93, "NO", "SI"), (22419, 1223.66, "NO", "SI"), (59744, 1515.03, "NO", "SI"), 
-    (22079, 1096.32, "NO", "SI"), (22356, 1267.65, "NO", "SI"), (51533, 1685.18, "NO", "SI"), (22085, 1183.9, "NO", "SI"), 
-    (22305, 1329.97, "NO", "SI"), (22549, 1385.62, "NO", "SI"), (22086, 1378.54, "NO", "SI"), (66200, 1161.29, "NO", "SI"), 
-    (22106, 1538.86, "NO", "SI"), (22589, 1612, "NO", "SI"), (22118, 1499.78, "NO", "SI"), (22518, 2175.71, "NO", "SI"), 
-    (63175, 3898.72, "NO", "SI"), (57249, 1624.63, "NO", "SI"), (62897, 1351.44, "NO", "SI"), (22717, 1497.6, "NO", "SI"), 
-    (22133, 1422.6, "NO", "SI"), (51129, 1422.6, "NO", "SI"), (22524, 1455.75, "NO", "SI"), (48697, 1497.6, "NO", "SI"), 
-    (22711, 1623.05, "NO", "SI"), (22684, 1668.64, "NO", "SI"), (51715, 1668.64, "NO", "SI"), (62898, 3129.8, "NO", "SI"), 
-    (22140, 1384.41, "NO", "SI"), (63168, 1394.33, "NO", "SI"), (49072, 1436.16, "NO", "SI"), (51666, 1640.39, "NO", "SI"), 
-    (22683, 1640.39, "NO", "SI"), (22822, 2086.82, "NO", "SI"), (22804, 2533.09, "NO", "SI"), (22785, 1994.12, "NO", "SI"), 
-    (22605, 2031.35, "NO", "SI"), (66046, 1622.42, "NO", "SI"), (48877, 2349.48, "NO", "SI"), (22155, 1818.36, "NO", "SI"), 
-    (48878, 1843.83, "NO", "SI"), (22161, 1735.46, "NO", "SI"), (22816, 1936.96, "NO", "SI"), (58933, 1847.06, "NO", "SI"), 
-    (22628, 1840.07, "NO", "SI"), (22823, 1678.87, "NO", "SI"), (22814, 1723.22, "NO", "SI"), (49876, 1732.79, "NO", "SI"), 
-    (22162, 2036.34, "NO", "SI"), (22260, 2172.26, "NO", "SI"), (50301, 3437.29, "NO", "SI"), (22547, 2079.84, "NO", "SI"), 
-    (57693, 3852.95, "NO", "SI"), (58485, 1649.09, "NO", "SI"), (59745, 4528.3, "NO", "SI"), (48930, 2178.12, "NO", "SI"), 
-    (61073, 2557, "NO", "SI"), (62652, 3061.37, "NO", "SI"), (48951, 4124.98, "NO", "SI"), (61070, 2595.42, "NO", "SI"), 
-    (22637, 5357.53, "NO", "SI"), (61076, 3665.95, "NO", "SI"), (63176, 3241.01, "NO", "SI"), (59252, 3937.48, "NO", "SI"), 
-    (48952, 2719.82, "NO", "SI"), (22604, 2052.58, "NO", "SI"), (62899, 3798, "NO", "SI"), (22625, 1689.26, "NO", "SI"), 
-    (59243, 2389.03, "NO", "SI"), (62900, 1757.22, "NO", "SI"), (22422, 1820.21, "NO", "SI"), (59253, 2218.13, "NO", "SI"), 
-    (59242, 1954.84, "NO", "SI"), (22388, 1602.15, "NO", "SI"), (62901, 1607.93, "NO", "SI"), (61074, 3276.39, "NO", "SI"), 
-    (22170, 1949.48, "NO", "SI"), (62902, 1828.75, "NO", "SI"), (59254, 4650.73, "NO", "SI"), (62903, 2733.19, "NO", "SI"), 
-    (22633, 2366.4, "NO", "SI"), (22777, 3084.78, "NO", "SI"), (61075, 3440.21, "NO", "SI"), (59270, 3064.19, "NO", "SI"), 
-    (48954, 1850.77, "NO", "SI"), (22817, 3518.33, "NO", "SI"), (59865, 3000, "NO", "SI"), (59260, 2276.51, "NO", "SI"), 
-    (22630, 2607.51, "NO", "SI"), (61086, 3184.07, "NO", "SI"), (22288, 2508.34, "NO", "SI"), (22284, 2853.25, "NO", "SI"), 
-    (58466, 1776.19, "NO", "SI"), (22295, 2672.44, "NO", "SI"), (62408, 3215.55, "NO", "SI"), (61088, 3074.03, "NO", "SI"), 
-    (59867, 3213.73, "NO", "SI"), (61077, 2877.35, "NO", "SI"), (62905, 2776.67, "NO", "SI"), (61071, 5533.92, "NO", "SI"), 
-    (58828, 3611.02, "NO", "SI"), (60952, 3556.71, "NO", "SI"), (59271, 2949.79, "NO", "SI"), (59868, 2674.07, "NO", "SI"), 
-    (61087, 2517.29, "NO", "SI"), (61081, 3318.41, "NO", "SI"), (66840, 3434.56, "NO", "SI"), (62404, 4299.59, "NO", "SI"), 
-    (66236, 3704.16, "NO", "SI"), (62407, 4591.9, "NO", "SI"), (57251, 3931.2, "NO", "SI"), (59256, 3118.28, "NO", "SI"), 
-    (66213, 5179.14, "NO", "SI"), (59257, 5466.91, "NO", "SI"), (59746, 3672.63, "NO", "SI"), (59748, 3816.85, "NO", "SI"), 
-    (59747, 3763.44, "NO", "SI"), (22281, 2523.49, "NO", "SI"), (22516, 2401.84, "NO", "SI"), (62406, 4519.72, "NO", "SI"), 
-    (62907, 4124.64, "NO", "SI"), (65016, 6114.49, "NO", "SI"), (22758, 5559.89, "NO", "SI"), (59870, 3170.46, "NO", "SI"), 
-    (22826, 2278.47, "NO", "SI"), (66045, 2807.06, "NO", "SI"), (59258, 3539.66, "NO", "SI"), (62654, 2891.17, "NO", "SI"), 
-    (22778, 2853.55, "NO", "SI"), (62908, 4228.23, "NO", "SI"), (62405, 3426.94, "NO", "SI"), (62655, 2827.08, "NO", "SI"), 
-    (62409, 4651.79, "NO", "SI"), (22827, 2704.62, "NO", "SI"), (51857, 5985.01, "NO", "SI"), (57226, 3044.56, "NO", "SI"), 
-    (61080, 3848.61, "NO", "SI"), (59871, 6968.19, "NO", "SI"), (61084, 4122.81, "NO", "SI"), (22752, 3691.39, "NO", "SI"), 
-    (22808, 3704.44, "NO", "SI"), (61085, 4319.4, "NO", "SI"), (59749, 4249.06, "NO", "SI"), (62909, 2345.84, "NO", "SI"),
-    (62410, 7263.94, "NO", "SI")
+#(ID, PMS, APLICA_CUPON (5%), APLICA_BONO_TARJETA(4%, 5%, 6%)) 
+codes_bridgestone_promo = [
+(67683, 2152.5, "NO", "SI"), (22569, 1278.54, "NO", "SI"), (22075, 1544.63, "NO", "SI"), (59744, 1574.88, "NO", "SI"), 
+(22419, 1296.22, "NO", "SI"), (59267, 2325.79, "NO", "SI"), (22079, 1378.4, "NO", "SI"), (51533, 1751.74, "NO", "SI"), 
+(22356, 1330.27, "NO", "SI"), (22305, 1382.51, "NO", "SI"), (22085, 1230.67, "NO", "SI"), (22549, 1454.07, "NO", "SI"), 
+(22086, 1446.64, "NO", "SI"), (49042, 1264.65, "NO", "SI"), (66200, 1264.65, "NO", "SI"), (22125, 2026.16, "NO", "SI"), 
+(22661, 1737.7, "NO", "SI"), (22589, 1675.67, "NO", "SI"), (22106, 1599.65, "NO", "SI"), (22118, 1559.02, "NO", "SI"), 
+(22113, 1330.72, "NO", "SI"), (22114, 1330.72, "NO", "SI"), (58465, 1636.97, "NO", "SI"), (22726, 1416.31, "NO", "SI"), 
+(65015, 2850.58, "NO", "SI"), (22518, 2261.65, "NO", "SI"), (62897, 1404.83, "NO", "SI"), (22524, 1513.26, "NO", "SI"), 
+(22133, 1478.79, "NO", "SI"), (51129, 1478.79, "NO", "SI"), (22717, 1556.76, "NO", "SI"), (48697, 1556.76, "NO", "SI"), 
+(22140, 1439.09, "NO", "SI"), (63168, 1449.41, "NO", "SI"), (22683, 1705.18, "NO", "SI"), (49072, 1492.89, "NO", "SI"), 
+(51666, 1705.18, "NO", "SI"), (22786, 1868.69, "NO", "SI"), (22822, 2189.9, "NO", "SI"), (22804, 2633.15, "NO", "SI"), 
+(22605, 2131.7, "NO", "SI"), (48878, 1934.92, "NO", "SI"), (22816, 2013.47, "NO", "SI"), (22158, 1622.04, "NO", "SI"), 
+(50300, 1765.01, "NO", "SI"), (22161, 1804.01, "NO", "SI"), (22823, 1761.81, "NO", "SI"), (22162, 2116.77, "NO", "SI"), 
+(22814, 1791.29, "NO", "SI"), (50301, 3573.06, "NO", "SI"), (22260, 2258.07, "NO", "SI"), (57693, 4005.14, "NO", "SI"), 
+(48952, 2827.26, "NO", "SI"), (22170, 2026.49, "NO", "SI"), (48954, 1930.05, "NO", "SI"), (22288, 2632.25, "NO", "SI"), 
+(66201, 3652.02, "NO", "SI"), (22284, 2965.96, "NO", "SI"), (22295, 2778, "NO", "SI"), (59271, 3066.3, "NO", "SI"), 
+(59868, 2779.69, "NO", "SI"), (61087, 2616.72, "NO", "SI"), (22516, 2496.71, "NO", "SI"), (22826, 2368.47, "NO", "SI"), 
+(59870, 3295.69, "NO", "SI"), (62405, 3562.3, "NO", "SI"), (62655, 2938.75, "NO", "SI"), (22301, 2850.59, "NO", "SI"), 
+(22827, 2811.45, "NO", "SI"), (61080, 4000.63, "NO", "SI"), (62909, 2438.5, "NO", "SI")
 ]
 
-key_sizes = [22356, 22086, 22518, 48697, 22804, 22260]
+key_sizes = [
+22356, 22086, 22518, 48697, 22804, 22260, 22170
+]
+
+vol_sizes = [
+59744, 22419, 22079, 22085, 22589, 22118, 22726, 22518, 62897, 22524, 22133, 48697, 22140, 63168, 22683, 51666, 22822, 
+22804, 48878, 22816, 22162, 22814, 22260, 57693, 48952, 22170, 48954, 22288, 22284, 22295, 59271, 59868, 61087, 22516, 
+22826, 59870, 62405, 62655, 22827, 61080, 62909
+]
 
 WHITE = 'FFFFFF'
 BLACK = '1A1818'
@@ -176,21 +160,36 @@ class ListaDePrecios(models.TransientModel):
                     #=IF(IF(MIN(Q{row_idx}:T{row_idx}) > 0, MIN(Q{row_idx}:T{row_idx}), "") = S{row_idx}, S{row_idx}, IF(MIN(Q{row_idx}:T{row_idx}) > 0, MIN(Q{row_idx}:T{row_idx}), "") * (1-IF(ISNUMBER($U$13), $U$13, 0)))
                 elif header == "PRECIO CON DESCUENTOS":
                      sheet.cell(row=row_idx, column=col_idx).value = f'''=S{row_idx}-
-                                                                            (IF(OR($A$8=1,$A$8=150,$A$8=350,$A$8=600),((S{row_idx}*$C$8)+(S{row_idx}*$E$8)+(S{row_idx}*$F$8)),0))-
-                                                                            (S{row_idx}*IF(ISNUMBER(IFERROR(FIND(UPPER(F{row_idx}),UPPER($N$12)),"")),$U$12,0)) -
-                                                                            (S{row_idx}*IF(ISNUMBER(IFERROR(FIND(UPPER(C{row_idx}),UPPER($J$7)),"")),$J$10,0)) -
-                                                                            (S{row_idx}*IF(ISNUMBER(IFERROR(FIND(UPPER(F{row_idx}),UPPER($I$7)),"")),$I$10,0)) -
-                                                                            (S{row_idx}*IF($O$8 = 0, 0, IF(ISNUMBER(IFERROR(FIND(F{row_idx},UPPER($N$8)),"")),
-                                                                            IF(AND(G{row_idx}>=VALUE(MID($P$8,2,FIND("-",$P$8)-2)), G{row_idx}<=VALUE(RIGHT($P$8,LEN($P$8)-FIND("-",$P$8)-1))
-                                                                            ), $U$8, IF(G{row_idx} >= VALUE(SUBSTITUTE(SUBSTITUTE($P$9,"R",""),"+","")), $U$9, 0))))) - 
-                                                                            IF($O$10 = 0, 0, IF(AND($N$10 = F{row_idx}, V{row_idx} = "SI"), S{row_idx}*$U$10, 0)) - 
-                                                                            (S{row_idx}*IF($O$11 = 0, 0, IF($N$11 = F{row_idx}, IF(ISNUMBER(FIND(","&E{row_idx}&",",","&SUBSTITUTE($P$11," ","")&",")), $U$11, 0)))) - 
-                                                                            (S{row_idx}* IF(AND(ISNUMBER(IFERROR(FIND(F{row_idx},UPPER($K$7)),"")), V{row_idx} = "SI"), $K$10, 0))
+                                                                         (IF(OR($A$8=1,$A$8=100,$A$8=200,$A$8=400,$A$8=700),((S{row_idx}*$C$8)+(S{row_idx}*$E$8)+(S{row_idx}*$F$8)),0)) -
+                                                                         (S{row_idx}* IF(V{row_idx} = "SI", IF(ISNUMBER(IFERROR(FIND(UPPER(F{row_idx}),UPPER($I$7)),"")),$I$10, 0), 0)) -
+                                                                         (S{row_idx}*IF(ISNUMBER(IFERROR(FIND(UPPER(F{row_idx}),UPPER($J$7)),"")),$J$10,0)) -
+                                                                         (S{row_idx}*IF(ISNUMBER(IFERROR(FIND(UPPER(F{row_idx}),UPPER($K$7)),"")),$K$10,0)) -
+                                                                         (S{row_idx}*IF(ISNUMBER(IFERROR(FIND(UPPER(F{row_idx}),UPPER($L$7)),"")),$L$10,0)) -
+                                                                         (S{row_idx}*IF(ISNUMBER(IFERROR(FIND(UPPER(C{row_idx}),UPPER($O$7)),"")),$O$10,0))-
+                                                                         (S{row_idx}*IF($A$8 = 0, 0, IF(ISNUMBER(IFERROR(FIND(UPPER(F{row_idx}),UPPER($M$7)),"")),
+                                                                         IF(AND(G{row_idx}>=VALUE(MID($M$9,2,FIND("-",$M$9)-2)), G{row_idx}<=VALUE(RIGHT($M$9,LEN($M$9)-FIND("-",$M$9)-1))),
+                                                                         $M$10, IF(G{row_idx} >= VALUE(SUBSTITUTE(SUBSTITUTE($N$9,"R",""),"+","")), $N$10, 0))))) -
+                                                                         (S{row_idx}* IF(V{row_idx} = "SI", IF(ISNUMBER(IFERROR(FIND(UPPER(F{row_idx}),UPPER($P$7)),"")),$P$10,0), 0))
                                                                           ''' 
-                                                                          
+                
+                # f'''=S{row_idx}-
+                #     (IF(OR($A$8=1,$A$8=150,$A$8=350,$A$8=600),((S{row_idx}*$C$8)+(S{row_idx}*$E$8)+(S{row_idx}*$F$8)),0))-
+                #     (S{row_idx}*IF(ISNUMBER(IFERROR(FIND(UPPER(F{row_idx}),UPPER($N$11)),"")),$U$11,0)) -
+                #     (S{row_idx}*IF(ISNUMBER(IFERROR(FIND(UPPER(C{row_idx}),UPPER($J$7)),"")),$J$10,0)) -
+                #     (S{row_idx}*IF(ISNUMBER(IFERROR(FIND(UPPER(F{row_idx}),UPPER($I$7)),"")),$I$10,0)) -
+                
+                #     (S{row_idx}*IF($O$8 = 0, 0, IF(ISNUMBER(IFERROR(FIND(F{row_idx},UPPER($N$8)),"")),
+                #     IF(AND(G{row_idx}>=VALUE(MID($P$8,2,FIND("-",$P$8)-2)), G{row_idx}<=VALUE(RIGHT($P$8,LEN($P$8)-FIND("-",$P$8)-1))
+                #     ), $U$8, IF(G{row_idx} >= VALUE(SUBSTITUTE(SUBSTITUTE($P$9,"R",""),"+","")), $U$9, 0))))) - 
+                #     IF($O$10 = 0, 0, IF(AND($N$10 = F{row_idx}, V{row_idx} = "SI"), S{row_idx}*$U$10, 0)) 
+                # - 
+                #     (S{row_idx}* IF(AND(ISNUMBER(IFERROR(FIND(F{row_idx},UPPER($K$7)),"")), V{row_idx} = "SI"), $K$10, 0))
+                #   ''' 
+                
                 # f'''=S{row_idx} -
                 # (IF(OR($A$8=1,$A$8=150,$A$8=350,$A$8=600), ((S{row_idx}*$D$8) + (S{row_idx}*$E$8) + (S{row_idx}*$F$8)), 0)) -
                 # (S{row_idx} * IF(ISNUMBER(IFERROR(FIND(F{row_idx}, UPPER($J$7)), "")), $J$10, 0)) - 
+                # (S{row_idx}*IF($O$11 = 0, 0, IF($N$11 = F{row_idx}, IF(ISNUMBER(FIND(","&E{row_idx}&",",","&SUBSTITUTE($P$11," ","")&",")), $U$11, 0))))
                 # (S{row_idx} * IF($O$8 = 0, 0, IF(ISNUMBER(IFERROR(FIND(F{row_idx}, UPPER($N$8)), "")), 
                 # IF(AND(G{row_idx}>=VALUE(MID($T$8,2,FIND("-",$T$8)-2)),
                 # G{row_idx}<=VALUE(RIGHT($T$8,LEN($T$8)-FIND("-",$T$8)-1))
@@ -252,11 +251,13 @@ class ListaDePrecios(models.TransientModel):
                 if header == "Precio Regular":
                     sheet.cell(row=row_idx, column=col_idx).value = f'=IF(N{row_idx} = "", O{row_idx}, MIN((N{row_idx}*0.9), O{row_idx}))'
                 elif header == "PRECIO CON DESCUENTOS":
-                    sheet.cell(row=row_idx, column=col_idx).value = f'''=P{row_idx} - (IF(OR($A$8=1,$A$8=150,$A$8=350,$A$8=600), (IF(N{row_idx} <> "", ((N{row_idx}*$D$8) + (N{row_idx}*$E$8) + (N{row_idx}*$F$8)), ((O{row_idx}*$D$8) + (O{row_idx}*$E$8) + (O{row_idx}*$F$8)))), 0)) - Q{row_idx}'''
+                    sheet.cell(row=row_idx, column=col_idx).value = f'''=P{row_idx} - (IF(OR($A$8=1,$A$8=100,$A$8=200,$A$8=400,$A$8=700), (IF(N{row_idx} <> "", ((N{row_idx}*$D$8) + (N{row_idx}*$E$8) + (N{row_idx}*$F$8)), ((O{row_idx}*$D$8) + (O{row_idx}*$E$8) + (O{row_idx}*$F$8)))), 0)) - Q{row_idx}'''
                 elif header == "Precio Potencial":
                     sheet.cell(row=row_idx, column=col_idx).value = f'''=R{row_idx} - S{row_idx}'''
                 elif header == "Desc. R13-R16":
-                    sheet.cell(row=row_idx, column=col_idx).value = f'''=IF(W{row_idx} <> "", IF($K$8 = "Sin bono", 0, IF($K$8 = "Facturación de 35 mil pesos", W{row_idx}, IF($K$8 = "Facturación de 300 mil pesos", X{row_idx}, IF($K$8 = "Facturación de 600 mil pesos", Y{row_idx}, IF($K$8 = "Facturación de 1¸2 millones de pesos", Z{row_idx}, 0))))), 0)'''
+                    sheet.cell(row=row_idx, column=col_idx).value = f'''=IF(W{row_idx} <> "", IF($I$8 = "Sin bono", 0, IF($I$8 = "Facturación de 150 mil pesos", W{row_idx}, IF($I$8 = "Facturación de 300 mil pesos", X{row_idx}, IF($I$8 = "Facturación de 600 mil pesos", Y{row_idx}, IF($I$8 = "Facturación de 1¸2 millones de pesos", Z{row_idx}, 0))))), 0)'''
+                elif header == "tarjeta regalo":
+                    sheet.cell(row=row_idx, column=col_idx).value = f'''=IF(AA{row_idx} <> "", IF($I$8 = "Sin bono", 0, IF($I$8 = "Facturación de 150 mil pesos", AA{row_idx}, IF($I$8 = "Facturación de 300 mil pesos", AB{row_idx}, IF($I$8 = "Facturación de 600 mil pesos", AC{row_idx}, IF($I$8 = "Facturación de 1¸2 millones de pesos", AD{row_idx}, 0))))), 0)'''
                 elif header == "FACTURACIÓN":
                     sheet.cell(row=row_idx, column=col_idx).value = f'=IF(Z{row_idx} = "", "", Z{row_idx}*U{row_idx})'   
                 else:
@@ -406,6 +407,8 @@ class ListaDePrecios(models.TransientModel):
 
         # Adjust column width based on content length
         start_col, start_row = start_ref[0], int(start_ref[1:])
+        
+        
         end_col = end_ref[0] if merged_cells else start_col
         end_row = int(end_ref[1:]) if merged_cells else start_row
 
@@ -444,8 +447,9 @@ class ListaDePrecios(models.TransientModel):
         outlet_start_column = 'S'
         outlet_end_column = 'U'
         
-        model_col_idx = column_index_from_string('V')
+        participa_col_idx = column_index_from_string('V')
         marca_col_idx = column_index_from_string('F')
+        model_col_idx = column_index_from_string('E')
         start_column2 = 'A'
         end_column2 = 'O'
         
@@ -458,16 +462,19 @@ class ListaDePrecios(models.TransientModel):
                     cell = row[col_idx]
                     cell.fill = PatternFill(start_color='EBEBEB', end_color='EBEBEB', fill_type='solid')
                 outlet_cell.fill = PatternFill(start_color='EBEBEB', end_color='EBEBEB', fill_type='solid')
-                    
-
                 
         for row in sheet.iter_rows(min_row=15):
-            desc_cell = row[model_col_idx - 1]
+            desc_cell = row[participa_col_idx - 1]
             marca_cell = row[marca_col_idx - 1]
+            model_cell = row[model_col_idx - 1]
+            id_cell = row[column_index_from_string('A') - 1]
             for col in range(ord(start_column2), ord(end_column2) + 1):
-                if desc_cell.value in ['SI'] and marca_cell.value in ['GOODYEAR', 'COOPER']:
+                if desc_cell.value in ['SI'] and marca_cell.value in ['GOODYEAR']:
                     cell = row[col - ord(start_column2)]
                     cell.fill = PatternFill(start_color='FFFF99', end_color='FFFF99', fill_type='solid')
+                if marca_cell.value in ['KUMHO'] and id_cell.value not in codes_kumho and model_cell.value in ['AT51', 'AT52', 'HT51', 'MT51', 'TA91', 'HP71']:
+                    cell = row[col - ord(start_column2)]
+                    cell.fill = PatternFill(start_color='FDE9D9', end_color='FDE9D9', fill_type='solid')
                     
         # for row in sheet.iter_rows(min_row=15):
         #     tier4_cell = row[tier4_col_idx - 1]
@@ -492,9 +499,9 @@ class ListaDePrecios(models.TransientModel):
         
         for row in sheet.iter_rows(min_row=14):
             cupon_cell = row[column_index_from_string(ids_in_codes_brig) - 1]
-            cupon_codes = {t[0]: t[3] for t in codes_bridgestone_promo if t[3] == "SI"}
-                    
-            if (cupon_cell.value in cupon_codes):
+            #cupon_codes = {t[0]: t[3] for t in codes_bridgestone_promo if t[3] == "SI"}
+
+            if (cupon_cell.value in vol_sizes):
                 for col_idx in range(column_index_from_string(column_bonus_cards) - 1, column_index_from_string(column_end_bonus_cards)):
                     cell = row[col_idx]
                     cell.fill = PatternFill(start_color='FDE9D9', end_color='FDE9D9', fill_type='solid')
@@ -524,6 +531,10 @@ class ListaDePrecios(models.TransientModel):
                 for col_idx in range(column_index_from_string(start_column) - 1, column_index_from_string(end_column)):
                     cell = row[col_idx]
                     cell.fill = PatternFill(start_color='F2DCDB', end_color='F2DCDB', fill_type='solid')
+            # elif (cupon_cell.value in bonus_cards) and (id_cell.value >= 17):
+            #     for col_idx in range(column_index_from_string(start_column) - 1, column_index_from_string(end_column)):
+            #         cell = row[col_idx]
+            #         cell.fill = PatternFill(start_color='E6B8B7', end_color='E6B8B7', fill_type='solid')
                     
         for row in sheet.iter_rows(min_row=14):
             id_cell = row[column_index_from_string(cupones) - 1]
@@ -664,7 +675,7 @@ class ListaDePrecios(models.TransientModel):
                 if self.partner_id:
                     cupones_dict5 = {t[0]: t[1] for t in codes_bridgestone_promo if t[3] == "SI"}
                     if obj.product_id.id in cupones_dict5:
-                        data_dict.update({'tarjeta regalo': ((cupones_dict5[obj.product_id.id] * .048) * 1.16).__round__(2)})
+                        data_dict.update({'tarjeta regalo': ((cupones_dict5[obj.product_id.id] * .03) * 1.16).__round__(2)})
                     else:
                         data_dict.update({'tarjeta regalo': ''})
                         
@@ -682,41 +693,64 @@ class ListaDePrecios(models.TransientModel):
                     bonus_cards = {t[0]: t[1] for t in codes_bridgestone_promo if t[3] == "SI"}
                     if obj.product_id.id in bonus_cards:
                         if obj.product_id.id in key_sizes:
-                            data_dict.update({'2.4%': ((bonus_cards[obj.product_id.id] * .03) * 1.16).__round__(2)})
-                            data_dict.update({'3%': ((bonus_cards[obj.product_id.id] * .036) * 1.16).__round__(2)})
-                            data_dict.update({'3.6%': ((bonus_cards[obj.product_id.id] * .042) * 1.16).__round__(2)})
-                            data_dict.update({'4.2%': ((bonus_cards[obj.product_id.id] * .048) * 1.16).__round__(2)})
+                            data_dict.update({'Rango 1': ((bonus_cards[obj.product_id.id] * 0.024) * 1.16).__round__(2)})
+                            data_dict.update({'Rango 2': ((bonus_cards[obj.product_id.id] * 0.032) * 1.16).__round__(2)})
+                            data_dict.update({'Rango 3': ((bonus_cards[obj.product_id.id] * 0.04) * 1.16).__round__(2)})
+                            data_dict.update({'Rango 4': ((bonus_cards[obj.product_id.id] * 0.048) * 1.16).__round__(2)})
                         
                         elif int(resultado) >= 13 and int(resultado) <= 16:
-                            data_dict.update({'2.4%': ((bonus_cards[obj.product_id.id] * .024) * 1.16).__round__(2)})
-                            data_dict.update({'3%': ((bonus_cards[obj.product_id.id] * .03) * 1.16).__round__(2)})
-                            data_dict.update({'3.6%': ((bonus_cards[obj.product_id.id] * .036) * 1.16).__round__(2)})
-                            data_dict.update({'4.2%': ((bonus_cards[obj.product_id.id] * .042) * 1.16).__round__(2)})
+                            data_dict.update({'Rango 1': ((bonus_cards[obj.product_id.id] * 0.016) * 1.16).__round__(2)})
+                            data_dict.update({'Rango 2': ((bonus_cards[obj.product_id.id] * 0.024) * 1.16).__round__(2)})
+                            data_dict.update({'Rango 3': ((bonus_cards[obj.product_id.id] * 0.032) * 1.16).__round__(2)})
+                            data_dict.update({'Rango 4': ((bonus_cards[obj.product_id.id] * 0.04) * 1.16).__round__(2)})
 
                     else:
-                        data_dict.update({'2.4%': ''})
-                        data_dict.update({'3%': ''})
-                        data_dict.update({'3.6%': ''})
-                        data_dict.update({'4.2%': ''})
+                        data_dict.update({'Rango 1': ''})
+                        data_dict.update({'Rango 2': ''})
+                        data_dict.update({'Rango 3': ''})
+                        data_dict.update({'Rango 4': ''})
+                        
+                    if obj.product_id.id in vol_sizes:
+                        data_dict.update({'VolSize 1': ((bonus_cards[obj.product_id.id] * 0.024) * 1.16).__round__(2)})
+                        data_dict.update({'VolSize 2': ((bonus_cards[obj.product_id.id] * 0.032) * 1.16).__round__(2)})
+                        data_dict.update({'VolSize 3': ((bonus_cards[obj.product_id.id] * 0.04) * 1.16).__round__(2)})
+                        data_dict.update({'VolSize 4': ((bonus_cards[obj.product_id.id] * 0.048) * 1.16).__round__(2)})
+                    else:
+                        data_dict.update({'VolSize 1': ''})
+                        data_dict.update({'VolSize 2': ''})
+                        data_dict.update({'VolSize 3': ''})
+                        data_dict.update({'VolSize 4': ''})
+
                 else:
                     if obj.product_id.id in bonus_cards:
                         if obj.product_id.id in key_sizes:
-                            data_dict.update({'2.4%': ((bonus_cards[obj.product_id.id] * .03) * 1.16).__round__(2)})
-                            data_dict.update({'3%': ((bonus_cards[obj.product_id.id] * .036) * 1.16).__round__(2)})
-                            data_dict.update({'3.6%': ((bonus_cards[obj.product_id.id] * .042) * 1.16).__round__(2)})
-                            data_dict.update({'4.2%': ((bonus_cards[obj.product_id.id] * .048) * 1.16).__round__(2)})
-                    
+                            data_dict.update({'Rango 1': ((bonus_cards[obj.product_id.id] * 0.024) * 1.16).__round__(2)})
+                            data_dict.update({'Rango 2': ((bonus_cards[obj.product_id.id] * 0.032) * 1.16).__round__(2)})
+                            data_dict.update({'Rango 3': ((bonus_cards[obj.product_id.id] * 0.04) * 1.16).__round__(2)})
+                            data_dict.update({'Rango 4': ((bonus_cards[obj.product_id.id] * 0.048) * 1.16).__round__(2)})
+                        
                         elif int(resultado) >= 13 and int(resultado) <= 16:
-                            data_dict.update({'2.4%': ((bonus_cards[obj.product_id.id] * .024) * 1.16).__round__(2)})
-                            data_dict.update({'3%': ((bonus_cards[obj.product_id.id] * .03) * 1.16).__round__(2)})
-                            data_dict.update({'3.6%': ((bonus_cards[obj.product_id.id] * .036) * 1.16).__round__(2)})
-                            data_dict.update({'4.2%': ((bonus_cards[obj.product_id.id] * .042) * 1.16).__round__(2)})
+                            data_dict.update({'Rango 1': ((bonus_cards[obj.product_id.id] * 0.016) * 1.16).__round__(2)})
+                            data_dict.update({'Rango 2': ((bonus_cards[obj.product_id.id] * 0.024) * 1.16).__round__(2)})
+                            data_dict.update({'Rango 3': ((bonus_cards[obj.product_id.id] * 0.032) * 1.16).__round__(2)})
+                            data_dict.update({'Rango 4': ((bonus_cards[obj.product_id.id] * 0.04) * 1.16).__round__(2)})
 
                     else:
-                        data_dict.update({'2.4%': ''})
-                        data_dict.update({'3%': ''})
-                        data_dict.update({'3.6%': ''})
-                        data_dict.update({'4.2%': ''})
+                        data_dict.update({'Rango 1': ''})
+                        data_dict.update({'Rango 2': ''})
+                        data_dict.update({'Rango 3': ''})
+                        data_dict.update({'Rango 4': ''})
+                        
+                    if obj.product_id.id in vol_sizes:
+                        data_dict.update({'VolSize 1': ((bonus_cards[obj.product_id.id] * 0.024) * 1.16).__round__(2)})
+                        data_dict.update({'VolSize 2': ((bonus_cards[obj.product_id.id] * 0.032) * 1.16).__round__(2)})
+                        data_dict.update({'VolSize 3': ((bonus_cards[obj.product_id.id] * 0.04) * 1.16).__round__(2)})
+                        data_dict.update({'VolSize 4': ((bonus_cards[obj.product_id.id] * 0.048) * 1.16).__round__(2)})
+                    else:
+                        data_dict.update({'VolSize 1': ''})
+                        data_dict.update({'VolSize 2': ''})
+                        data_dict.update({'VolSize 3': ''})
+                        data_dict.update({'VolSize 4': ''})
                 
                 # if obj.volumen > 0:
                 #     data_dict.update({
@@ -781,7 +815,7 @@ class ListaDePrecios(models.TransientModel):
                 # else:
                 #     data_dict.update({'DESCUENTO': 0})
                     
-                if obj.product_id.id in codes_jinyu:
+                if obj.brand_id.name in ('KUMHO') and obj.product_id.id not in codes_kumho and obj.model_id.name in ('AT51', 'AT52', 'HT51', 'MT51', 'TA91', 'HP71'):
                     data_dict.update({'DESCUENTO': "SI"})
                 elif obj.product_id.id in codes_goodyear:
                     data_dict.update({'DESCUENTO': "SI"})
@@ -797,7 +831,7 @@ class ListaDePrecios(models.TransientModel):
                 # else:
                 #     data_dict.update({'DESCUENTO': 0})
                     
-                if obj.product_id.id in codes_jinyu:
+                if obj.brand_id.name in ('KUMHO') and obj.product_id.id not in codes_kumho and obj.model_id.name in ('AT51', 'AT52', 'HT51', 'MT51', 'TA91', 'HP71'):
                     data_dict.update({'DESCUENTO': "SI"})
                 elif obj.product_id.id in codes_goodyear:
                     data_dict.update({'DESCUENTO': "SI"})
@@ -843,52 +877,43 @@ class ListaDePrecios(models.TransientModel):
         #financial,logistic = self.get_profile_data(partner_id)
         vendedor = self.get_profile_data(partner_id)
                 
-        llantas_x_mes = ['1', '150', '350', '600']
-        
         #volume_percent = ['0%','2%','3%']
         logistic_percent = ['0%','2%','4%']
         financial_percent = ['0%','2%','3%']
         
         bonus_cards = [
             'Sin bono',
-            'Facturación de 35 mil pesos', 
+            'Facturación de 150 mil pesos', 
             'Facturación de 300 mil pesos', 
             'Facturación de 600 mil pesos',
             'Facturación de 1¸2 millones de pesos',
             ]
         
-        desc_Tier3 = ['0%','3%','4%','5%']
-        
-        desc_dunlop = ['0', '50', '150', '300']
-        desc_jinyu = ['0', '250', '600', '1000']
-        desc_kumho = ['0', '30', '60', '120']
-        desc_pirelli = ['0', '12', '30', '50']
+        vol_purchase = ['0', '1', '100', '200', '400', '700']
         #bs_percentR14 = ['0%', '5%', '8%']
         #bs_percentR18 = ['0%', '8%']
         #bs_percentR14 = ['$1 a $46¸399', '$46¸400 a $579¸999', 'Más de $580¸000']
         #bs_percentR18 = ['$1 a $46¸399', 'Más de $46¸400']
+        
+        kumho_percent = ['0%', '3%', '4%', '6%']
          
         combo_data_sheet1 = [
             #{'cell_ref': 'D7', 'values': volume_percent},
             {'cell_ref': 'E8', 'values': logistic_percent},
             {'cell_ref': 'F8', 'values': financial_percent},
-            {'cell_ref': 'A8', 'values': llantas_x_mes},
+            {'cell_ref': 'A8', 'values': vol_purchase},
             
-            {'cell_ref': 'J10', 'values': desc_Tier3},
+            {'cell_ref': 'P10', 'values': kumho_percent},
             
-            {'cell_ref': 'O8', 'values': desc_dunlop},
-            {'cell_ref': 'O10', 'values': desc_jinyu},
-            {'cell_ref': 'O11', 'values': desc_kumho},
-            {'cell_ref': 'O12', 'values': desc_pirelli},
         ]
         
         combo_data_sheet3 = [
             {'cell_ref': 'E8', 'values': logistic_percent},
             {'cell_ref': 'F8', 'values': financial_percent},
             
-            {'cell_ref': 'A8', 'values': llantas_x_mes},
+            {'cell_ref': 'A8', 'values': vol_purchase},
             
-            {'cell_ref': 'K8', 'values': bonus_cards},
+            {'cell_ref': 'I8', 'values': bonus_cards},
             #{'cell_ref': 'I8', 'values': bs_percentR14},
             #{'cell_ref': 'M8', 'values': bs_percentR18}
         ]
@@ -930,7 +955,7 @@ class ListaDePrecios(models.TransientModel):
             {'cell_ref': 'F7', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': False, 'fill_color': '595959', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': "Financiero", 'data_type': 'string'},
             
             {'cell_ref': 'A8:B8', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': 1},
-            {'cell_ref': 'C8:D8', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '0%', 'value': f"""=IF(A8=1,0%,IF(A8=150,1%,IF(A8=350,2%,IF(A8=600,3%, 0%))))"""},
+            {'cell_ref': 'C8:D8', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '0%', 'value': f"""=IF($A$8 = 1, 0%, IF($A$8= 100, 0%, IF($A$8 = 200, 1%, IF($A$8 = 400, 2%, IF($A$8 = 700, 3%, 0%)))))"""},
             {'cell_ref': 'E8', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '0%', 'value': "0%"},
             {'cell_ref': 'F8', 'font_name': 'Calibri', 'font_size': 11, 'font_color': '00B050', 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '0%', 'value': "0%"},
             
@@ -951,8 +976,8 @@ class ListaDePrecios(models.TransientModel):
             # {'cell_ref': 'N12:Q13', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "PIRELLI / FEDERAL / DUNLOP / ONYX", 'data_type': 'string'},
             # {'cell_ref': 'I7:J8', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': 'FDE9D9', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "KUMHO", 'data_type': 'string'},
             # {'cell_ref': 'K7:L8', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': YELLOW, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "PIRELLI", 'data_type': 'string'},
-            #{'cell_ref': 'K7:K8', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': 'DCE6F1', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "GOODYEAR", 'data_type': 'string'},
-            #{'cell_ref': 'L7:L8', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': 'EBEBEB', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "Lista Outlet ", 'data_type': 'string'},
+            # {'cell_ref': 'K7:K8', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': 'DCE6F1', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "GOODYEAR", 'data_type': 'string'},
+            # {'cell_ref': 'L7:L8', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': 'EBEBEB', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "Lista Outlet ", 'data_type': 'string'},
             
             # {'cell_ref': 'I14:I15', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '0%', 'value': f"""=IF(A13 = 1, 0%, IF(A13 = 150, 3%, IF(A13 = 350, 5%, IF(A13 = 600, 5%, 0%))))"""},
             # {'cell_ref': 'J14:J15', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '0%', 'value': f"""=IF(A13 = 1, 0%, IF(A13 = 150, 3%, IF(A13 = 350, 5%, IF(A13 = 600, 5%, 0%))))"""},
@@ -963,55 +988,32 @@ class ListaDePrecios(models.TransientModel):
             # {'cell_ref': 'L9:L10', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '0%', 'value': f"""=IF(A8 = 1, 0%, IF(A8 = 150, 4%, IF(A8 = 350, 4%, IF(A8 = 600, 4%, 0%))))"""},
 
             ########################################################################################################################################################################################################################################################################################################################################
-            {'cell_ref': 'I6:L6', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': False, 'fill_color': RED, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': "PROMOCIONES DE MARCA POR MES", 'data_type': 'string'},
+            {'cell_ref': 'I6:S6', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': False, 'fill_color': RED, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': "PROMOCIONES DE MARCA POR MES", 'data_type': 'string'},
             
+            {'cell_ref': 'I7:I9', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': 'FFFF99', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "GOODYEAR", 'data_type': 'string'},
+            {'cell_ref': 'J7:J9', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "NEXEN", 'data_type': 'string'},
+            {'cell_ref': 'K7:K8', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "JINYU", 'data_type': 'string'},
+            {'cell_ref': 'K9', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': f"""=IF($A$8 = 1, "", IF($A$8= 100, "Min. 8 Medidas", IF($A$8 = 200, "Min. 12 Medidas", IF($A$8 = 400, "Min. 16 Medidas", IF($A$8 = 700, "Min. 20 Medidas", "")))))""", 'data_type': 'string'},
+            {'cell_ref': 'L7:L9', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "PIRELLI", 'data_type': 'string'},
+            {'cell_ref': 'M7:N8', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "DUNLOP / FALKEN", 'data_type': 'string'},
+            {'cell_ref': 'M9', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "R13-R15", 'data_type': 'string'},
+            {'cell_ref': 'N9', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "R16+", 'data_type': 'string'},
+            {'cell_ref': 'O7:O9', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "TIER 3", 'data_type': 'string'},
             
-            {'cell_ref': 'I7:I8', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "NEXEN", 'data_type': 'string'},
-            {'cell_ref': 'J7:J8', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "TIER 3", 'data_type': 'string'},
-            {'cell_ref': 'K7:L8', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': 'FFFF99', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "GOODYEAR / COOPER", 'data_type': 'string'},
-            #{'cell_ref': 'K8:L8', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "mín. 30%' de compra en medida R18+", 'data_type': 'string'},
+            {'cell_ref': 'P7:S8', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': 'FDE9D9', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "KUMHO", 'data_type': 'string'},
+            {'cell_ref': 'P9:S9', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': 'FDE9D9', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': f"""=IF($P$10 = 3%, "30 Llantas", IF($P$10 = 4%, "60 Llantas", IF($P$10 = 6%, "120 Llantas", 0%)))""", 'data_type': 'string'},
+                        
+            {'cell_ref': 'I10:I11', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': 'FFFF99', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '0.0%', 'value': f"""=IF($A$8 = 1, 1.5%, IF($A$8= 100, 3.5%, IF($A$8 = 200, 3.5%, IF($A$8 = 400, 5.5%, IF($A$8 = 700, 7.5%, 0%)))))""", 'data_type': 'string'},
+            {'cell_ref': 'J10:J11', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '0%', 'value': f"""=IF($A$8 = 1, 2%, IF($A$8= 100, 3%, IF($A$8 = 200, 3%, IF($A$8 = 400, 5%, IF($A$8 = 700, 5%, 0%)))))""", 'data_type': 'string'},
+            {'cell_ref': 'K10:K11', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '0%', 'value': f"""=IF($A$8 = 1, 0%, IF($A$8= 100, 1%, IF($A$8 = 200, 3%, IF($A$8 = 400, 5%, IF($A$8 = 700, 8%, 0%)))))""", 'data_type': 'string'},
+            {'cell_ref': 'L10:L11', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '0%', 'value': f"""=IF($A$8 = 1, 2%, IF($A$8= 100, 2%, IF($A$8 = 200, 2%, IF($A$8 = 400, 2%, IF($A$8 = 700, 2%, 0%)))))""", 'data_type': 'string'},
+            {'cell_ref': 'M10:M11', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '0%', 'value': f"""=IF($A$8 = 1, 1%, IF($A$8= 100, 2%, IF($A$8 = 200, 3%, IF($A$8 = 400, 3%, IF($A$8 = 700, 4%, 0%)))))""", 'data_type': 'string'},
+            {'cell_ref': 'N10:N11', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '0%', 'value': f"""=IF($A$8 = 1, 2%, IF($A$8= 100, 3%, IF($A$8 = 200, 4%, IF($A$8 = 400, 4%, IF($A$8 = 700, 5%, 0%)))))""", 'data_type': 'string'},
+            {'cell_ref': 'O10:O11', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '0%', 'value': f"""=IF($A$8 = 1, 2%, IF($A$8= 100, 2%, IF($A$8 = 200, 3%, IF($A$8 = 400, 4%, IF($A$8 = 700, 5%, 0%)))))""", 'data_type': 'string'},
+            {'cell_ref': 'P10:S11', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': 'FDE9D9', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '0%', 'value': '0%', 'data_type': 'string'},
+                        
             
-            {'cell_ref': 'I9:L9', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': False, 'fill_color': RED, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': "DESCUENTOS", 'data_type': 'string'},
-            
-            {'cell_ref': 'I10', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '0%', 'value': "5%", 'data_type': 'string'},
-            {'cell_ref': 'J10', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '0%', 'value': "0%", 'data_type': 'string'},
-            {'cell_ref': 'K10:L10', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': 'FFFF99', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '0%', 'value': "7.5%", 'data_type': 'string'},
-            
-            {'cell_ref': 'I11:L11', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': False, 'fill_color': RED, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': "CONDICIÓN", 'data_type': 'string'},
-            
-            {'cell_ref': 'I12', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "Sin Volumen", 'data_type': 'string'},
-            {'cell_ref': 'J12', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': f"""=IF($J$10 = 3%, "50 Llantas", IF($J$10 = 4%, "100 Llantas", IF($J$10 = 5%, "200 Llantas", "Sin Descuento")))"""},
-            {'cell_ref': 'K12:L12', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': 'FFFF99', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "(Solo medidas participantes)", 'data_type': 'string'},
-            ########################################################################################################################################################################################################################################################################################################################################
-            {'cell_ref': 'N6:U6', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': False, 'fill_color': RED, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': "PROMOCIONES DE MARCA POR MES", 'data_type': 'string'},
-            
-            {'cell_ref': 'N7', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "Marca", 'data_type': 'string'},
-            {'cell_ref': 'O7:S7', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "Volumen", 'data_type': 'string'},
-            {'cell_ref': 'T7', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "Rin", 'data_type': 'string'},
-            {'cell_ref': 'U7', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "Descuento", 'data_type': 'string'},
-            
-            {'cell_ref': 'N8:N9', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "DUNLOP / FALKEN", 'data_type': 'string'},
-            {'cell_ref': 'N10', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "JINYU", 'data_type': 'string'},
-            {'cell_ref': 'N11', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "KUMHO", 'data_type': 'string'},
-            {'cell_ref': 'N12', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "PIRELLI", 'data_type': 'string'},
-            
-            {'cell_ref': 'O8:O9', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': 0, 'data_type': 'string'},
-            {'cell_ref': 'O10', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': 0, 'data_type': 'string'},
-            {'cell_ref': 'O11', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "Sin Volumen", 'data_type': 'string'},
-            {'cell_ref': 'O12', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': 0, 'data_type': 'string'},
-            
-            {'cell_ref': 'P8:T8', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value':  'R13-R15', 'data_type': 'string'},
-            {'cell_ref': 'P9:T9', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value':  'R16+', 'data_type': 'string'},
-            {'cell_ref': 'P10:T10', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value':  f"""=IF($O$10 = 1000, "18 Medidas, 12 llantas x medida", IF($O$10 = 600, "16 Medidas, 12 llantas x medida", IF($O$10 = 250, "10 Medidas, 12 llantas x medida", "Sin Descuento")))"""},
-            {'cell_ref': 'P11:T11', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value':  "AT51, AT52, HP71, HT51, MT51 TA91", 'data_type': 'string'},
-            {'cell_ref': 'P12:T12', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value':  "En la compra de los sig. Volúmenes", 'data_type': 'string'},
-            
-            {'cell_ref': 'U8', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format':  '0%', 'value':  f"""=IF($O$8 = 50, 2%, IF($O$8 = 150, 3%, IF($O$8 = 300, 4%,  "Sin Descuento")))""", 'data_type': 'string'},
-            {'cell_ref': 'U9', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format':  '0%', 'value':  f"""=IF($O$8 = 50, 3%, IF($O$8 = 150, 4%, IF($O$8 = 300, 5%,  "Sin Descuento")))""", 'data_type': 'string'},
-            {'cell_ref': 'U10', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '0%', 'value':  f"""=IF($O$10 = 1000, 8%, IF($O$10 = 600, 5%, IF($O$10 = 250, 3%, "Sin Descuento")))""", 'data_type': 'string'},
-            {'cell_ref': 'U11', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '0%', 'value':  "5%", 'data_type': 'string'},
-            {'cell_ref': 'U12', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '0%', 'value':  f"""=IF($O$12 = 50, 5%, IF($O$12 = 30, 4%, IF($O$12 = 12, 3%, 0%)))""", 'data_type': 'string'},
-            
+
             ########################################################################################################################################################################################################################################################################################################################################
             {'cell_ref': 'A2:D2', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': True, 'fill_color': WHITE, 'border': None, 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "CÓDIGO:", 'data_type': 'string'},   
             {'cell_ref': 'E2', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': None, 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "VTA-FO-03", 'data_type': 'string'},   
@@ -1181,7 +1183,7 @@ class ListaDePrecios(models.TransientModel):
                 {'cell_ref': 'F7', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': False, 'fill_color': '595959', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': "Financiero", 'data_type': 'string'},
                 
                 {'cell_ref': 'A8:C8', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': 1},
-                {'cell_ref': 'D8', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '0%', 'value': f"""=IF(A8=1,0%,IF(A8=150,1%,IF(A8=350,2%,IF(A8=600,3%, 0%))))"""},
+                {'cell_ref': 'D8', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '0%', 'value': f"""=IF($A$8 = 1, 0%, IF($A$8= 100, 0%, IF($A$8 = 200, 1%, IF($A$8 = 400, 2%, IF($A$8 = 700, 3%, 0%)))))"""},
                 {'cell_ref': 'E8', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '0%', 'value': "0%"},
                 {'cell_ref': 'F8', 'font_name': 'Calibri', 'font_size': 11, 'font_color': '00B050', 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '0%', 'value': "0%"},
                 
@@ -1224,6 +1226,8 @@ class ListaDePrecios(models.TransientModel):
                 {'cell_ref': 'Y13', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': '92D050', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0.00', 'data_type': 'string'},
                 {'cell_ref': 'Z13', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': '92D050', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0.00', 'data_type': 'string'},
                 
+                # {'cell_ref': 'AA13', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': '92D050', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0.00', 'data_type': 'string'},
+                                
                 # {'cell_ref': 'W13', 'font_name': 'Calibri', 'font_size': 11, 'font_color': 'C00000', 'bold': True, 'fill_color': 'D9D9D9', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0.00', 'data_type': 'string'},
                 
                 # {'cell_ref': 'X13', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': True, 'fill_color': '92D050', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0.00', 'data_type': 'string'},
@@ -1239,15 +1243,13 @@ class ListaDePrecios(models.TransientModel):
                 {'cell_ref': 'I6:L6', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': False, 'fill_color': RED, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': "PROMOCIÓN BRIDGESTONE Y FIRESTONE", 'data_type': 'string'},
                 
                 {'cell_ref': 'I7:J7', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': 'FDE9D9', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': "TARJETA REGALO", 'data_type': 'string'},
-                {'cell_ref': 'I8:J8', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': False, 'fill_color': BLACK, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': "Compra mín 35mil pesos netos al mes", 'data_type': 'string'},
                 {'cell_ref': 'I9:J9', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': 'FDE9D9', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': "(Consulte medidas participantes)", 'data_type': 'string'},
                 
                 {'cell_ref': 'K7:L7', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': 'F2DCDB', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': "VOLUMEN MENSUAL R13-R16", 'data_type': 'string'},
-                
-                {'cell_ref': 'K8:L8', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': False, 'fill_color': BLACK, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '0%', 'value': "Sin bono", 'data_type': 'string'},
-                {'cell_ref': 'K9:L9', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': False, 'fill_color': '00B0F0', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '0%', 'value': f"""=IF(K8 = "Facturación de 35 mil pesos", "Descuento 3%", IF(K8 = "Facturación de 300 mil pesos", "Descuento 3.6%", IF(K8 = "Facturación de 600 mil pesos", "Descuento 4.2%", IF(K8 = "Facturación de 1¸2 millones de pesos", "Descuento 4.8%", "Sin Descuento"))))""", 'data_type': 'string'},
-                {'cell_ref': 'K10:L10', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': 'F2DCDB', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': f"""=IF(K8 = "Facturación de 35 mil pesos", "Descuento 2.4%", IF(K8 = "Facturación de 300 mil pesos", "Descuento 3%", IF(K8 = "Facturación de 600 mil pesos", "Descuento 3.6%", IF(K8 = "Facturación de 1¸2 millones de pesos", "Descuento 4.2%", "Sin Descuento"))))""", 'data_type': 'string'},
-                                                                                                                                                                                                                                                            
+                {'cell_ref': 'I8:L8', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': False, 'fill_color': BLACK, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '0%', 'value': "Sin bono", 'data_type': 'string'},
+                {'cell_ref': 'K9:L9', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': False, 'fill_color': '00B0F0', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '0%', 'value': f"""=IF(I8 = "Facturación de 150 mil pesos", "Descuento 2.4%", IF(I8 = "Facturación de 300 mil pesos", "Descuento 3.2%", IF(I8 = "Facturación de 600 mil pesos", "Descuento 4%", IF(I8 = "Facturación de 1¸2 millones de pesos", "Descuento 4.8%", "Sin Descuento"))))""", 'data_type': 'string'},
+                {'cell_ref': 'K10:L10', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': 'F2DCDB', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': f"""=IF(I8 = "Facturación de 150 mil pesos", "Descuento 1.6%", IF(I8 = "Facturación de 300 mil pesos", "Descuento 2.4%", IF(I8 = "Facturación de 600 mil pesos", "Descuento 3.2%", IF(I8 = "Facturación de 1¸2 millones de pesos", "Descuento 4%", "Sin Descuento"))))""", 'data_type': 'string'},
+                                                                                                                                                                                                                                                                           
                 ]
 
             data_for_sheet5 = [
@@ -1284,7 +1286,7 @@ class ListaDePrecios(models.TransientModel):
             formats = {
                 'string': ['B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'M'],
                 'number': ['A', 'L', 'U', 'V'],
-                'currency': ['N', 'O', 'P', 'Q', 'R', 'S', 'T', 'W', 'X', 'Y', 'Z'],
+                'currency': ['N', 'O', 'P', 'Q', 'R', 'S', 'T', 'W', 'X', 'Y', 'Z', 'AA', 'AB', 'AC', 'AD'],
             }
             
             formats2 = {
@@ -1299,14 +1301,14 @@ class ListaDePrecios(models.TransientModel):
             # Para ocultar la hoja:
             # sheet.sheet_state = 'hidden'
             
-            columna_a_ocultar_sheet3 = ['A', 'N', 'O', 'V', 'W', 'X', 'Y', 'Z']
+            columna_a_ocultar_sheet3 = ['A', 'N', 'O', 'V', 'W', 'X', 'Y', 'Z', 'AA', 'AB', 'AC', 'AD']
             
             # Itera sobre cada hoja
             for sheet in sheets:
                 start_row = 13
                 end_row = num_rows_3
                 start_col = 'A'
-                end_col = 'Z'
+                end_col = 'AD'
                 # Itera sobre cada tipo de formato y sus respectivas columnas
                 for format_type, columns in formats.items():
                     for column in columns:
@@ -1451,5 +1453,3 @@ class ListaDePrecios(models.TransientModel):
             return self.sudo().get_xlsx_report(self.partner_id)
         elif not self.partner_id and self.volume_profile and self.financial_profile and self.logistic_profile:
             return self.sudo().get_xlsx_report(self.partner_id)
-        
-        

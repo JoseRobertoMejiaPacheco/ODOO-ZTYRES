@@ -79,5 +79,41 @@
         </field>
     </record>
 
+
+    <record id="view_amount_rim_tier_form" model="ir.ui.view">
+        <field name="name">ztyres_promo.amount.rim.tier.form</field>
+        <field name="model">ztyres_promo.current_policy_amount</field>
+        <field name="arch" type="xml">
+            <form string="Tramo de monto y porcentajes por RIN">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="lower_limit" string="Desde ($ con IVA)"/>
+                            <field name="upper_limit" string="Hasta ($ con IVA)"/>
+                        </group>
+                        <group>
+                            <field name="min_qty"/>
+                        </group>
+                    </group>
+                    <separator string="Porcentajes por rango de RIN"/>
+                    <div class="alert alert-info" role="alert">
+                        Los rangos son libres. Ejemplo: 14 a 16 y 17 a 99.
+                        Si mañana cambia a R13-R15 y R16+, solo edita estos renglones.
+                        Usa 99 como límite superior para representar “en adelante”.
+                    </div>
+                    <field name="rim_discount_ids" nolabel="1">
+                        <tree editable="bottom">
+                            <field name="rim_from"/>
+                            <field name="rim_to"/>
+                            <field name="discount"/>
+                            <field name="key_size_discount" string="Key Size (%)"/>
+                        </tree>
+                    </field>
+                    <field name="notas_credito_id" invisible="1"/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
     </data>
 </odoo>

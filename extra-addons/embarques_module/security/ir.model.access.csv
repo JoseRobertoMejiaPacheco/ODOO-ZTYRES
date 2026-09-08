@@ -1,0 +1,28 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_embarques_user,embarque user,model_embarques_embarques,embarques_module.group_embarques_user,1,1,1,0
+access_embarques_manager,embarque manager,model_embarques_embarques,embarques_module.group_embarques_manager,1,1,1,1
+access_embarques_finance,embarque finanzas,model_embarques_embarques,embarques_module.group_embarques_finance,1,1,0,0
+access_stage_user,etapa user,model_embarques_stage,embarques_module.group_embarques_user,1,0,0,0
+access_stage_manager,etapa manager,model_embarques_stage,embarques_module.group_embarques_manager,1,1,1,1
+access_tag_user,etiqueta user,model_embarques_tag,embarques_module.group_embarques_user,1,0,0,0
+access_tag_manager,etiqueta manager,model_embarques_tag,embarques_module.group_embarques_manager,1,1,1,1
+access_rutas_user,ruta user,model_rutas_embarques,embarques_module.group_embarques_user,1,0,0,0
+access_rutas_manager,ruta manager,model_rutas_embarques,embarques_module.group_embarques_manager,1,1,1,1
+access_zona_user,zona user,model_embarques_zona,embarques_module.group_embarques_user,1,0,0,0
+access_zona_manager,zona manager,model_embarques_zona,embarques_module.group_embarques_manager,1,1,1,1
+access_zona_finance,zona finanzas,model_embarques_zona,embarques_module.group_embarques_finance,1,0,0,0
+access_unidad_user,unidad user,model_embarques_unidad,embarques_module.group_embarques_user,1,0,0,0
+access_unidad_manager,unidad manager,model_embarques_unidad,embarques_module.group_embarques_manager,1,1,1,1
+access_unidad_finance,unidad finanzas,model_embarques_unidad,embarques_module.group_embarques_finance,1,0,0,0
+access_vehicle_user,vehiculo user,model_embarques_vehicle,embarques_module.group_embarques_user,1,0,0,0
+access_vehicle_manager,vehiculo manager,model_embarques_vehicle,embarques_module.group_embarques_manager,1,1,1,1
+access_vehicle_finance,vehiculo finanzas,model_embarques_vehicle,embarques_module.group_embarques_finance,1,0,0,0
+access_carta_vehicle_user,vehiculo carta porte user,l10n_mx_edi_stock.model_l10n_mx_edi_vehicle,embarques_module.group_embarques_user,1,0,0,0
+access_carta_vehicle_manager,vehiculo carta porte manager,l10n_mx_edi_stock.model_l10n_mx_edi_vehicle,embarques_module.group_embarques_manager,1,1,0,0
+access_carta_vehicle_finance,vehiculo carta porte finanzas,l10n_mx_edi_stock.model_l10n_mx_edi_vehicle,embarques_module.group_embarques_finance,1,0,0,0
+access_destino_user,destino user,model_embarques_destino,embarques_module.group_embarques_user,1,0,0,0
+access_destino_manager,destino manager,model_embarques_destino,embarques_module.group_embarques_manager,1,1,1,1
+access_destino_finance,destino finanzas,model_embarques_destino,embarques_module.group_embarques_finance,1,0,0,0
+access_policy_user,politica user,model_embarques_discount_policy,embarques_module.group_embarques_user,1,0,0,0
+access_policy_manager,politica manager,model_embarques_discount_policy,embarques_module.group_embarques_manager,1,1,1,1
+access_policy_finance,politica finanzas,model_embarques_discount_policy,embarques_module.group_embarques_finance,1,0,0,0

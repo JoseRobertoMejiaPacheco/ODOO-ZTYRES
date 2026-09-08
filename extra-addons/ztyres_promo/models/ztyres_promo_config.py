@@ -76,6 +76,7 @@ FEATURE_SCOPES = (SCOPE_TIRE_FEATURE, SCOPE_ATTRIBUTE_COMBINATION)
 # ---------------------------------------------------------------------------
 POLICY_QUANTITY = 'quantity'
 POLICY_AMOUNT = 'amount'
+POLICY_AMOUNT_RIM = 'amount_rim'
 POLICY_MONTHLY_VOLUME = 'monthly_volume'
 POLICY_RIM_QUANTITY = 'rim_quantity'
 POLICY_COUPONS = 'coupons'
@@ -83,13 +84,14 @@ POLICY_COUPONS = 'coupons'
 POLICY_SELECTION = [
     (POLICY_QUANTITY, 'Cantidad'),
     (POLICY_AMOUNT, 'Monto'),
+    (POLICY_AMOUNT_RIM, 'Monto por Rin / Key Sizes'),
     (POLICY_MONTHLY_VOLUME, 'Volumen Mensual'),
     (POLICY_RIM_QUANTITY, 'Cantidad Acumulada por Rin'),
     (POLICY_COUPONS, 'Cupones'),
 ]
 
 # Políticas que usan las tablas de tramos genéricas (lower/upper/%/monto fijo).
-TIER_POLICIES = (POLICY_QUANTITY, POLICY_AMOUNT)
+TIER_POLICIES = (POLICY_QUANTITY, POLICY_AMOUNT, POLICY_AMOUNT_RIM)
 
 # ---------------------------------------------------------------------------
 # Matriz de combinaciones válidas
@@ -100,18 +102,21 @@ ALLOWED_POLICIES_BY_SCOPE = {
     SCOPE_TIRE_FEATURE: (
         POLICY_QUANTITY,
         POLICY_AMOUNT,
+        POLICY_AMOUNT_RIM,
         POLICY_MONTHLY_VOLUME,
         POLICY_RIM_QUANTITY,
     ),
     SCOPE_ATTRIBUTE_COMBINATION: (
         POLICY_QUANTITY,
         POLICY_AMOUNT,
+        POLICY_AMOUNT_RIM,
         POLICY_MONTHLY_VOLUME,
         POLICY_RIM_QUANTITY,
     ),
     SCOPE_SPECIFIC_PRODUCTS: (
         POLICY_QUANTITY,
         POLICY_AMOUNT,
+        POLICY_AMOUNT_RIM,
         POLICY_MONTHLY_VOLUME,
         POLICY_RIM_QUANTITY,
     ),
@@ -130,10 +135,96 @@ FORCED_POLICY_BY_SCOPE = {
 # ---------------------------------------------------------------------------
 REWARD_PERCENTAGE = 'percentage'
 REWARD_FIXED_AMOUNT = 'fixed_amount'
+# Tarjeta de regalo ("Promo ZT"): el cliente alcanza el nivel y se le
+# entrega una tarjeta por el valor de la columna. NO genera nota de
+# crédito — solo aparece en la tabla de resultados como alcanzada.
+REWARD_GIFT_CARD = 'gift_card'
 
 REWARD_SELECTION = [
     (REWARD_PERCENTAGE, 'Porcentaje'),
     (REWARD_FIXED_AMOUNT, 'Monto fijo en NC'),
+    (REWARD_GIFT_CARD, 'Tarjeta de regalo'),
+]
+
+# ---------------------------------------------------------------------------
+# Tarjeta de regalo: de dónde sale el valor
+# ---------------------------------------------------------------------------
+# Hay dos promociones distintas que en la mesa se dicen igual
+# ("te llevas una tarjeta de regalo"), y confundirlas cambia el monto:
+#
+#   TIER    -> una tarjeta por alcanzar el nivel. El valor está en la
+#              columna "Promo ZT" del propio nivel y NO depende de
+#              cuántas llantas se compraron: llegar a 50 mil da la misma
+#              tarjeta que llegar a 80 mil dentro del mismo tramo.
+#
+#   PRODUCT -> el nivel solo dice si el cliente CALIFICA (p. ej. compra
+#              mínima de 50 mil netos al mes). El valor sale de la
+#              plantilla que se carga por código: cada código trae su
+#              monto por pieza y se multiplica por las piezas compradas.
+#              Si la columna del código dice 5 y compró 10 llantas, son
+#              50. Es la mecánica de B/F-0801PZT.
+GIFT_CARD_SOURCE_TIER = 'tier'
+GIFT_CARD_SOURCE_PRODUCT = 'product'
+
+GIFT_CARD_SOURCE_SELECTION = [
+    (GIFT_CARD_SOURCE_TIER, 'Valor fijo del nivel alcanzado'),
+    (GIFT_CARD_SOURCE_PRODUCT, 'Monto por pieza de la plantilla (por código)'),
+]
+
+# ---------------------------------------------------------------------------
+# Tarjeta de regalo: cómo se entrega
+# ---------------------------------------------------------------------------
+# El valor calculado siempre se guarda y se muestra. Lo que cambia aquí
+# es si además se emite y se timbra una nota de crédito por ese importe.
+#
+# El default es NO emitir NC, porque es la opción reversible: si hacía
+# falta la NC se prende el selector y se recalcula. Al revés no —una NC
+# timbrada de más ya salió al SAT.
+GIFT_CARD_DELIVERY_NONE = 'none'
+GIFT_CARD_DELIVERY_NC = 'nc'
+
+GIFT_CARD_DELIVERY_SELECTION = [
+    (GIFT_CARD_DELIVERY_NONE, 'Solo aviso: se entrega la tarjeta, sin NC'),
+    (GIFT_CARD_DELIVERY_NC, 'Nota de crédito por el valor de la tarjeta'),
+]
+
+# ---------------------------------------------------------------------------
+# Base de cálculo del beneficio porcentual
+# ---------------------------------------------------------------------------
+# Un porcentaje siempre se cobra sobre ALGO. Hasta ahora ese algo era
+# siempre el subtotal facturado de la línea, y no hacía falta decirlo.
+#
+# Con la promoción de precios PMS ya no es único: el convenio fija un
+# precio de referencia por código (el PMS) y el beneficio se paga sobre
+# ese precio, no sobre lo que realmente se facturó. Dos clientes que
+# compraron el mismo código a distinto precio reciben la misma NC por
+# pieza.
+#
+# La base NO interviene en la elección del nivel: el acumulado se sigue
+# midiendo con lo facturado (piezas o subtotal real). El PMS solo cambia
+# sobre qué se multiplica el porcentaje.
+BASE_INVOICED = 'invoiced'
+BASE_PMS = 'pms'
+
+REWARD_BASE_SELECTION = [
+    (BASE_INVOICED, 'Subtotal facturado (lo que se vendió)'),
+    (BASE_PMS, 'Precio PMS x piezas (tabla de la promoción)'),
+]
+
+# ---------------------------------------------------------------------------
+# ¿Un importe capturado trae IVA?
+# ---------------------------------------------------------------------------
+# Regla del módulo: todo monto que se captura en una promoción se
+# escribe CON IVA, porque así lo ve el negocio (ver `reward_engine.untaxed`).
+# El precio PMS es la excepción que obliga a preguntarlo: las listas de
+# las marcas circulan de las dos formas y equivocarse cambia la NC un
+# 16%. Por eso aquí se captura explícitamente en vez de asumirlo.
+PRICE_UNTAXED = 'untaxed'
+PRICE_TAXED = 'taxed'
+
+PRICE_TAX_SELECTION = [
+    (PRICE_UNTAXED, 'Sin IVA (es un subtotal)'),
+    (PRICE_TAXED, 'Con IVA (es un precio facturado)'),
 ]
 
 # Tope de piezas bonificadas por producto en promociones de cupones.

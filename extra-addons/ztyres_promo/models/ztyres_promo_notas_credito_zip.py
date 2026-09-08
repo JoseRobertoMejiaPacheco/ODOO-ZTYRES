@@ -8,7 +8,7 @@ sí (armado del archivo, validaciones, adjunto) vive en
 from odoo import models
 from odoo.exceptions import UserError
 
-from ..utils import xml_zip
+from ..utils import pdf_zip, xml_zip
 
 
 class ZtyresVolumenZip(models.Model):
@@ -28,6 +28,23 @@ class ZtyresVolumenZip(models.Model):
             self.env,
             valid_invoices,
             move_type=self._context.get('move_type'),
+            res_model=self._name,
+            res_id=self.id,
+        )
+
+    def download_zip_pdfs(self):
+        """Descarga los PDF de las mismas facturas válidas del ZIP XML."""
+        self.ensure_one()
+        valid_invoices = self._get_valid_invoices('out_invoice')
+        if not valid_invoices:
+            raise UserError(
+                'No se encontraron facturas con productos participantes '
+                'que hayan ganado la promoción.'
+            )
+
+        return pdf_zip.generate_pdf_zip_attachment(
+            self.env,
+            valid_invoices,
             res_model=self._name,
             res_id=self.id,
         )

@@ -177,7 +177,12 @@ class ZtyresPromoDocumentMixin(models.AbstractModel):
 
         body = ''
         if show_global:
-            body += escape(self._render_promo_message(promo, result['ganado'], result['discount_percent']))
+            body += escape(self._render_promo_message(
+                promo,
+                result['ganado'],
+                result['discount_percent'],
+                gift_card_amount=result.get('gift_card_amount', 0.0),
+            ))
         else:
             body += '<strong>%s</strong>' % escape(promo.nombre or promo.display_name)
 
@@ -186,7 +191,13 @@ class ZtyresPromoDocumentMixin(models.AbstractModel):
 
         return '<li>%s</li>' % body
 
-    def _render_promo_message(self, promo, ganado, discount_percent):
+    def _render_promo_message(
+        self,
+        promo,
+        ganado,
+        discount_percent,
+        gift_card_amount=0.0,
+    ):
         """Arma el mensaje de una promoción para un monto dado
         (puede ser el total del documento o el de una línea puntual),
         usando `promo_ganada_message` (el texto configurado por el
@@ -195,16 +206,34 @@ class ZtyresPromoDocumentMixin(models.AbstractModel):
         defecto (compatibilidad con promociones creadas antes de que
         existiera este campo). NO escapa el resultado — quien llame a
         esto decide si necesita escaparlo (HTML) o no (texto plano)."""
-        porcentaje = '{:.2f}%'.format(discount_percent) if discount_percent is not None else ''
-        monto = '${:,.2f}'.format(ganado)
+        porcentaje = (
+            ('{:.1f}'.format(discount_percent)).rstrip('0').rstrip('.') + '%'
+            if discount_percent is not None else ''
+        )
         promocion_name = promo.nombre or promo.display_name
+
+        # En una tarjeta de regalo entregada por fuera, `ganado` es cero
+        # por diseño (no hay NC). Si `{monto}` se armara con él, el
+        # aviso diría "¡Ganaste $0.00!" en la cara del cliente, que es
+        # lo contrario de lo que la promoción quiere comunicar. El monto
+        # que se muestra es el valor de la tarjeta.
+        tarjeta = '${:,.2f}'.format(gift_card_amount) if gift_card_amount else ''
+        monto = tarjeta if gift_card_amount and not ganado else '${:,.2f}'.format(ganado)
 
         template = promo.promo_ganada_message
         if not template:
             porcentaje_suffix = ' (%s)' % porcentaje if porcentaje else ''
+            if gift_card_amount and not ganado:
+                return '%s: %s en tarjeta de regalo' % (promocion_name, tarjeta)
             return '%s%s: %s ganado en NC' % (promocion_name, porcentaje_suffix, monto)
 
-        return self._format_message(template, promocion=promocion_name, monto=monto, porcentaje=porcentaje)
+        return self._format_message(
+            template,
+            promocion=promocion_name,
+            monto=monto,
+            porcentaje=porcentaje,
+            tarjeta=tarjeta,
+        )
 
     def _format_message(self, template, **values):
         """Reemplaza los marcadores (`{promocion}`, `{monto}`,

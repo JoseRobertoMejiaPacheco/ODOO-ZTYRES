@@ -20,13 +20,12 @@
     'version': '0.1',
 
     # any module necessary for this one to work correctly
-    'depends': ['ztyres_products','product','web','website','contacts','sale','mass_mailing','discount_profiles'],
+    'depends': ['ztyres_products','product','web','website','contacts','sale','discount_profiles'],
 
     # always loaded
     'data': [
         'wizard/security/security.xml',
         # 'security/ir.model.access.csv',
-        'views/views.xml',
         'views/templates.xml',
         'wizard/views/lista_de_precios.xml'
     ],

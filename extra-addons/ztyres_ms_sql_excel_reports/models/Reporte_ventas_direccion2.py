@@ -46,18 +46,22 @@ class ReporteVentasDireccion(models.TransientModel):
         
         vendedores_Actuales = [
             'DIEGO GOMEZ',
-            'HUMBERTO MORENO',
-            'Alvaro Ivan Andrade Rosales',
             'JOSE AARON FONSECA RADA',
+            'Alvaro Ivan Andrade Rosales',
             'CHRISTIAN GUADALUPE NORIEGA PALACIOS',
+            'JOSE MARIANO JAIME MARQUEZ',
+            'LAURA MONSERRAT TORRES VAZQUEZ',
+            'HUMBERTO MORENO',
         ]
         
         vendedores = [
+            'DIEGO GOMEZ',
+            'JOSE AARON FONSECA RADA',
             'Alvaro Ivan Andrade Rosales',
             'CHRISTIAN GUADALUPE NORIEGA PALACIOS',
-            'DIEGO GOMEZ',
+            'JOSE MARIANO JAIME MARQUEZ',
+            'LAURA MONSERRAT TORRES VAZQUEZ',
             'HUMBERTO MORENO',
-            'JOSE AARON FONSECA RADA',
             'OTROS',
             'RICARDO DE COSS'
         ]
@@ -70,7 +74,7 @@ class ReporteVentasDireccion(models.TransientModel):
                 SUM(sol.product_uom_qty) AS "cantidad",
                 SUM(sol.price_subtotal) AS "subtotal",
                 so.currency_id AS "divisa",
-                rcs."name" AS "estado"
+                rcs.code AS "estado"
             FROM sale_order so
             LEFT JOIN sale_order_line sol ON so.id = sol.order_id  
             LEFT JOIN res_partner rp2 ON sol.order_partner_id = rp2.id 
@@ -84,7 +88,7 @@ class ReporteVentasDireccion(models.TransientModel):
             AND so.date_order BETWEEN %s AND %s
             AND sol.qty_invoiced = 0
             AND so.state not IN ('cancel')
-            GROUP BY rp2."name", so."name", so.date_order, rp."name", zpm."name", so.currency_id, rcs."name", rp2."name"
+            GROUP BY rp2."name", so."name", so.date_order, rp."name", zpm."name", so.currency_id, rcs.code, rp2."name"
         """
         # Ejecutar la consulta
         self.env.cr.execute(query, (primer_dia_año, ultimo_dia_año))
@@ -105,7 +109,7 @@ class ReporteVentasDireccion(models.TransientModel):
         query2 = """
             SELECT
                 rp."name" as cliente,
-            	rcs."name" AS estado,
+            	rcs.code AS estado,
                 zpm."name" AS fabricante,
                 rp2."name" AS vendedor, 
                 SUM(CASE
@@ -132,7 +136,7 @@ class ReporteVentasDireccion(models.TransientModel):
             AND am.move_type IN ('out_invoice', 'out_refund')
             AND pt.detailed_type IN ('product')
             AND aml.display_type IN ('product')
-            GROUP BY rcs."name", zpm."name", rp2."name", pt.id, ru.id, am.invoice_date, rp.country_id, 
+            GROUP BY rcs.code, zpm."name", rp2."name", pt.id, ru.id, am.invoice_date, rp.country_id, 
                      aml.move_id, am.currency_id, rp."name"
         """
         # Ejecutar la consulta
@@ -234,30 +238,13 @@ class ReporteVentasDireccion(models.TransientModel):
         ]['cliente']
 
         df3 = df3[df3['cliente'].isin(clientes_80)].copy()
+        
+        df3['mes'] = df3['fecha'].dt.month.map(meses_es)
 
-        df_resultado = (
-            df3.groupby(
-                ['cliente', 'fabricante'],
-                as_index=False
-            )
-            .agg(
-                cantidad_total=('cantidad', 'sum')
-            )
-            .sort_values(
-                ['cliente', 'cantidad_total'],
-                ascending=[True, False]
-            )
-        )
-        
-        pivot_df_resultado = df_resultado.pivot_table(
-            index='cliente',
-            columns='fabricante',
-            values='cantidad_total',
-            fill_value=0
-        ).reset_index()
-        
+        df_resultado = (df3.groupby(['cliente', 'fabricante', 'mes'],as_index=False)
+                           .agg(cantidad_total=('cantidad', 'sum'))
+                           .sort_values(['cliente', 'cantidad_total'], ascending=[True, False]))
         
         reports_core = self.env['ztyres_ms_sql_excel_core']
         reports_core.action_insert_dataframe(df_final2, 'venta_anual')
-        reports_core.action_insert_dataframe(pivot_df_resultado, 'venta_ultimos_6_meses')
-        reports_core.action_insert_dataframe(df3, 'detalle_ultimos_6_meses')
+        reports_core.action_insert_dataframe(df_resultado, 'detalle_ultimos_6_meses')

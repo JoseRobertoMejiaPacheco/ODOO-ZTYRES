@@ -14,8 +14,10 @@ class PromotionsExternalAPI(http.Controller):
 
     /ztyres_promotions/external/*  — para el cotizador HTML/JS que
     vive FUERA de Odoo (otro dominio, sin sesión). Requiere la API key
-    compartida (header X-Api-Key), configurable en Promociones >
-    Configuración > Parámetros del sistema (EXTERNAL_API_KEY).
+    compartida (header X-Api-Key). Se configura en Ajustes > Técnico >
+    Parámetros del sistema, con la clave
+    ztyres_promotions.EXTERNAL_API_KEY. Sin ella, /external/* rechaza
+    todo.
 
     /ztyres_promotions/cotizador*  — para la app Owl que vive DENTRO
     de Odoo (servida por este mismo controlador). Esta NO usa API
@@ -33,11 +35,27 @@ class PromotionsExternalAPI(http.Controller):
     # ------------------------------------------------------------
     # Autenticación — SOLO para /external/*
     # ------------------------------------------------------------
+
+    # Clave en ir.config_parameter. Se lee directo, sin modelo
+    # intermedio: era un registro tipado completo para resolver este
+    # único string.
+    API_KEY_PARAM = 'ztyres_promotions.EXTERNAL_API_KEY'
+
+    def _expected_key(self):
+        """Key configurada, o '' si no hay ninguna.
+
+        `get_param` devuelve False cuando la clave no existe o está
+        vacía. Se normaliza a '' aquí para que los llamadores puedan
+        confiar en `bool(...)`: sin key configurada, la API externa
+        rechaza todo.
+        """
+        return request.env['ir.config_parameter'].sudo().get_param(
+            self.API_KEY_PARAM
+        ) or ''
+
     def _check_key(self):
         sent = request.httprequest.headers.get('X-Api-Key')
-        expected = request.env['ztyres_promotions.config.param'].sudo().get(
-            'EXTERNAL_API_KEY'
-        )
+        expected = self._expected_key()
         return bool(expected) and sent == expected
 
     def _check_key_loose(self):
@@ -50,9 +68,7 @@ class PromotionsExternalAPI(http.Controller):
             request.httprequest.headers.get('X-Api-Key')
             or request.httprequest.args.get('key')
         )
-        expected = request.env['ztyres_promotions.config.param'].sudo().get(
-            'EXTERNAL_API_KEY'
-        )
+        expected = self._expected_key()
         return bool(expected) and sent == expected
 
     def _json(self, data, status=200):

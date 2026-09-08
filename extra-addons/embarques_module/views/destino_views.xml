@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_destino_tree" model="ir.ui.view">
+        <field name="name">embarques.destino.tree</field>
+        <field name="model">embarques.destino</field>
+        <field name="arch" type="xml">
+            <tree string="Destinos" editable="top" multi_edit="1">
+                <field name="name" string="Destino" readonly="1"/>
+                <field name="state_id" options="{'no_create': True}"/>
+                <field name="city_id" string="Ciudad / Municipio"
+                       options="{'no_create': True}" optional="show"/>
+                <field name="locality_id" string="Localidad SAT"
+                       domain="[('state_id', '=', state_id)]"
+                       options="{'no_create': True}" optional="show"/>
+                <field name="manual_name" string="Nombre manual" optional="show"/>
+                <field name="zona_id" options="{'no_create': True}"/>
+                <field name="distance_km" optional="show"/>
+                <field name="discount_policy_ids" widget="many2many_tags"
+                       options="{'no_create': True}" optional="show"/>
+                <field name="unidad_ids" invisible="1"/>
+                <field name="paqueteria_estado" widget="badge"
+                       decoration-success="paqueteria_estado == 'sin_costo'"
+                       decoration-info="paqueteria_estado == 'con_costo'"/>
+                <field name="paqueteria_cost"
+                       attrs="{'readonly': [('paqueteria_estado','=','sin_costo')]}"/>
+                <field name="paqueteria_free_from_qty" optional="show"
+                       attrs="{'readonly': [('paqueteria_estado','=','sin_costo')]}"/>
+                <field name="configuration_status" widget="badge" readonly="1"
+                       decoration-success="configuration_status == 'ok'"
+                       decoration-warning="configuration_status == 'warning'"
+                       decoration-danger="configuration_status == 'error'"/>
+                <field name="configuration_message" readonly="1" optional="show"/>
+                <field name="currency_id" invisible="1"/>
+                <field name="company_id" groups="base.group_multi_company" optional="hide"/>
+                <field name="seed_key" optional="hide"/>
+                <field name="active" optional="hide"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="view_destino_search" model="ir.ui.view">
+        <field name="name">embarques.destino.search</field>
+        <field name="model">embarques.destino</field>
+        <field name="arch" type="xml">
+            <search string="Destinos">
+                <field name="name"/>
+                <field name="manual_name"/>
+                <field name="state_id"/>
+                <field name="city_id"/>
+                <field name="locality_id"/>
+                <field name="zona_id"/>
+                <separator/>
+                <filter string="Sin zona" name="sin_zona" domain="[('zona_id','=',False)]"/>
+                <filter string="Paquetería en blanco" name="paq_pendiente"
+                        domain="[('paqueteria_estado','=',False)]"/>
+                <filter string="Paquetería con costo" name="paq_costo"
+                        domain="[('paqueteria_estado','=','con_costo')]"/>
+                <separator/>
+                <filter string="Con errores" name="config_error"
+                        domain="[('configuration_status','=','error')]"/>
+                <filter string="Con advertencias" name="config_warning"
+                        domain="[('configuration_status','=','warning')]"/>
+                <filter string="Archivados" name="inactive" domain="[('active','=',False)]"/>
+                <group expand="1" string="Agrupar por">
+                    <filter string="Zona" name="group_zona" context="{'group_by': 'zona_id'}"/>
+                    <filter string="Estado" name="group_state" context="{'group_by': 'state_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_destino" model="ir.actions.act_window">
+        <field name="name">Destinos</field>
+        <field name="res_model">embarques.destino</field>
+        <field name="view_mode">tree</field>
+        <field name="context">{'search_default_group_zona': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Captura la zona, los rangos con descuento y la paquetería
+            </p>
+            <p>Los destinos se capturan y mantienen manualmente.</p>
+            <p>La consolidación de clientes se configura y valida directamente
+               en cada embarque; ya no depende de ciudades permitidas.</p>
+        </field>
+    </record>
+
+</odoo>

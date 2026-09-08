@@ -27,9 +27,11 @@ from odoo import models
 
 from .ztyres_promo_config import (
     POLICY_AMOUNT,
+    POLICY_AMOUNT_RIM,
     POLICY_MONTHLY_VOLUME,
     POLICY_QUANTITY,
     REWARD_FIXED_AMOUNT,
+    REWARD_GIFT_CARD,
     SCOPE_ATTRIBUTE_COMBINATION,
     SCOPE_COUPONS,
     SCOPE_RIM_POLICY,
@@ -191,14 +193,22 @@ class ZtyresVolumenEval(models.Model):
             return amount_by_line
 
         if self._is_coupon_promotion():
+            # El monto del cupón se captura CON IVA y la NC se emite
+            # sobre el subtotal, así que aquí hay que bajarlo igual que
+            # lo hace `coupon_amounts` en el cálculo definitivo. Sin
+            # esto, la cotización prometía 1.16 veces la nota de crédito
+            # que después se emitía: un cupón de $150 se anunciaba como
+            # $150 ganados y terminaba pagando $129.31.
             amount_by_product = {
-                coupon.product_id.id: coupon.amount
+                coupon.product_id.id: engine.untaxed(coupon.amount)
                 for coupon in self.coupon_ids
             }
             return {
-                line.id: line[quantity_field] * amount_by_product.get(
-                    line.product_id.product_tmpl_id.id,
-                    0.0,
+                line.id: engine.round_money(
+                    line[quantity_field] * amount_by_product.get(
+                        line.product_id.product_tmpl_id.id,
+                        0.0,
+                    )
                 )
                 for line in matched_lines
             }
@@ -212,7 +222,25 @@ class ZtyresVolumenEval(models.Model):
                 fixed_amount,
             )
 
-        if self._has_key_sizes():
+        if self._is_amount_rim_promotion():
+            policies = self._active_policy_lines()
+            tier_value = sum(matched_lines.mapped('price_subtotal'))
+            tier = engine.matching_tier(
+                policies,
+                tier_value,
+                quantity=sum(matched_lines.mapped(quantity_field)),
+            )
+            _total, amount_by_line, _breakdown = engine.amount_rim_amounts(
+                self.key_size_product_ids,
+                tier,
+                matched_lines,
+                quantity_field=quantity_field,
+                unit_base_by_line=self._key_size_unit_by_line(matched_lines),
+                unit_base_tax_factor=self._pms_tax_factor(),
+            )
+            return amount_by_line
+
+        if self._uses_key_size_engine():
             policies = self._active_policy_lines()
             tier_value = (
                 sum(matched_lines.mapped('price_subtotal'))
@@ -229,11 +257,13 @@ class ZtyresVolumenEval(models.Model):
                 matched_lines,
                 discount_percent or 0.0,
                 quantity_field=quantity_field,
+                unit_base_by_line=self._key_size_unit_by_line(matched_lines),
+                unit_base_tax_factor=self._pms_tax_factor(),
             )
             return amount_by_line
 
         return {
-            line.id: line.price_subtotal * (discount_percent or 0) / 100
+            line.id: engine.percent_amount(line.price_subtotal, discount_percent)
             for line in matched_lines
         }
 
@@ -316,6 +346,18 @@ class ZtyresVolumenEval(models.Model):
         quantity = sum(matched_lines.mapped(quantity_field))
         amount = sum(matched_lines.mapped('price_subtotal'))
 
+        # Tarjeta de regalo: no hay NC que calcular, solo aviso de que el
+        # cliente alcanzó el nivel. Sale antes del camino normal porque
+        # ese camino descarta todo lo que da cero, y esta promoción da
+        # cero por diseño.
+        if self._effective_reward_type() == REWARD_GIFT_CARD:
+            return self._evaluate_gift_card(
+                matched_lines,
+                quantity,
+                amount,
+                quantity_field,
+            )
+
         discount_percent, fixed_amount = self._evaluate_document_reward(
             quantity,
             amount,
@@ -337,11 +379,16 @@ class ZtyresVolumenEval(models.Model):
             'promo': self,
             'qty': quantity,
             'amount': amount,
+            # Se muestra el porcentaje SOLO cuando el importe es
+            # exactamente subtotal x porcentaje. Con rin, con Key Sizes o
+            # con base PMS el número no explica el importe —el cliente
+            # multiplicaría y no le daría— así que es mejor no enseñarlo.
             'discount_percent': (
                 None
                 if (
                     self._is_rim_quantity_promotion()
-                    or self._has_key_sizes()
+                    or self._is_amount_rim_promotion()
+                    or self._uses_key_size_engine()
                     or self._effective_reward_type() == REWARD_FIXED_AMOUNT
                 )
                 else discount_percent
@@ -351,6 +398,102 @@ class ZtyresVolumenEval(models.Model):
                 matched_lines,
                 quantity_field,
                 line_ganado_map,
+            ),
+            'line_ganado_map': line_ganado_map,
+        }
+
+    def _evaluate_gift_card(
+        self,
+        matched_lines,
+        quantity,
+        amount,
+        quantity_field,
+    ):
+        """Resultado de una promoción de tarjeta de regalo.
+
+        Devuelve la misma forma de diccionario que el resto para que
+        ningún consumidor tenga que saber que esta promoción es
+        distinta, con una particularidad: `ganado` normalmente es 0.0.
+        Eso es lo que hace que NO se emita nota de crédito —`_create_nc`
+        solo factura las líneas con `total_nc_untaxed > 0`— sin tener
+        que bloquear nada aparte. Solo deja de ser cero cuando la
+        promoción se configuró explícitamente para emitir NC por el
+        valor de la tarjeta.
+
+        `gift_card_amount` trae siempre el valor tal como se le entrega
+        al cliente (con IVA). Es el dato que muestra el aviso.
+
+        El tramo se elige con la tabla de la política vigente, sea por
+        monto o por cantidad. Antes se leía siempre la de monto, así que
+        una promoción por cantidad no entregaba nunca.
+
+        Si el cliente no llega a ningún nivel, o el cálculo da cero, no
+        hay nada que avisar y se descarta.
+        """
+        self.ensure_one()
+        engine = self.env['ztyres_promo.reward_engine']
+        policies = self._active_policy_lines()
+        tier_value = quantity if self._get_policy() == POLICY_QUANTITY else amount
+
+        if not engine.gift_card_qualifies(
+            policies,
+            tier_value,
+            quantity=quantity,
+        ):
+            return None
+
+        if self._gift_card_uses_product_table():
+            gift_card_amount, amount_by_line = engine.gift_card_product_amounts(
+                self.gift_card_ids,
+                matched_lines,
+                quantity_field,
+            )
+        else:
+            gift_card_amount = engine.gift_card_value(
+                policies,
+                tier_value,
+                quantity=quantity,
+            )
+            # El valor fijo del nivel no pertenece a ninguna línea en
+            # particular, así que no se desglosa por producto.
+            amount_by_line = {}
+
+        if gift_card_amount <= 0:
+            return None
+
+        generates_nc = self._gift_card_generates_nc()
+        ganado = engine.untaxed(gift_card_amount) if generates_nc else 0.0
+        line_ganado_map = (
+            {
+                line_id: engine.untaxed(value)
+                for line_id, value in amount_by_line.items()
+                if value > 0
+            }
+            if generates_nc
+            else {}
+        )
+
+        return {
+            'promo': self,
+            'qty': quantity,
+            'amount': amount,
+            'discount_percent': None,
+            'ganado': ganado,
+            'gift_card_amount': gift_card_amount,
+            'gift_card_by_line': amount_by_line,
+            # El desglose por producto se arma con el valor de TARJETA,
+            # no con el importe de NC: es lo que el cliente quiere ver
+            # en la cotización. Ojo al leerlo: la clave se llama
+            # `ganado` porque es la que espera el renderizador, pero
+            # aquí ese número lleva IVA.
+            'lines': (
+                self._build_product_breakdown(
+                    matched_lines,
+                    quantity_field,
+                    amount_by_line,
+                )
+                if amount_by_line
+                else []
             ),
             'line_ganado_map': line_ganado_map,
         }
@@ -379,6 +522,9 @@ class ZtyresVolumenEval(models.Model):
                 self._effective_reward_type(),
                 quantity=quantity,
             )
+
+        if policy == POLICY_AMOUNT_RIM:
+            return 0.0, 0.0
 
         if policy == POLICY_MONTHLY_VOLUME:
             # Depende del acumulado del periodo completo del cliente.

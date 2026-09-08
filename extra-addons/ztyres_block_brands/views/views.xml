@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<odoo>
+
+  <!-- ===================================================== -->
+  <!-- VISTA LISTA                                           -->
+  <!-- ===================================================== -->
+
+  <record id="view_ztyres_block_brands_tree" model="ir.ui.view">
+    <field name="name">ztyres.block.brands.tree</field>
+    <field name="model">ztyres_block_brands</field>
+    <field name="arch" type="xml">
+      <tree string="Bloqueo de Marcas">
+        <field name="partner_id"/>
+        <field name="restricted_brand_ids" widget="many2many_tags"/>
+      </tree>
+    </field>
+  </record>
+
+
+  <!-- ===================================================== -->
+  <!-- VISTA FORMULARIO                                      -->
+  <!-- ===================================================== -->
+
+  <record id="view_ztyres_block_brands_form" model="ir.ui.view">
+    <field name="name">ztyres.block.brands.form</field>
+    <field name="model">ztyres_block_brands</field>
+    <field name="arch" type="xml">
+      <form string="Bloqueo de Marcas">
+        <sheet>
+          <group>
+            <field name="partner_id"/>
+            <field name="restricted_brand_ids" widget="many2many_tags" options="{'no_create': True}" />
+          </group>
+        </sheet>
+      </form>
+    </field>
+  </record>
+
+
+  <!-- ===================================================== -->
+  <!-- ACCIÓN                                                -->
+  <!-- ===================================================== -->
+
+  <record id="action_ztyres_block_brands" model="ir.actions.act_window">
+    <field name="name">Bloqueo de Marcas</field>
+    <field name="res_model">ztyres_block_brands</field>
+    <field name="view_mode">tree,form</field>
+
+    <field name="help" type="html">
+      <p class="o_view_nocontent_smiling_face">
+                Crea una nueva restricción de marcas.
+      </p>
+      <p>
+                Define qué marcas no puede comprar cada cliente.
+      </p>
+    </field>
+  </record>
+
+</odoo>

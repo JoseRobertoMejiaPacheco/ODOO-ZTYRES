@@ -1,0 +1,25 @@
+// Estos estilos sólo afectan el formulario de Embarques.
+.o_form_view.o_embarque_form,
+.o_embarque_form {
+    .o_embarque_route {
+        gap: 6px 4px;
+        padding: 10px 0 4px;
+    }
+
+    .o_embarque_route_badge {
+        padding: 8px 12px;
+        margin-bottom: 4px;
+        font-size: 14px !important;
+        font-weight: 600;
+        line-height: 1.25;
+        white-space: normal;
+        text-align: left;
+    }
+
+    .o_embarque_number,
+    .o_embarque_number .o_field_widget {
+        min-width: 100px;
+        white-space: nowrap !important;
+        font-variant-numeric: tabular-nums;
+    }
+}

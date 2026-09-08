@@ -8,11 +8,11 @@
             <field name="arch" type="xml">
                 <tree>
                     <field name="made_sequence_hole" invisible="1"/>
-                    <field name="move_type"  string="Tipo"/>
-                    <field name="name" decoration-bf="1" decoration-danger="made_sequence_hole"/> 
-                    <field name="partner_id"  string="Cliente"/>
-                    <field name="invoice_partner_display_name" string="Cliente"/>                                       
-                    <field name="invoice_date"  string="Fecha"/>
+                    <field name="move_type" string="Tipo"/>
+                    <field name="name" decoration-bf="1" decoration-danger="made_sequence_hole"/>
+                    <field name="partner_id" string="Cliente"/>
+                    <field name="invoice_partner_display_name" string="Cliente"/>
+                    <field name="invoice_date" string="Fecha"/>
                     <field name="amount_total_signed" string="Total" sum="Total" decoration-bf="1" optional="hide"/>
                     <field name="amount_total_in_currency_signed" string="Total in Currency" groups="base.group_multi_currency" optional="hide"/>
                     <field name="amount_residual_signed" string="Saldo" sum="Saldo" optional="show"/>
@@ -28,26 +28,46 @@
                     <header>
                     </header>
                     <sheet>
+                        <field name="currency_id" invisible="1"/>
                         <group>
                             <field name="partner_id"/>
+                            <field name="invoice_id"/>
                             <field name="payment_id"/>
                             <field name="payment_amount"/>
-                            <!-- <field name="payment_partner_id"/> -->
-                            <field name="payment_amount_pending" string="Pendiente por aplicar(Pago)" force_save='1'/>                            
+                            <field name="payment_amount_pending" string="Pendiente por aplicar(Pago)" force_save="1"/>
                             <field name="elapsed_days"/>
                         </group>
+
+                        <!--
+                            Apartado de NC manual: nc_mode permite capturar la
+                            nota de crédito por monto o por porcentaje además
+                            del catálogo de descuentos. nc_reason es obligatorio.
+                        -->
                         <field name="payment_ids">
-                            <tree create="true" delete="true" editable="bottom"  decoration-bf="1" decoration-success="payment_origin == 'prev'">
+                            <tree create="true" delete="true" editable="bottom" decoration-bf="1" decoration-success="payment_origin == 'prev'">
                                 <field name="payment_origin" invisible="1"/>
-                                <field name="payment_name" required="1" attrs="{'readonly': [('payment_origin', 'in', ['prev'])]}" />
+                                <field name="currency_id" invisible="1"/>
+                                <field name="payment_name" required="1" attrs="{'readonly': [('payment_origin', 'in', ['prev'])]}"/>
                                 <field name="move_id" domain="[('id','=',-1)]" attrs="{'readonly': [('payment_origin', 'in', ['prev'])]}" context="{'tree_view_ref': 'multipayment_tool.account_move_tree'}"/>
                                 <field name="move_date" attrs="{'readonly': [('payment_origin', 'in', ['prev'])]}" force_save="1" string="Fecha de Emisión"/>
                                 <field name="move_amount_total" readonly="1"/>
                                 <field name="move_amount_residual" readonly="1"/>
-                                <field name="currency_id" readonly="1"/>
                                 <field name="move_detailed_line_ids" widget="many2many_tags" readonly="1"/>
-                                <field name="discount_id" string="Desc.(%)" attrs="{'readonly': ['|', ('payment_name', 'not in', 'out_refund'), ('payment_origin', '=', 'prev')]}"/>
-                                <field name="amount_to_apply" attrs="{'readonly': [('payment_origin', 'in', ['prev'])]}" />
+
+                                <field name="nc_mode" string="Tipo NC"
+                                       attrs="{'readonly': ['|', ('payment_name', '!=', 'out_refund'), ('payment_origin', '=', 'prev')]}"/>
+                                <field name="discount_id" string="Desc.(%)"
+                                       attrs="{'readonly': ['|', '|', ('payment_name', '!=', 'out_refund'), ('payment_origin', '=', 'prev'), ('nc_mode', '!=', 'discount')]}"/>
+                                <field name="nc_value" string="Valor NC"
+                                       attrs="{'readonly': ['|', '|', ('payment_name', '!=', 'out_refund'), ('payment_origin', '=', 'prev'), ('nc_mode', 'not in', ['amount','percent'])],
+                                               'required': [('payment_name', '=', 'out_refund'), ('payment_origin', '=', 'new'), ('nc_mode', 'in', ['amount','percent'])]}"/>
+                                <field name="nc_base" string="Base %" optional="hide"
+                                       attrs="{'readonly': [('nc_mode', '!=', 'percent')]}"/>
+                                <field name="nc_reason" string="Motivo NC"
+                                       attrs="{'readonly': ['|', ('payment_name', '!=', 'out_refund'), ('payment_origin', '=', 'prev')],
+                                               'required': [('payment_name', '=', 'out_refund'), ('payment_origin', '=', 'new')]}"/>
+
+                                <field name="amount_to_apply" attrs="{'readonly': [('payment_origin', 'in', ['prev'])]}"/>
                             </tree>
                         </field>
 
@@ -56,43 +76,31 @@
                             <div style="width: 200px; margin-top: 3px;">
                                 <table class="table table-sm table-bordered" style="width: 100%;">
                                     <tr>
-                                        <td>
-                                            <strong>Factura:</strong>
-                                        </td>
+                                        <td><strong>Factura:</strong></td>
                                         <td class="text-end">
                                             <field name="invoice_amount_total" widget="monetary"
-                                                options="{'currency_field': 'currency_id'}"
-                                                readonly="1" />
+                                                options="{'currency_field': 'currency_id'}" readonly="1"/>
                                         </td>
                                     </tr>
                                     <tr>
-                                        <td>
-                                            <strong>Pagos:</strong>
-                                        </td>
+                                        <td><strong>Pagos:</strong></td>
                                         <td class="text-end">
                                             <field name="total_payments" widget="monetary"
-                                                options="{'currency_field': 'currency_id'}"
-                                                readonly="1" />
+                                                options="{'currency_field': 'currency_id'}" readonly="1"/>
                                         </td>
                                     </tr>
                                     <tr>
-                                        <td>
-                                            <strong>Notas de Crédito:</strong>
-                                        </td>
+                                        <td><strong>Notas de Crédito:</strong></td>
                                         <td class="text-end">
                                             <field name="total_nc" widget="monetary"
-                                                options="{'currency_field': 'currency_id'}"
-                                                readonly="1" />
+                                                options="{'currency_field': 'currency_id'}" readonly="1"/>
                                         </td>
                                     </tr>
                                     <tr>
-                                        <td>
-                                            <strong>Saldo:</strong>
-                                        </td>
+                                        <td><strong>Saldo:</strong></td>
                                         <td class="text-end">
                                             <field name="amount_residual" widget="monetary"
-                                                options="{'currency_field': 'currency_id'}"
-                                                readonly="1" />
+                                                options="{'currency_field': 'currency_id'}" readonly="1"/>
                                         </td>
                                     </tr>
                                 </table>
@@ -104,28 +112,50 @@
             </field>
         </record>
 
-
-
         <record id="multipayment_tool.payments_tree" model="ir.ui.view">
             <field name="name">multipayment_tool.payments.tree</field>
             <field name="model">multipayment_tool.payments</field>
             <field name="arch" type="xml">
                 <tree editable="bottom">
-                    <field name="move_type" />
-                    <field name="discount_id" />
-                    <field name="amount_to_apply" />
-                    <field name="payment_origin" />
-                    <field name="move_id" />
-                    <field name="move_date" />
+                    <field name="move_type"/>
+                    <field name="nc_mode"/>
+                    <field name="discount_id"/>
+                    <field name="nc_value"/>
+                    <field name="nc_reason"/>
+                    <field name="amount_to_apply"/>
+                    <field name="payment_origin"/>
+                    <field name="move_id"/>
+                    <field name="move_date"/>
                     <field name="move_amount_total" widget="monetary"
-                        options="{'currency_field': 'currency_id'}" />
+                        options="{'currency_field': 'currency_id'}"/>
                     <field name="move_amount_residual" widget="monetary"
-                        options="{'currency_field': 'currency_id'}" />
-                    <field name="currency_id" />
-                    <field name="move_detailed_line_ids" widget="many2many_tags" />
+                        options="{'currency_field': 'currency_id'}"/>
+                    <field name="currency_id"/>
+                    <field name="move_detailed_line_ids" widget="many2many_tags"/>
                 </tree>
             </field>
         </record>
+
+        <record id="multipayment_tool_discount_tree" model="ir.ui.view">
+            <field name="name">multipayment_tool.discount.tree</field>
+            <field name="model">multipayment_tool.discount</field>
+            <field name="arch" type="xml">
+                <tree editable="bottom">
+                    <field name="name"/>
+                    <field name="discount"/>
+                </tree>
+            </field>
+        </record>
+
+        <record id="action_multipayment_tool_discount" model="ir.actions.act_window">
+            <field name="name">Descuentos para Notas de Crédito</field>
+            <field name="res_model">multipayment_tool.discount</field>
+            <field name="view_mode">tree</field>
+        </record>
+
+        <menuitem id="menu_multipayment_tool_discount" name="Descuentos para NC"
+                  parent="account.menu_finance_configuration"
+                  action="action_multipayment_tool_discount"/>
 
     </data>
 </odoo>

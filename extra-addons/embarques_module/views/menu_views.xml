@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem id="menu_root" name="Embarques" sequence="50"
+              groups="embarques_module.group_embarques_user"/>
+
+    <menuitem id="menu_operaciones" name="Operaciones"
+              parent="menu_root" sequence="10"/>
+
+    <menuitem id="menu_embarques" name="Embarques"
+              parent="menu_operaciones" action="action_embarque" sequence="10"/>
+
+    <menuitem id="menu_config" name="Configuración"
+              parent="menu_root" sequence="90"
+              groups="embarques_module.group_embarques_manager"/>
+
+    <menuitem id="menu_destinos" name="Destinos"
+              parent="menu_config" action="action_destino" sequence="10"/>
+
+    <menuitem id="menu_policy" name="Rangos y Descuentos"
+              parent="menu_config" action="action_policy" sequence="20"/>
+
+    <menuitem id="menu_zonas" name="Zonas"
+              parent="menu_config" action="action_zona" sequence="30"/>
+
+    <menuitem id="menu_rangos" name="Rangos de Llantas"
+              parent="menu_config" action="action_unidad" sequence="40"/>
+
+    <menuitem id="menu_unidades" name="Vehículos"
+              parent="menu_config" action="action_carta_porte_vehicle_embarques"
+              sequence="45"/>
+
+    <menuitem id="menu_rutas" name="Rutas"
+              parent="menu_config" action="action_ruta" sequence="50"/>
+
+    <menuitem id="menu_etapas" name="Etapas"
+              parent="menu_config" action="action_stage" sequence="70"/>
+
+    <menuitem id="menu_etiquetas" name="Etiquetas"
+              parent="menu_config" action="action_tag" sequence="80"/>
+
+</odoo>

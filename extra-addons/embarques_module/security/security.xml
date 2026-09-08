@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="module_category_embarques" model="ir.module.category">
+        <field name="name">Embarques</field>
+        <field name="sequence">30</field>
+    </record>
+
+    <record id="group_embarques_user" model="res.groups">
+        <field name="name">Usuario</field>
+        <field name="category_id" ref="embarques_module.module_category_embarques"/>
+    </record>
+
+    <record id="group_embarques_manager" model="res.groups">
+        <field name="name">Administrador</field>
+        <field name="category_id" ref="embarques_module.module_category_embarques"/>
+        <field name="implied_ids" eval="[(4, ref('embarques_module.group_embarques_user'))]"/>
+    </record>
+
+    <!-- Grupo suelto: se otorga a Finanzas, con independencia de su rol en Embarques -->
+    <record id="group_embarques_finance" model="res.groups">
+        <field name="name">Embarques / Autorizar descuento manual (Finanzas)</field>
+    </record>
+
+</odoo>
