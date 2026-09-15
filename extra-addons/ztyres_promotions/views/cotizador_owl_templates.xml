@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
   <!--
-    Página pública del cotizador (sin sesión). La sirve el controlador
+    Página del cotizador autenticada. La sirve el controlador con sesión
+    de Odoo: usuarios internos autorizados y usuarios Portal.
     en /ztyres_promotions/cotizador vía request.render().
 
     Es una página 100% propia (no extiende el layout del website ni
@@ -20,6 +21,7 @@
       <head>
         <meta charset="utf-8"/>
         <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+        <meta name="ztyres-cotizador-uid" t-att-content="ztyres_cotizador_uid"/>
         <title>Cotizador · Ztyres</title>
         <t t-call-assets="web.assets_common" t-js="false"/>
         <t t-call-assets="ztyres_promotions.assets_cotizador_public" t-js="false"/>

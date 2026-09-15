@@ -150,7 +150,12 @@ class AccountMove(models.Model):
 
         if not has_candidate:
             return False
-
+        if len(percentages) > 1:
+            raise UserError(_(
+                'La línea "%s" mezcla pedidos/traslados con descuentos '
+                'logísticos distintos (%s). Sepáralos antes de facturar.') % (
+                    line.name,
+                    ', '.join('%.2f%%' % p for p in sorted(percentages))))
         return percentages.pop() if percentages else 0.0
 
     def _requires_embarque_logistic_nc(self):

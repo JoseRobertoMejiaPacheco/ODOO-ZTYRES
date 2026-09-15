@@ -21,9 +21,24 @@ export const SF_FIELDS = [
    autorizados. El 0% permite indicar que esa categoría no aplica. */
 export const PROFILE_FIELDS = [
   { key: 'volumen', label: 'Volumen', options: ['0', '1', '2', '3'] },
-  { key: 'logistico', label: 'Logístico', options: ['0', '2', '4'] },
+  { key: 'logistico', label: 'Logístico', options: ['0', '2', '3', '4', '5'] },
   { key: 'financiero', label: 'Financiero', options: ['0', '2', '3'] },
 ];
+
+function getUserScope() {
+  // Aisla las preferencias persistidas por cuenta de Odoo. Esto es
+  // importante en equipos compartidos: localStorage pertenece al
+  // navegador, no a la sesión de Odoo.
+  const meta = document.querySelector('meta[name="ztyres-cotizador-uid"]');
+  const fromMeta = meta && meta.getAttribute('content');
+  const fromOdoo = window.odoo && window.odoo.session_info && window.odoo.session_info.uid;
+  const uid = fromMeta || fromOdoo || 'anonymous';
+  return String(uid).replace(/[^a-zA-Z0-9_-]/g, '_');
+}
+
+function scopedKey(key) {
+  return `ztyres_${getUserScope()}_${key}`;
+}
 
 export const NATIONALITY_LABELS = {
   national: 'Nacional',
@@ -87,7 +102,7 @@ export function normalizeSearchText(s) {
 export function getVisibleColumns() {
   const valid = EXTRA_COLUMNS.map((c) => c.key);
   try {
-    const raw = localStorage.getItem('ztyres_catalog_columns');
+    const raw = localStorage.getItem(scopedKey('catalog_columns'));
     // null = primera vez en este navegador: las opcionales arrancan
     // apagadas (Cara y Eq. Original ya son columnas fijas de la
     // tabla, no opcionales). El filter limpia claves guardadas de
@@ -100,7 +115,7 @@ export function getVisibleColumns() {
   catch (e) { return []; }
 }
 export function setVisibleColumns(cols) {
-  localStorage.setItem('ztyres_catalog_columns', JSON.stringify(cols));
+  localStorage.setItem(scopedKey('catalog_columns'), JSON.stringify(cols));
 }
 
 /* Selección del simulador de promos ({promoId: {on, tier}}) — se
@@ -135,18 +150,18 @@ export function promoColorFor(id) {
   return PROMO_COLORS[((n % PROMO_COLORS.length) + PROMO_COLORS.length) % PROMO_COLORS.length];
 }
 export function getShowIva() {
-  return localStorage.getItem('ztyres_show_iva') === '1';
+  return localStorage.getItem(scopedKey('show_iva')) === '1';
 }
 export function setShowIva(on) {
-  localStorage.setItem('ztyres_show_iva', on ? '1' : '0');
+  localStorage.setItem(scopedKey('show_iva'), on ? '1' : '0');
 }
 
 export function getPromoSim() {
-  try { return JSON.parse(localStorage.getItem('ztyres_promo_sim') || '{}'); }
+  try { return JSON.parse(localStorage.getItem(scopedKey('promo_sim')) || '{}'); }
   catch (e) { return {}; }
 }
 export function setPromoSim(sim) {
-  localStorage.setItem('ztyres_promo_sim', JSON.stringify(sim));
+  localStorage.setItem(scopedKey('promo_sim'), JSON.stringify(sim));
 }
 
 /* Factor de la Política comercial: los tres descuentos del cliente
@@ -170,7 +185,7 @@ export function policyLabel(profile) {
 
 export function getSFFilters() {
   try {
-    const saved = JSON.parse(localStorage.getItem('ztyres_sf_filters') || '{}');
+    const saved = JSON.parse(localStorage.getItem(scopedKey('sf_filters')) || '{}');
     const allowed = new Set(SF_FIELDS.map((field) => field.key));
     return Object.fromEntries(
       Object.entries(saved).filter(([key, values]) => allowed.has(key) && Array.isArray(values) && values.length),
@@ -179,7 +194,7 @@ export function getSFFilters() {
   catch (e) { return {}; }
 }
 export function setSFFilters(f) {
-  localStorage.setItem('ztyres_sf_filters', JSON.stringify(f));
+  localStorage.setItem(scopedKey('sf_filters'), JSON.stringify(f));
 }
 
 /* ---------- Bloqueo de scroll de fondo mientras hay un modal abierto ----------

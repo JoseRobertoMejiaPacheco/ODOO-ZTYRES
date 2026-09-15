@@ -257,6 +257,10 @@ class Embarques(models.Model):
             if rec.consolidation_stop_limit < 1:
                 raise ValidationError(_(
                     'El máximo de stops para consolidar debe ser al menos 1.'))
+            # if rec.consolidation_stop_limit > 2:
+            #     raise ValidationError(_(
+            #         'La política autoriza consolidar como máximo 2 clientes '
+            #         'por embarque.'))
             if rec.consolidation_min_qty < 250:
                 raise ValidationError(_(
                     'La consolidación sólo se autoriza a partir de 250 '
@@ -1028,10 +1032,10 @@ class Embarques(models.Model):
             for order in embarque.pedidos_ids.mapped('sale_id'):
                 pickings = embarque.pedidos_ids.filtered(lambda p: p.sale_id == order)
                 percentages = set(pickings.mapped('embarque_discount_percentage'))
-                # if len(percentages) > 1:
-                #     raise UserError(_(
-                #         'El pedido %s tiene traslados con descuentos distintos. '
-                #         'Sepáralos antes de facturar.') % order.display_name)
+                if len(percentages) > 1:
+                    raise UserError(_(
+                        'El pedido %s tiene traslados con descuentos distintos. '
+                        'Sepáralos antes de facturar.') % order.display_name)
                 vals = {
                     'embarque_discount_percentage': percentages.pop() if percentages else 0.0,
                 }
@@ -1185,6 +1189,21 @@ class Embarques(models.Model):
 
         res = super().write(vals)
         if 'pedidos_ids' in vals:
+            # Al editar la lista Many2many, el stock.picking puede haberse
+            # guardado unos instantes antes de que esta relación exista en BD.
+            # Validamos aquí las solicitudes pendientes ya con el embarque
+            # correctamente relacionado, evitando el falso error de que el
+            # traslado no pertenece a un embarque.
+            for embarque in self:
+                for picking in embarque.pedidos_ids.filtered(
+                        lambda p: p.requested_discount_percentage):
+                    tope = embarque._max_manual_percentage_for_picking(picking)
+                    solicitado = picking.requested_discount_percentage
+                    if tope is not False and solicitado > tope:
+                        raise UserError(_(
+                            'El descuento solicitado (%.2f%%) supera el máximo '
+                            'permitido de %.2f%% para %s.') % (
+                                solicitado, tope, picking.display_name))
             self._assign_initial_load_orders()
         self._validate_vehicle_configuration()
 

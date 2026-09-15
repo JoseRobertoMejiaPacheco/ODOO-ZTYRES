@@ -14,10 +14,10 @@
    diferencia es solo en qué bundle se cargan (assets_backend vs el
    bundle público de este módulo).
    ============================================================ */
-import { Component, useState, xml, onWillStart } from "@odoo/owl";
+import { Component, useState, xml, onWillStart, onMounted, onWillUnmount } from "@odoo/owl";
 
 import {
-  CatalogTable, TableFilters, PromoStrip, ClientPanel, OrderPanel, IvaToggle,
+  CatalogTable, TableFilters, PromoStrip, ClientPanel, OrderPanel, IvaToggle, buildMobilePromoIndex,
 } from "./components.js";
 import { fetchCatalog, fetchPromos, fetchQuote } from "./api.js";
 // import { fetchPartners } from "./api.js";  // Cliente desactivado
@@ -31,7 +31,7 @@ import { getSFFilters, setSFFilters, getPromoSim, setPromoSim, policyFactor, pol
 
 export class CotizadorOwlApp extends Component {
   static template = xml`
-    <div class="o_ztyres_cotizador">
+    <div class="o_ztyres_cotizador" t-att-class="{ 'ztyres-public': isPublic }">
       <div class="wrap">
         <div class="error-box" t-if="state.connError" t-esc="state.connError"/>
 
@@ -83,7 +83,7 @@ export class CotizadorOwlApp extends Component {
                "Ver pedido ↓" vuelve a hacer su trabajo. -->
           <div class="main-grid">
             <aside class="side-col side-left">
-              <PromoStrip state="state"/>
+              <PromoStrip state="state" onChange="onPromoChanged"/>
             </aside>
 
             <section class="center-col">
@@ -101,7 +101,7 @@ export class CotizadorOwlApp extends Component {
                   </button>
                 </div>
                 <div class="table-scroll">
-                  <CatalogTable state="state" showImages="showImages"
+                  <CatalogTable state="state" promoRevision="state.promoRevision" showImages="showImages"
                                 onAdd="addToCart" onInc="increment" onDec="decrement" onSetQty="setQty"/>
                 </div>
               </div>
@@ -174,7 +174,7 @@ export class CotizadorOwlApp extends Component {
     try {
       const resp = await fetch(`/ztyres_promotions/cotizador/download/${kind}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'X-Ztyres-Cotizador': '1' },
         body: JSON.stringify(payload),
       });
       if (!resp.ok) throw new Error(await resp.text());
@@ -223,7 +223,115 @@ export class CotizadorOwlApp extends Component {
     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
+  scrollToPromos = () => {
+    const el = document.querySelector('.promos-panel');
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
+  onPromoChanged = (sim) => {
+    // La selección de una promo debe ser un cambio de estado de la APP,
+    // no una mutación hecha desde el hijo. Así OWL siempre vuelve a
+    // renderizar catálogo + tarjetas + precios + colores.
+    this.state.promoSim = { ...(sim || {}) };
+    this.state.mobilePromoIndex = buildMobilePromoIndex(this.state, this.state.promoSim);
+    this.state.promoRevision = (this.state.promoRevision || 0) + 1;
+    setPromoSim(this.state.promoSim);
+  };
+
+  clearPromo = (promoId) => {
+    const previous = this.state.promoSim || {};
+    if (!Object.prototype.hasOwnProperty.call(previous, promoId)) return;
+    const sim = { ...previous };
+    delete sim[promoId];
+    this.state.promoSim = sim;
+    this.state.mobilePromoIndex = buildMobilePromoIndex(this.state, sim);
+    this.state.promoRevision = (this.state.promoRevision || 0) + 1;
+    setPromoSim(sim);
+  };
+
+  get activePromoSelections() {
+    const promos = this.state.promos || [];
+    const sim = this.state.promoSim || {};
+    const percent = (value) => `${Number(value || 0).toLocaleString('es-MX', { minimumFractionDigits: 0, maximumFractionDigits: 1 })}%`;
+    const whole = (value) => Math.round(Number(value || 0)).toLocaleString('es-MX', { maximumFractionDigits: 0 });
+    return promos.filter((pr) => {
+      const s = sim[pr.id];
+      return s && s.on;
+    }).map((pr) => {
+      const s = sim[pr.id] || {};
+      const tier = (pr.tiers || [])[s.tier] || null;
+      let summary = 'Condición seleccionada';
+      if (tier) {
+        const max = Number(tier.max || 999999999);
+        const min = Number(tier.min || 0);
+        const range = max >= 999999999
+          ? `${whole(min)}+ pzas`
+          : `${whole(min)}–${whole(max)} pzas`;
+        if (pr.promo_type === 'amount') {
+          const amount = max >= 999999999 ? `$${whole(min)}+` : `$${whole(min)}–$${whole(max)}`;
+          summary = `${amount} · ${pr.reward_type === 'fixed_amount' ? '$' + whole(tier.fixed_amount) + ' NC' : percent(tier.discount)}`;
+        } else if (pr.reward_type === 'gift_card') {
+          summary = `${range} · Tarjeta`;
+        } else if (pr.reward_type === 'fixed_amount') {
+          summary = `${range} · $${whole(tier.fixed_amount)} NC`;
+        } else if (pr.promo_type === 'monthly_volume') {
+          summary = `${range} · ${whole(tier.minimum_products)} medidas × ${whole(tier.minimum_qty_per_measure)} pzas`;
+        } else if (pr.promo_type === 'rim_quantity' || pr.promo_type === 'amount_rim') {
+          const discounts = (tier.rim_discounts || []).map((r) => Number(r.discount || 0)).filter((v) => v > 0);
+          summary = `${range} · ${discounts.length ? percent(Math.max(...discounts)) : percent(tier.discount)}`;
+        } else {
+          summary = `${range} · ${percent(tier.discount)}`;
+        }
+      }
+      return {
+        id: pr.id,
+        name: pr.display_label || pr.name || 'Promoción',
+        summary,
+        color: `hsl(${(Number(pr.id) * 137.5) % 360}, 70%, 42%)`,
+      };
+    });
+  }
+
+  get isPublic() {
+    return !!document.getElementById("app-root");
+  }
+
   setup() {
+    this._scrollParents = [];
+
+    const enableMobileScroll = () => {
+      if (window.innerWidth > 1024 && !/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent || "")) return;
+      const nodes = [
+        document.querySelector(".o_action_manager"),
+        document.querySelector(".o_action"),
+        document.querySelector(".o_web_client"),
+      ].filter(Boolean);
+      this._scrollParents = [...new Set(nodes)];
+      this._scrollParents.forEach((el) => {
+        el.dataset.ztyresMobileScroll = "1";
+        el.style.overflowY = "auto";
+        el.style.overflowX = "hidden";
+        el.style.webkitOverflowScrolling = "touch";
+        el.style.touchAction = "pan-y";
+      });
+    };
+
+    onMounted(() => {
+      if (!this.isPublic) enableMobileScroll();
+    });
+
+    onWillUnmount(() => {
+      this._scrollParents.forEach((el) => {
+        if (el.dataset.ztyresMobileScroll !== "1") return;
+        delete el.dataset.ztyresMobileScroll;
+        el.style.removeProperty("overflow-y");
+        el.style.removeProperty("overflow-x");
+        el.style.removeProperty("-webkit-overflow-scrolling");
+        el.style.removeProperty("touch-action");
+      });
+      this._scrollParents = [];
+    });
+
     this.state = useState({
       loaded: false,
       connError: '',
@@ -231,6 +339,8 @@ export class CotizadorOwlApp extends Component {
       partners: [],
       promos: [],
       promoSim: getPromoSim(),
+      promoRevision: 0,
+      mobilePromoIndex: Object.create(null),
       showIva: getShowIva(),
       partnerId: null,
       profile: { volumen: '0', logistico: '0', financiero: '0' },
@@ -260,6 +370,7 @@ export class CotizadorOwlApp extends Component {
         ]);
         this.state.catalog = catalog;
         this.state.promos = promos || [];
+        this.state.mobilePromoIndex = buildMobilePromoIndex(this.state, this.state.promoSim);
         // Limpia selecciones guardadas de promos que ya no están
         // vigentes (venció la promo, se canceló, etc.).
         const validIds = new Set((promos || []).map((p) => String(p.id)));
@@ -275,7 +386,10 @@ export class CotizadorOwlApp extends Component {
             promoSelectionChanged = true;
           }
         });
-        if (promoSelectionChanged) setPromoSim(this.state.promoSim);
+        if (promoSelectionChanged) {
+          this.state.mobilePromoIndex = buildMobilePromoIndex(this.state, this.state.promoSim);
+          setPromoSim(this.state.promoSim);
+        }
         this.state.loaded = true;
       } catch (e) {
         this.state.connError = `No se pudo cargar el catálogo: ${e.message}`;

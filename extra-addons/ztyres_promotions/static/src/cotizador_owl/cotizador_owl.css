@@ -1758,7 +1758,7 @@ to  { opacity: 1; transform: scale(1); }
   height: auto;
   object-fit: contain;
 }
-@media (max-width: 760px) {
+@media (max-width: 1024px) {
   .o_ztyres_cotizador .op6 .chip {
     height: 46px;
     width: 108px;
@@ -2090,6 +2090,8 @@ to  { opacity: 1; transform: scale(1); }
 }
 .o_ztyres_cotizador .flat-table .flat-th-disp,
 .o_ztyres_cotizador .flat-td-disp { width: 50px; text-align: center; font-weight: 700; }
+.o_ztyres_cotizador .flat-th-transit,
+.o_ztyres_cotizador .flat-td-transit { width: 68px; min-width: 68px; text-align: center; font-weight: 700; white-space: nowrap; }
 
 /* Columnas de atributos (Segmento, Tipo, Modelo, etc.) — con
    table-layout:fixed se reparten el espacio restante a partes iguales
@@ -6603,3 +6605,2175 @@ body:has(> #app-root) { margin: 0; }
    Fijando flex: 0 0 auto, cada promoción conserva su alto natural, el
    contenido desborda y el panel scrollea, que es lo que se busca. */
 .o_ztyres_cotizador .side-left .promos-panel > * { flex: 0 0 auto; }
+
+
+/* =====================================================================
+   ZTYRES · INTERFAZ MÓVIL REAL
+   ---------------------------------------------------------------------
+   En <=760px el catálogo NO usa la tabla de escritorio. El componente
+   móvil se renderiza como un árbol RIN -> MEDIDA -> tarjetas. Esto evita
+   depender de hacks de display sobre <table> y garantiza que los
+   encabezados de escritorio nunca aparezcan en un teléfono.
+   ===================================================================== */
+@media (max-width: 1024px) {
+  .o_ztyres_cotizador .ztyres-mobile-catalog {
+    width: 100%;
+    display: block;
+    padding: 2px 0 12px;
+  }
+  .o_ztyres_cotizador .zmc-rim { margin: 0 0 8px; }
+  .o_ztyres_cotizador .zmc-rim-head,
+  .o_ztyres_cotizador .zmc-med-head {
+    width: 100%; border: 0; text-align: left; cursor: pointer;
+    display: flex; align-items: center; gap: 8px;
+    font-family: var(--font-body); -webkit-tap-highlight-color: transparent;
+  }
+  .o_ztyres_cotizador .zmc-rim-head {
+    min-height: 46px; padding: 11px 12px; border-radius: 10px;
+    background: var(--rubber-dark); color: #fff;
+    position: relative; z-index: 2;
+    pointer-events: auto;
+  }
+  .o_ztyres_cotizador .zmc-rim-head strong { font-size: 14px; }
+  .o_ztyres_cotizador .zmc-rim-meta { margin-left: auto; font-size: 10.5px; opacity: .8; white-space: nowrap; }
+  .o_ztyres_cotizador .zmc-med-head {
+    min-height: 40px; padding: 9px 11px; border: 1px solid var(--line);
+    border-radius: 9px; background: var(--card); color: var(--ink);
+    position: relative; z-index: 2;
+    pointer-events: auto;
+  }
+  .o_ztyres_cotizador .zmc-med-head.open { background: var(--teal-soft); }
+  .o_ztyres_cotizador .zmc-med-head strong { font-size: 13px; }
+  .o_ztyres_cotizador .zmc-med-count { margin-left: auto; min-width: 25px; text-align: center; border-radius: 999px; padding: 2px 7px; background: var(--paper); font-size: 10.5px; font-weight: 800; color: var(--ink-soft); }
+  .o_ztyres_cotizador .zmc-caret { flex: 0 0 auto; font-size: 9px; transition: transform .15s ease; }
+  .o_ztyres_cotizador .zmc-rim-head.open .zmc-caret,
+  .o_ztyres_cotizador .zmc-med-head.open .zmc-caret { transform: rotate(90deg); }
+  .o_ztyres_cotizador .zmc-measures { padding: 6px 0 0 10px; }
+  .o_ztyres_cotizador .zmc-med { margin-bottom: 7px; }
+  .o_ztyres_cotizador .zmc-cards { padding: 6px 0 2px 10px; }
+  .o_ztyres_cotizador .ztyres-mobile-card {
+    background: var(--paper); border: 1px solid var(--line); border-radius: 11px;
+    padding: 11px; margin: 0 0 8px; box-shadow: 0 1px 3px rgba(20,22,28,.07);
+  }
+  .o_ztyres_cotizador .ztyres-mobile-card.in-cart { box-shadow: inset 3px 0 0 #2e7d32, 0 1px 3px rgba(20,22,28,.07); }
+  .o_ztyres_cotizador .ztyres-mobile-card.in-promo { border-color: var(--line); }
+  .o_ztyres_cotizador .zmc-head { display:flex; align-items:center; gap:10px; min-width:0; }
+  .o_ztyres_cotizador .zmc-image { position:relative; flex:0 0 58px; width:58px; height:58px; border:1px solid var(--line); border-radius:9px; background:#fff; display:flex; align-items:center; justify-content:center; overflow:hidden; cursor:zoom-in; }
+  .o_ztyres_cotizador .zmc-image img { max-width:100%; max-height:100%; object-fit:contain; }
+  .o_ztyres_cotizador .zmc-image svg { width:25px; height:25px; opacity:.35; }
+  .o_ztyres_cotizador .zmc-zoom { position:absolute; right:3px; bottom:3px; width:17px; height:17px; border-radius:50%; background:rgba(0,0,0,.62); color:#fff; display:flex; align-items:center; justify-content:center; }
+  .o_ztyres_cotizador .zmc-zoom svg { width:10px; height:10px; opacity:1; }
+  .o_ztyres_cotizador .zmc-title { min-width:0; flex:1; }
+  .o_ztyres_cotizador .zmc-brand { font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.25px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .o_ztyres_cotizador .zmc-model { font-size:14px; font-weight:800; line-height:1.15; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .o_ztyres_cotizador .zmc-code { font-family:var(--font-mono); color:var(--ink-soft); font-size:9px; margin-top:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .o_ztyres_cotizador .zmc-cart { flex:0 0 auto; display:flex; align-items:center; gap:3px; padding:4px 7px; border-radius:999px; background:var(--success-soft); color:#2e7d32; font-size:10px; font-weight:800; }
+  .o_ztyres_cotizador .zmc-cart svg { width:11px; height:11px; }
+  .o_ztyres_cotizador .zmc-size { display:flex; align-items:center; gap:7px; margin-top:9px; padding:7px 8px; border-radius:7px; background:var(--card); font-family:var(--font-mono); font-size:12px; font-weight:800; }
+  /* El contenedor Rin es un bloque del acordeón; nunca debe heredar
+     reglas de alineación de elementos internos de las tarjetas. */
+  .o_ztyres_cotizador .zmc-rim { margin: 0 0 8px; order: initial; }
+  .o_ztyres_cotizador .zmc-tier { padding:2px 7px; border-radius:999px; font-family:var(--font-body); font-size:10px; font-weight:800; }
+  .o_ztyres_cotizador .zmc-stock { display:grid; grid-template-columns:repeat(3,1fr); gap:5px; margin-top:7px; }
+  .o_ztyres_cotizador .zmc-stock > div { display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:45px; padding:5px 3px; border-radius:7px; background:var(--card); }
+  .o_ztyres_cotizador .zmc-stock span,.o_ztyres_cotizador .zmc-attrs span,.o_ztyres_cotizador .zmc-price-block span { font-size:9px; text-transform:uppercase; letter-spacing:.25px; color:var(--ink-soft); font-weight:800; }
+  .o_ztyres_cotizador .zmc-stock b { margin-top:2px; font-family:var(--font-mono); font-size:13px; }
+  .o_ztyres_cotizador .zmc-attrs { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:5px; margin-top:7px; }
+  .o_ztyres_cotizador .zmc-attrs > div { display:flex; justify-content:space-between; align-items:center; gap:5px; min-width:0; padding:5px 6px; border-radius:6px; background:rgba(20,22,28,.045); }
+  .o_ztyres_cotizador .zmc-attrs b { min-width:0; text-align:right; font-size:10px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .o_ztyres_cotizador .zmc-prices { display:grid; grid-template-columns:1fr 1fr; gap:7px; margin-top:9px; padding-top:9px; border-top:1px dashed var(--line); }
+  .o_ztyres_cotizador .zmc-price-block { display:flex; flex-direction:column; gap:2px; min-width:0; }
+  .o_ztyres_cotizador .zmc-price-block strong { font-family:var(--font-mono); font-size:16px; white-space:nowrap; }
+  .o_ztyres_cotizador .zmc-price-block strong.has-promo { text-decoration:line-through; opacity:.55; font-size:13px; }
+  .o_ztyres_cotizador .zmc-promo strong { color:#2e7d32; font-size:17px; }
+  .o_ztyres_cotizador .zmc-gift { grid-column:1/-1; display:flex; flex-direction:row; justify-content:space-between; align-items:center; padding-top:5px; border-top:1px solid var(--line); }
+  .o_ztyres_cotizador .zmc-gift strong { color:#B95E15; font-size:13px; }
+  .o_ztyres_cotizador .zmc-gift strong.pending { opacity:.45; color:var(--ink-soft); }
+  .o_ztyres_cotizador .zmc-action { margin-top:9px; }
+  .o_ztyres_cotizador .zmc-action .add-btn,.o_ztyres_cotizador .zmc-action .qty-stepper { width:100%; min-height:42px; justify-content:center; }
+  .o_ztyres_cotizador .zmc-action .add-btn { font-size:12px; }
+  .o_ztyres_cotizador .zmc-collapse { display:flex; justify-content:center; padding:5px 0 8px; }
+  .o_ztyres_cotizador .zmc-collapse .btn-sec { min-height:40px; }
+  /* Ocultar por completo cualquier remanente de tabla dentro del móvil. */
+  .o_ztyres_cotizador .catalog-panel > .table-scroll > .flat-table { display:none !important; }
+}
+
+@media (max-width: 420px) {
+  .o_ztyres_cotizador .zmc-cards { padding-left:6px; }
+  .o_ztyres_cotizador .ztyres-mobile-card { padding:9px; }
+  .o_ztyres_cotizador .zmc-image { flex-basis:52px; width:52px; height:52px; }
+  .o_ztyres_cotizador .zmc-model { font-size:13px; }
+  .o_ztyres_cotizador .zmc-attrs { grid-template-columns:1fr; }
+}
+
+
+/* =====================================================================
+   ZTYRES · CORRECCIÓN MÓVIL DE SCROLL
+   ---------------------------------------------------------------------
+   El catálogo móvil ya se renderiza como Rin -> Medida -> tarjeta. El
+   problema restante era de scroll: en algunos navegadores móviles y en
+   la client action de Odoo, la combinación height:100% + overflow:auto
+   dejaba el contenedor en una caja que no recibía el gesto vertical.
+   No se cambia la vista de escritorio.
+   ===================================================================== */
+@media (max-width: 1024px) {
+  html, body {
+    overscroll-behavior-y: auto !important;
+  }
+
+  .o_ztyres_cotizador {
+    width: 100%;
+    max-width: 100%;
+    min-height: 100dvh !important;
+    height: auto !important;
+    overflow: visible !important;
+    overflow-x: hidden !important;
+    touch-action: pan-y;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: auto;
+    scroll-snap-type: none !important;
+  }
+
+  /* La página pública debe dejar que el navegador sea quien haga el
+     scroll. La client action de Odoo recibe el scroll en sus padres,
+     ajustados por app.js. */
+  .o_ztyres_cotizador.ztyres-public {
+    min-height: 100dvh !important;
+    overflow: visible !important;
+  }
+
+  .o_ztyres_cotizador .wrap {
+    width: 100%;
+    max-width: 100%;
+    padding-left: 10px;
+    padding-right: 10px;
+    padding-bottom: 18px;
+  }
+
+  .o_ztyres_cotizador header {
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    border-radius: 0;
+  }
+
+  /* Evita que una caja interna capture el gesto vertical completo. */
+  .o_ztyres_cotizador .grid,
+  .o_ztyres_cotizador .catalog-panel,
+  .o_ztyres_cotizador .table-scroll,
+  .o_ztyres_cotizador .ztyres-mobile-catalog {
+    min-height: 0 !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    overflow-x: hidden !important;
+    touch-action: pan-y;
+  }
+
+  /* El buscador de la captura quedó con un alto exagerado por reglas
+     heredadas. En móvil debe ser una caja compacta, no un óvalo enorme. */
+  .o_ztyres_cotizador .global-search,
+  .o_ztyres_cotizador #globalSearch,
+  .o_ztyres_cotizador #searchInput {
+    min-height: 46px !important;
+    height: 46px !important;
+    max-height: 46px !important;
+    padding: 10px 14px !important;
+    border-radius: 12px !important;
+    box-sizing: border-box;
+  }
+
+  .o_ztyres_cotizador .global-search input,
+  .o_ztyres_cotizador #searchInput input {
+    min-height: 24px !important;
+    height: auto !important;
+  }
+
+  /* No fijar RIN ni medidas mientras se recorre el catálogo. */
+  .o_ztyres_cotizador .zmc-rim-head,
+  .o_ztyres_cotizador .zmc-med-head {
+    position: static !important;
+  }
+
+  .o_ztyres_cotizador .zmc-rim,
+  .o_ztyres_cotizador .zmc-med,
+  .o_ztyres_cotizador .zmc-cards,
+  .o_ztyres_cotizador .zmc-measures {
+    overflow: visible !important;
+    max-height: none !important;
+  }
+
+  .o_ztyres_cotizador .ztyres-mobile-card {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  /* Botones grandes y fiables al tacto. */
+  .o_ztyres_cotizador button,
+  .o_ztyres_cotizador input,
+  .o_ztyres_cotizador select {
+    touch-action: manipulation;
+  }
+}
+
+@media (max-width: 480px) {
+  .o_ztyres_cotizador .wrap { padding-left: 8px; padding-right: 8px; }
+  .o_ztyres_cotizador .panel { padding: 10px; }
+  .o_ztyres_cotizador .ztyres-mobile-catalog { padding-bottom: 20px; }
+  .o_ztyres_cotizador .zmc-rim-head { min-height: 44px; }
+}
+
+/* ============================================================
+   v4.6 — MÓVIL: SCROLL + ACORDEÓN, UNA SOLA SUPERFICIE
+   ------------------------------------------------------------
+   El catálogo móvil debe comportarse como una página normal. En el
+   backend de Odoo el action manager suele ser el viewport real; si se
+   deja overflow:hidden en esa cadena, el dedo no puede desplazar la
+   vista aunque el contenido sea más alto. Aquí el action manager es
+   el único scroll host en backend. La página pública sigue usando el
+   scroll nativo del navegador.
+   ============================================================ */
+@media (max-width: 1100px) {
+  .o_action_manager:has(.o_ztyres_cotizador) {
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    overscroll-behavior-y: contain;
+    touch-action: pan-y !important;
+    min-height: 0 !important;
+  }
+
+  .o_action_manager:has(.o_ztyres_cotizador) .o_content,
+  .o_action_manager:has(.o_ztyres_cotizador) .o_view_controller,
+  .o_action_manager:has(.o_ztyres_cotizador) .o_action {
+    min-height: 0 !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    touch-action: pan-y !important;
+  }
+
+  /* Nada dentro del catálogo crea un segundo scroll vertical. */
+  .o_ztyres_cotizador .table-scroll,
+  .o_ztyres_cotizador .catalog-panel,
+  .o_ztyres_cotizador .center-col,
+  .o_ztyres_cotizador .main-grid,
+  .o_ztyres_cotizador .ztyres-mobile-catalog,
+  .o_ztyres_cotizador .zmc-measures,
+  .o_ztyres_cotizador .zmc-cards {
+    overflow-y: visible !important;
+    overflow-x: hidden !important;
+    height: auto !important;
+    max-height: none !important;
+    min-height: 0 !important;
+    touch-action: pan-y !important;
+  }
+
+  /* El botón es el target táctil completo. No usamos pointer-events
+     especiales ni pseudo-elementos encima que puedan comerse el tap. */
+  .o_ztyres_cotizador .zmc-rim-head,
+  .o_ztyres_cotizador .zmc-med-head {
+    display: flex !important;
+    width: 100% !important;
+    min-height: 46px !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+    pointer-events: auto !important;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: rgba(0,0,0,.08);
+    touch-action: manipulation !important;
+  }
+
+  .o_ztyres_cotizador .zmc-med-head {
+    min-height: 44px !important;
+  }
+
+  .o_ztyres_cotizador .zmc-rim-head:active,
+  .o_ztyres_cotizador .zmc-med-head:active {
+    transform: scale(.995);
+  }
+
+  .o_ztyres_cotizador .zmc-rim-head .zmc-caret,
+  .o_ztyres_cotizador .zmc-med-head .zmc-caret {
+    pointer-events: none !important;
+  }
+
+  /* Las tarjetas solo existen cuando la medida está abierta; no hay
+     alturas animadas que puedan interferir con el scroll del dedo. */
+  .o_ztyres_cotizador .zmc-rim,
+  .o_ztyres_cotizador .zmc-med {
+    position: static !important;
+    width: 100% !important;
+  }
+}
+
+/* ================================================================
+   v4.7 — MOBILE PRODUCT CARDS · PREMIUM UX
+   Sin dependencia de fotografías. Jerarquía visual pensada para
+   consulta rápida + decisión + acción con una sola mano.
+   ================================================================ */
+@media (max-width: 1024px) {
+  .o_ztyres_cotizador .zmc-cards {
+    padding: 8px 0 4px 8px !important;
+  }
+
+  .o_ztyres_cotizador .ztyres-mobile-card {
+    position: relative;
+    overflow: hidden;
+    padding: 0 !important;
+    margin: 0 0 10px !important;
+    border: 1px solid rgba(20,22,28,.10) !important;
+    border-radius: 16px !important;
+    background: #fff !important;
+    box-shadow: 0 2px 10px rgba(20,22,28,.07) !important;
+    transition: box-shadow .18s ease, transform .18s ease;
+  }
+
+  .o_ztyres_cotizador .ztyres-mobile-card.in-cart {
+    box-shadow: inset 4px 0 0 #2e7d32, 0 3px 12px rgba(20,22,28,.09) !important;
+  }
+
+  .o_ztyres_cotizador .zmc-head {
+    padding: 13px 13px 10px !important;
+    gap: 11px !important;
+    background: linear-gradient(180deg, #fff 0%, #fafbfc 100%);
+  }
+
+  .o_ztyres_cotizador .zmc-badge {
+    flex: 0 0 54px;
+    width: 54px;
+    height: 54px;
+    border-radius: 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    background: #17191f;
+    color: #fff;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,.08);
+  }
+
+  .o_ztyres_cotizador .zmc-badge-ring {
+    font-family: var(--font-mono);
+    font-size: 15px;
+    line-height: 1;
+    font-weight: 900;
+  }
+
+  .o_ztyres_cotizador .zmc-badge-label {
+    font-size: 7px;
+    line-height: 1;
+    letter-spacing: 1px;
+    font-weight: 800;
+    opacity: .62;
+  }
+
+  .o_ztyres_cotizador .zmc-title { min-width: 0; }
+  .o_ztyres_cotizador .zmc-kicker {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 4px;
+    color: var(--ink-soft);
+    font-size: 9px;
+    font-weight: 850;
+    letter-spacing: .55px;
+    text-transform: uppercase;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .o_ztyres_cotizador .zmc-kicker i {
+    font-style: normal;
+    opacity: .7;
+    font-family: var(--font-mono);
+    font-weight: 700;
+  }
+  .o_ztyres_cotizador .zmc-model {
+    margin-top: 3px !important;
+    color: var(--ink) !important;
+    font-size: 16px !important;
+    line-height: 1.1 !important;
+    font-weight: 900 !important;
+  }
+  .o_ztyres_cotizador .zmc-subtitle {
+    margin-top: 4px;
+    color: var(--ink-soft);
+    font-size: 10px;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .o_ztyres_cotizador .zmc-cart {
+    align-self: flex-start;
+    min-width: 30px;
+    justify-content: center;
+    padding: 5px 7px !important;
+  }
+
+  .o_ztyres_cotizador .zmc-size {
+    margin: 0 13px !important;
+    padding: 9px 10px !important;
+    min-height: 38px;
+    border: 1px solid rgba(20,22,28,.07);
+    border-radius: 10px !important;
+    background: #f5f6f7 !important;
+    gap: 9px !important;
+    font-size: 11px !important;
+  }
+  .o_ztyres_cotizador .zmc-size strong {
+    font-size: 14px;
+    font-weight: 950;
+  }
+  .o_ztyres_cotizador .zmc-size > span:nth-child(2) {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .o_ztyres_cotizador .zmc-tier { font-size: 9px !important; }
+
+  .o_ztyres_cotizador .zmc-stock {
+    margin: 10px 13px 0 !important;
+    gap: 6px !important;
+  }
+  .o_ztyres_cotizador .zmc-stock > div {
+    min-height: 50px !important;
+    padding: 7px 4px !important;
+    border: 1px solid rgba(20,22,28,.07);
+    border-radius: 10px !important;
+    background: #fafafa !important;
+  }
+  .o_ztyres_cotizador .zmc-stock span {
+    font-size: 8px !important;
+    letter-spacing: .35px !important;
+  }
+  .o_ztyres_cotizador .zmc-stock b {
+    margin-top: 4px !important;
+    font-size: 14px !important;
+  }
+
+  .o_ztyres_cotizador .zmc-specs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 10px;
+    margin: 10px 13px 0;
+    padding: 8px 0 2px;
+    border-top: 1px solid rgba(20,22,28,.08);
+  }
+  .o_ztyres_cotizador .zmc-specs > div {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    min-height: 29px;
+    border-bottom: 1px solid rgba(20,22,28,.055);
+  }
+  .o_ztyres_cotizador .zmc-specs span {
+    min-width: 0;
+    color: var(--ink-soft);
+    font-size: 8px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .25px;
+  }
+  .o_ztyres_cotizador .zmc-specs b {
+    min-width: 0;
+    max-width: 58%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--ink);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    text-align: right;
+  }
+
+  .o_ztyres_cotizador .zmc-commerce {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin: 10px 13px 0;
+    padding: 10px 0 0;
+    border-top: 1px dashed rgba(20,22,28,.14);
+  }
+  .o_ztyres_cotizador .zmc-price-block {
+    min-width: 0;
+    padding: 2px 0;
+  }
+  .o_ztyres_cotizador .zmc-price-block span,
+  .o_ztyres_cotizador .zmc-gift span {
+    font-size: 8px !important;
+    letter-spacing: .4px !important;
+  }
+  .o_ztyres_cotizador .zmc-price-block strong {
+    display: block;
+    margin-top: 3px;
+    font-size: 17px !important;
+    line-height: 1.1;
+  }
+  .o_ztyres_cotizador .zmc-price-block strong.has-promo { font-size: 11px !important; }
+  .o_ztyres_cotizador .zmc-promo {
+    padding-left: 9px;
+    border-left: 1px solid rgba(46,125,50,.16);
+  }
+  .o_ztyres_cotizador .zmc-promo strong { font-size: 19px !important; }
+  .o_ztyres_cotizador .zmc-gift {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 2px;
+    padding: 8px 0 0 !important;
+    border-top: 1px solid rgba(20,22,28,.06) !important;
+  }
+
+  .o_ztyres_cotizador .zmc-action {
+    margin: 11px 13px 13px !important;
+  }
+  .o_ztyres_cotizador .zmc-action .add-btn,
+  .o_ztyres_cotizador .zmc-action .qty-stepper {
+    min-height: 46px !important;
+    border-radius: 11px !important;
+  }
+  .o_ztyres_cotizador .zmc-action .add-btn {
+    width: 100%;
+    font-size: 12px !important;
+    font-weight: 900;
+    letter-spacing: .1px;
+  }
+  .o_ztyres_cotizador .zmc-action .qty-stepper {
+    width: 100%;
+    display: grid !important;
+    grid-template-columns: 46px 1fr 46px;
+    overflow: hidden;
+    border: 1px solid rgba(20,22,28,.10);
+    background: #f7f7f8;
+  }
+  .o_ztyres_cotizador .zmc-action .step-btn {
+    min-width: 46px !important;
+    min-height: 44px !important;
+    border-radius: 0 !important;
+  }
+  .o_ztyres_cotizador .zmc-action .step-input {
+    width: 100% !important;
+    min-width: 0;
+    min-height: 44px !important;
+    border: 0 !important;
+    border-left: 1px solid rgba(20,22,28,.08) !important;
+    border-right: 1px solid rgba(20,22,28,.08) !important;
+    background: #fff !important;
+    text-align: center;
+    font-family: var(--font-mono);
+    font-weight: 900;
+  }
+}
+
+@media (max-width: 420px) {
+  .o_ztyres_cotizador .zmc-head { padding: 12px 11px 9px !important; }
+  .o_ztyres_cotizador .zmc-badge { flex-basis: 50px; width: 50px; height: 50px; }
+  .o_ztyres_cotizador .zmc-model { font-size: 15px !important; }
+  .o_ztyres_cotizador .zmc-size,
+  .o_ztyres_cotizador .zmc-stock,
+  .o_ztyres_cotizador .zmc-specs,
+  .o_ztyres_cotizador .zmc-commerce { margin-left: 11px !important; margin-right: 11px !important; }
+  .o_ztyres_cotizador .zmc-action { margin-left: 11px !important; margin-right: 11px !important; }
+}
+
+/* ================================================================
+   Mobile compact product cards — v2
+   Prioridad: nombre completo + marca, máxima densidad útil,
+   lectura rápida y CTA accesible sin scroll interno.
+   ================================================================ */
+@media (max-width: 767px) {
+  .o_ztyres_cotizador .ztyres-mobile-card {
+    margin-bottom: 7px !important;
+    border-radius: 13px !important;
+    box-shadow: 0 1px 6px rgba(20,22,28,.065) !important;
+  }
+
+  .o_ztyres_cotizador .zmc-head {
+    padding: 9px 10px 7px !important;
+    gap: 8px !important;
+    align-items: flex-start !important;
+  }
+
+  .o_ztyres_cotizador .zmc-badge {
+    flex: 0 0 42px !important;
+    width: 42px !important;
+    height: 42px !important;
+    border-radius: 10px !important;
+  }
+
+  .o_ztyres_cotizador .zmc-badge-ring { font-size: 13px !important; }
+  .o_ztyres_cotizador .zmc-badge-label { font-size: 6px !important; }
+
+  .o_ztyres_cotizador .zmc-title {
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    padding-top: 1px;
+  }
+
+  /* Marca: protagonista, pero compacta */
+  .o_ztyres_cotizador .zmc-brand-highlight {
+    display: inline-block;
+    max-width: 100%;
+    color: var(--ink) !important;
+    font-size: 10px !important;
+    line-height: 1.05 !important;
+    font-weight: 950 !important;
+    text-transform: uppercase;
+    letter-spacing: .65px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Nombre comercial COMPLETO: [F0674HB] 155/70 R13 N04T FIREMAX FM601 */
+  .o_ztyres_cotizador .zmc-fullname {
+    margin-top: 3px !important;
+    color: var(--ink) !important;
+    font-size: 13px !important;
+    line-height: 1.18 !important;
+    font-weight: 900 !important;
+    letter-spacing: -.1px;
+    overflow-wrap: anywhere;
+  }
+
+  .o_ztyres_cotizador .zmc-cart {
+    min-width: 27px !important;
+    padding: 4px 6px !important;
+    font-size: 9px !important;
+  }
+
+  .o_ztyres_cotizador .zmc-size {
+    margin: 0 10px !important;
+    padding: 6px 8px !important;
+    min-height: 31px !important;
+    border-radius: 8px !important;
+    gap: 7px !important;
+    font-size: 10px !important;
+  }
+  .o_ztyres_cotizador .zmc-size strong { font-size: 12px !important; }
+
+  .o_ztyres_cotizador .zmc-stock {
+    margin: 7px 10px 0 !important;
+    gap: 4px !important;
+  }
+  .o_ztyres_cotizador .zmc-stock > div {
+    min-height: 38px !important;
+    padding: 4px 3px !important;
+    border-radius: 7px !important;
+  }
+  .o_ztyres_cotizador .zmc-stock span { font-size: 7px !important; }
+  .o_ztyres_cotizador .zmc-stock b {
+    margin-top: 2px !important;
+    font-size: 12px !important;
+  }
+
+  .o_ztyres_cotizador .zmc-specs {
+    gap: 0 8px !important;
+    margin: 7px 10px 0 !important;
+    padding: 4px 0 0 !important;
+  }
+  .o_ztyres_cotizador .zmc-specs > div { min-height: 24px !important; }
+  .o_ztyres_cotizador .zmc-specs span { font-size: 7px !important; }
+  .o_ztyres_cotizador .zmc-specs b { font-size: 9px !important; }
+
+  .o_ztyres_cotizador .zmc-commerce {
+    gap: 7px !important;
+    margin: 7px 10px 0 !important;
+    padding: 7px 0 0 !important;
+  }
+  .o_ztyres_cotizador .zmc-price-block span,
+  .o_ztyres_cotizador .zmc-gift span { font-size: 7px !important; }
+  .o_ztyres_cotizador .zmc-price-block strong {
+    margin-top: 2px !important;
+    font-size: 15px !important;
+  }
+  .o_ztyres_cotizador .zmc-price-block strong.has-promo { font-size: 10px !important; }
+  .o_ztyres_cotizador .zmc-promo strong { font-size: 16px !important; }
+  .o_ztyres_cotizador .zmc-gift { padding-top: 5px !important; }
+
+  .o_ztyres_cotizador .zmc-action {
+    margin: 7px 10px 9px !important;
+  }
+  .o_ztyres_cotizador .zmc-action .add-btn,
+  .o_ztyres_cotizador .zmc-action .qty-stepper {
+    min-height: 40px !important;
+    border-radius: 9px !important;
+  }
+  .o_ztyres_cotizador .zmc-action .add-btn { font-size: 11px !important; }
+  .o_ztyres_cotizador .zmc-action .qty-stepper { grid-template-columns: 40px 1fr 40px !important; }
+  .o_ztyres_cotizador .zmc-action .step-btn {
+    min-width: 40px !important;
+    min-height: 38px !important;
+  }
+  .o_ztyres_cotizador .zmc-action .step-input { min-height: 38px !important; }
+}
+
+@media (max-width: 420px) {
+  .o_ztyres_cotizador .zmc-badge {
+    flex-basis: 38px !important;
+    width: 38px !important;
+    height: 38px !important;
+  }
+  .o_ztyres_cotizador .zmc-fullname { font-size: 12px !important; }
+  .o_ztyres_cotizador .zmc-brand-highlight { font-size: 9px !important; }
+}
+
+/* =====================================================================
+   ZTYRES · MOBILE CARD V3.1 · IDENTIDAD + LECTURA RESPONSIVA
+   - El código se pinta una sola vez: separado del display_name.
+   - En pantallas medianas las propiedades se apilan dentro de cada
+     celda para evitar que etiqueta + valor se peguen horizontalmente.
+   ===================================================================== */
+@media (max-width: 1024px) {
+  .o_ztyres_cotizador .zmc-product-line {
+    align-items: baseline !important;
+  }
+
+  .o_ztyres_cotizador .zmc-fullname {
+    min-width: 0 !important;
+    overflow-wrap: anywhere !important;
+  }
+
+  .o_ztyres_cotizador .zmc-info-row > span {
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 2px !important;
+    white-space: normal !important;
+    line-height: 1.05 !important;
+  }
+
+  .o_ztyres_cotizador .zmc-info-row b {
+    width: 100% !important;
+    text-align: center !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    font-size: 7px !important;
+    line-height: 1 !important;
+  }
+
+  .o_ztyres_cotizador .zmc-info-row strong {
+    max-width: 100% !important;
+    text-align: center !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    font-size: 9px !important;
+    line-height: 1.05 !important;
+  }
+
+  .o_ztyres_cotizador .zmc-properties {
+    padding-top: 5px !important;
+    padding-bottom: 5px !important;
+  }
+
+  .o_ztyres_cotizador .zmc-inventory {
+    padding-top: 5px !important;
+    padding-bottom: 5px !important;
+  }
+}
+
+/* =====================================================================
+   ZTYRES · MOBILE CARD V3 · DENSIDAD COMERCIAL
+   3 filas de lectura: identidad / propiedades / inventario.
+   ===================================================================== */
+@media (max-width: 767px) {
+  .o_ztyres_cotizador .ztyres-mobile-card {
+    padding: 0 !important;
+    margin: 0 0 6px !important;
+    border-radius: 10px !important;
+    overflow: hidden;
+    box-shadow: 0 1px 5px rgba(20,22,28,.06) !important;
+  }
+
+  /* 1. Marca + código + nombre */
+  .o_ztyres_cotizador .zmc-head {
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    padding: 7px 9px 6px !important;
+    min-height: 30px !important;
+    background: #fff !important;
+    border-bottom: 1px solid rgba(20,22,28,.07);
+  }
+
+  .o_ztyres_cotizador .zmc-product-line {
+    display: flex;
+    align-items: baseline;
+    flex: 1 1 auto;
+    min-width: 0;
+    gap: 5px;
+    line-height: 1.15;
+  }
+
+  .o_ztyres_cotizador .zmc-brand-highlight {
+    flex: 0 0 auto;
+    max-width: 27%;
+    color: var(--ink) !important;
+    font-size: 10px !important;
+    font-weight: 950 !important;
+    letter-spacing: .35px !important;
+    text-transform: uppercase;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .o_ztyres_cotizador .zmc-code-inline {
+    flex: 0 0 auto;
+    color: var(--ink-soft);
+    font-family: var(--font-mono);
+    font-size: 8.5px;
+    font-weight: 800;
+    white-space: nowrap;
+  }
+
+  .o_ztyres_cotizador .zmc-fullname {
+    flex: 1 1 auto;
+    min-width: 0;
+    color: var(--ink) !important;
+    font-size: 11.5px !important;
+    line-height: 1.15 !important;
+    font-weight: 900 !important;
+    letter-spacing: -.1px;
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+  }
+
+  .o_ztyres_cotizador .zmc-cart {
+    flex: 0 0 auto;
+    min-width: 24px !important;
+    padding: 3px 5px !important;
+    font-size: 8px !important;
+    border-radius: 999px !important;
+  }
+
+  /* Ya no necesitamos el bloque separado de medida: está en el nombre. */
+  .o_ztyres_cotizador .zmc-size { display: none !important; }
+
+  /* 2 y 3. Propiedades e inventario: una fila compacta cada una */
+  .o_ztyres_cotizador .zmc-info-row {
+    display: grid !important;
+    align-items: center;
+    margin: 0 !important;
+    padding: 4px 9px !important;
+    border: 0 !important;
+    gap: 5px !important;
+  }
+
+  .o_ztyres_cotizador .zmc-properties {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    background: #fafbfc;
+    border-bottom: 1px solid rgba(20,22,28,.055) !important;
+  }
+
+  .o_ztyres_cotizador .zmc-inventory {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    background: #fff;
+  }
+
+  .o_ztyres_cotizador .zmc-info-row > span {
+    min-width: 0;
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 3px;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+
+  .o_ztyres_cotizador .zmc-info-row b {
+    min-width: 0;
+    color: var(--ink-soft);
+    font-size: 7px;
+    line-height: 1;
+    font-weight: 800;
+    letter-spacing: -.05px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .o_ztyres_cotizador .zmc-info-row strong {
+    min-width: 0;
+    color: var(--ink);
+    font-family: var(--font-mono);
+    font-size: 9px;
+    line-height: 1;
+    font-weight: 900;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .o_ztyres_cotizador .zmc-inventory > span {
+    padding: 3px 4px;
+    border-radius: 5px;
+    background: #f5f6f7;
+  }
+
+  .o_ztyres_cotizador .zmc-inventory > span:first-child {
+    background: rgba(46,125,50,.07);
+  }
+
+  .o_ztyres_cotizador .zmc-inventory > span:first-child strong {
+    color: #2e7d32;
+  }
+
+  /* Compactar precio + acción, sin quitar funcionalidad */
+  .o_ztyres_cotizador .zmc-commerce {
+    margin: 0 9px !important;
+    padding: 5px 0 !important;
+    gap: 7px !important;
+    border-top: 1px dashed rgba(20,22,28,.10) !important;
+  }
+
+  .o_ztyres_cotizador .zmc-price-block span,
+  .o_ztyres_cotizador .zmc-gift span {
+    font-size: 7px !important;
+  }
+
+  .o_ztyres_cotizador .zmc-price-block strong {
+    margin-top: 1px !important;
+    font-size: 14px !important;
+  }
+
+  .o_ztyres_cotizador .zmc-promo strong { font-size: 15px !important; }
+
+  .o_ztyres_cotizador .zmc-action {
+    margin: 0 9px 7px !important;
+  }
+
+  .o_ztyres_cotizador .zmc-action .add-btn,
+  .o_ztyres_cotizador .zmc-action .qty-stepper {
+    min-height: 36px !important;
+    border-radius: 8px !important;
+  }
+
+  .o_ztyres_cotizador .zmc-action .add-btn { font-size: 10.5px !important; }
+}
+
+@media (max-width: 390px) {
+  .o_ztyres_cotizador .zmc-head { padding-left: 7px !important; padding-right: 7px !important; gap: 4px !important; }
+  .o_ztyres_cotizador .zmc-product-line { gap: 4px; }
+  .o_ztyres_cotizador .zmc-brand-highlight { max-width: 25%; font-size: 9px !important; }
+  .o_ztyres_cotizador .zmc-code-inline { font-size: 8px; }
+  .o_ztyres_cotizador .zmc-fullname { font-size: 10.5px !important; }
+  .o_ztyres_cotizador .zmc-info-row { padding-left: 7px !important; padding-right: 7px !important; gap: 3px !important; }
+  .o_ztyres_cotizador .zmc-info-row b { font-size: 6.5px; }
+  .o_ztyres_cotizador .zmc-info-row strong { font-size: 8.5px; }
+}
+
+
+/* =====================================================================
+   ZTYRES · MOBILE CARD V3.2 · TABLET / PANTALLA MEDIANA
+   Evita el efecto: "Cap / Cara04-NVel / Índ.T75...".
+   Cada propiedad conserva su propia celda y apila etiqueta + valor.
+   ===================================================================== */
+@media (min-width: 768px) and (max-width: 1024px) {
+  .o_ztyres_cotizador .zmc-info-row > span {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 2px !important;
+    min-width: 0 !important;
+    white-space: normal !important;
+    overflow: hidden !important;
+  }
+
+  .o_ztyres_cotizador .zmc-info-row > span b {
+    display: block !important;
+    width: 100% !important;
+    text-align: center !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    font-size: 8px !important;
+    line-height: 1 !important;
+  }
+
+  .o_ztyres_cotizador .zmc-info-row > span strong {
+    display: block !important;
+    max-width: 100% !important;
+    text-align: center !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    font-size: 10px !important;
+    line-height: 1.05 !important;
+  }
+
+  .o_ztyres_cotizador .zmc-properties {
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+    padding-top: 6px !important;
+    padding-bottom: 6px !important;
+  }
+
+  .o_ztyres_cotizador .zmc-inventory {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    padding-top: 6px !important;
+    padding-bottom: 6px !important;
+  }
+}
+
+
+/* =====================================================================
+   ZTYRES · RESPONSIVE PREMIUM · v5
+   ---------------------------------------------------------------------
+   Regla de oro: la tarjeta se adapta al ANCHO DISPONIBLE, no a una
+   resolución concreta. Se evita cualquier overflow horizontal y cada
+   bloque puede comprimirse sin romper la lectura.
+   ===================================================================== */
+
+/* Tablet pequeña / laptop estrecha: el catálogo móvil sigue siendo la
+   interfaz correcta hasta 1100px para evitar tablas apretadas. */
+@media (max-width: 1100px) {
+  .o_ztyres_cotizador .ztyres-mobile-catalog,
+  .o_ztyres_cotizador .zmc-rim,
+  .o_ztyres_cotizador .zmc-measures,
+  .o_ztyres_cotizador .zmc-med,
+  .o_ztyres_cotizador .zmc-cards {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .o_ztyres_cotizador .zmc-measures,
+  .o_ztyres_cotizador .zmc-cards {
+    padding-left: clamp(4px, 1.2vw, 10px) !important;
+    padding-right: 0 !important;
+  }
+
+  .o_ztyres_cotizador .ztyres-mobile-card {
+    box-sizing: border-box !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .o_ztyres_cotizador .zmc-product-line,
+  .o_ztyres_cotizador .zmc-info-row,
+  .o_ztyres_cotizador .zmc-commerce,
+  .o_ztyres_cotizador .zmc-action {
+    min-width: 0 !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .o_ztyres_cotizador .zmc-product-line > *,
+  .o_ztyres_cotizador .zmc-info-row > span {
+    min-width: 0 !important;
+  }
+
+  /* Identidad: marca + SKU + nombre; el nombre gana el espacio restante. */
+  .o_ztyres_cotizador .zmc-brand-highlight {
+    flex: 0 1 auto !important;
+    max-width: 24% !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+  .o_ztyres_cotizador .zmc-code-inline {
+    flex: 0 1 auto !important;
+    max-width: 24% !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+  .o_ztyres_cotizador .zmc-fullname {
+    flex: 1 1 180px !important;
+    min-width: 0 !important;
+    overflow-wrap: anywhere !important;
+    word-break: normal !important;
+  }
+
+  /* Nunca permitimos que etiquetas de inventario o propiedades creen
+     scroll horizontal. */
+  .o_ztyres_cotizador .zmc-properties,
+  .o_ztyres_cotizador .zmc-inventory {
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+}
+
+/* 769–1100: tablet / landscape. Más aire que teléfono, pero mantiene
+   la lectura compacta y estable. */
+@media (min-width: 769px) and (max-width: 1100px) {
+  .o_ztyres_cotizador .ztyres-mobile-card {
+    border-radius: 14px !important;
+    margin-bottom: 9px !important;
+  }
+
+  .o_ztyres_cotizador .zmc-head {
+    padding: 11px 13px 9px !important;
+  }
+
+  .o_ztyres_cotizador .zmc-product-line {
+    gap: 7px !important;
+  }
+
+  .o_ztyres_cotizador .zmc-brand-highlight {
+    font-size: 11px !important;
+  }
+  .o_ztyres_cotizador .zmc-code-inline {
+    font-size: 9px !important;
+  }
+  .o_ztyres_cotizador .zmc-fullname {
+    font-size: 14px !important;
+    line-height: 1.2 !important;
+  }
+
+  .o_ztyres_cotizador .zmc-properties,
+  .o_ztyres_cotizador .zmc-inventory {
+    gap: 7px !important;
+    padding-left: 13px !important;
+    padding-right: 13px !important;
+  }
+
+  .o_ztyres_cotizador .zmc-info-row > span {
+    min-width: 0 !important;
+  }
+  .o_ztyres_cotizador .zmc-info-row b {
+    font-size: 8px !important;
+  }
+  .o_ztyres_cotizador .zmc-info-row strong {
+    font-size: 10px !important;
+  }
+
+  .o_ztyres_cotizador .zmc-commerce {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+    margin-left: 13px !important;
+    margin-right: 13px !important;
+  }
+  .o_ztyres_cotizador .zmc-action {
+    margin-left: 13px !important;
+    margin-right: 13px !important;
+  }
+}
+
+/* Teléfono: la identidad puede pasar a dos líneas, pero la tarjeta sigue
+   siendo una pieza compacta. */
+@media (max-width: 768px) {
+  .o_ztyres_cotizador .wrap {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .o_ztyres_cotizador .zmc-rim-head {
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+  }
+
+  .o_ztyres_cotizador .zmc-rim-meta {
+    max-width: 45% !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  .o_ztyres_cotizador .zmc-med-head strong {
+    min-width: 0 !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+
+  .o_ztyres_cotizador .zmc-head {
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
+  .o_ztyres_cotizador .zmc-product-line {
+    display: grid !important;
+    grid-template-columns: auto auto minmax(0, 1fr) !important;
+    align-items: baseline !important;
+    gap: 3px 5px !important;
+  }
+
+  .o_ztyres_cotizador .zmc-brand-highlight,
+  .o_ztyres_cotizador .zmc-code-inline {
+    max-width: none !important;
+    white-space: nowrap !important;
+  }
+
+  .o_ztyres_cotizador .zmc-fullname {
+    min-width: 0 !important;
+    overflow: hidden !important;
+    display: -webkit-box !important;
+    -webkit-box-orient: vertical !important;
+    -webkit-line-clamp: 2 !important;
+    line-clamp: 2 !important;
+  }
+
+  /* En anchos normales cada propiedad conserva una celda; no se pega
+     una etiqueta con la siguiente. */
+  .o_ztyres_cotizador .zmc-properties {
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+  }
+  .o_ztyres_cotizador .zmc-inventory {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+}
+
+/* Teléfonos muy estrechos: prioriza legibilidad antes que meter las cinco
+   propiedades a presión. */
+@media (max-width: 430px) {
+  .o_ztyres_cotizador .ztyres-mobile-card {
+    border-radius: 11px !important;
+    margin-bottom: 6px !important;
+  }
+
+  .o_ztyres_cotizador .zmc-head {
+    padding: 8px 8px 7px !important;
+  }
+
+  .o_ztyres_cotizador .zmc-brand-highlight {
+    font-size: 9.5px !important;
+    letter-spacing: .35px !important;
+  }
+  .o_ztyres_cotizador .zmc-code-inline {
+    font-size: 7.8px !important;
+  }
+  .o_ztyres_cotizador .zmc-fullname {
+    font-size: 11.5px !important;
+    line-height: 1.15 !important;
+  }
+
+  .o_ztyres_cotizador .zmc-info-row {
+    gap: 2px !important;
+    padding-left: 7px !important;
+    padding-right: 7px !important;
+  }
+
+  .o_ztyres_cotizador .zmc-info-row b {
+    font-size: 6.3px !important;
+    letter-spacing: -.1px !important;
+  }
+  .o_ztyres_cotizador .zmc-info-row strong {
+    font-size: 8.3px !important;
+  }
+
+  .o_ztyres_cotizador .zmc-inventory > span {
+    padding-left: 2px !important;
+    padding-right: 2px !important;
+  }
+
+  .o_ztyres_cotizador .zmc-commerce {
+    margin-left: 8px !important;
+    margin-right: 8px !important;
+    gap: 5px !important;
+  }
+  .o_ztyres_cotizador .zmc-action {
+    margin-left: 8px !important;
+    margin-right: 8px !important;
+  }
+}
+
+/* 360px y menores: los datos secundarios siguen visibles, pero las
+   etiquetas se acortan visualmente mediante el propio ancho de celda. */
+@media (max-width: 360px) {
+  .o_ztyres_cotizador .zmc-product-line {
+    grid-template-columns: minmax(0, auto) minmax(0, auto) minmax(0, 1fr) !important;
+    gap: 2px 3px !important;
+  }
+
+  .o_ztyres_cotizador .zmc-brand-highlight { font-size: 8.8px !important; }
+  .o_ztyres_cotizador .zmc-code-inline { font-size: 7.2px !important; }
+  .o_ztyres_cotizador .zmc-fullname { font-size: 10.5px !important; }
+
+  .o_ztyres_cotizador .zmc-properties { gap: 1px !important; }
+  .o_ztyres_cotizador .zmc-inventory { gap: 2px !important; }
+  .o_ztyres_cotizador .zmc-info-row b { font-size: 5.8px !important; }
+  .o_ztyres_cotizador .zmc-info-row strong { font-size: 7.8px !important; }
+}
+
+/* Landscape en teléfonos: aprovecha el ancho sin convertir la tarjeta en
+   una tabla. */
+@media (max-width: 900px) and (orientation: landscape) {
+  .o_ztyres_cotizador .zmc-fullname {
+    -webkit-line-clamp: 1 !important;
+    line-clamp: 1 !important;
+  }
+  .o_ztyres_cotizador .ztyres-mobile-card {
+    margin-bottom: 6px !important;
+  }
+}
+
+/* Accesibilidad y acabado: foco visible sin romper el layout. */
+.o_ztyres_cotizador .zmc-rim-head:focus-visible,
+.o_ztyres_cotizador .zmc-med-head:focus-visible,
+.o_ztyres_cotizador .zmc-action button:focus-visible,
+.o_ztyres_cotizador .zmc-action input:focus-visible {
+  outline: 2px solid currentColor !important;
+  outline-offset: 2px !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .o_ztyres_cotizador .zmc-rim-head,
+  .o_ztyres_cotizador .zmc-med-head,
+  .o_ztyres_cotizador .ztyres-mobile-card {
+    transition: none !important;
+  }
+}
+
+/* ============================================================
+   v6.1 — Cápsula móvil de promoción activa
+   Las promos están después del catálogo en el layout móvil. La
+   cápsula evita que el usuario pierda el contexto del precio que
+   está simulando mientras navega por las llantas.
+   ============================================================ */
+.o_ztyres_cotizador .mobile-promo-capsule {
+  display: none;
+}
+
+@media (max-width: 1100px) {
+  .o_ztyres_cotizador .mobile-promo-capsule {
+    display: block;
+    position: sticky;
+    top: 8px;
+    z-index: 30;
+    width: 100%;
+    margin: 0 0 10px;
+    padding: 8px 10px;
+    border: 1px solid rgba(148, 163, 184, .38);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, .96);
+    box-shadow: 0 5px 18px rgba(15, 23, 42, .12);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+
+  .o_ztyres_cotizador .mobile-promo-capsule-head {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    min-width: 0;
+    margin-bottom: 6px;
+  }
+
+  .o_ztyres_cotizador .mobile-promo-capsule-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    flex: 0 0 20px;
+    border-radius: 50%;
+    background: #198754;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 900;
+  }
+
+  .o_ztyres_cotizador .mobile-promo-capsule-title {
+    min-width: 0;
+    overflow: hidden;
+    color: #334155;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+  }
+
+  .o_ztyres_cotizador .mobile-promo-change {
+    margin-left: auto;
+    flex: 0 0 auto;
+    min-height: 30px;
+    padding: 5px 9px;
+    border: 1px solid #d8a300;
+    border-radius: 999px;
+    background: #fffaf0;
+    color: #8a6500;
+    font-size: 10px;
+    font-weight: 800;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .o_ztyres_cotizador .mobile-promo-chips {
+    display: flex;
+    gap: 6px;
+    min-width: 0;
+    overflow-x: auto;
+    padding: 1px 1px 2px;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-x;
+  }
+  .o_ztyres_cotizador .mobile-promo-chips::-webkit-scrollbar { display: none; }
+
+  .o_ztyres_cotizador .mobile-promo-chip {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    min-width: min(100%, 330px);
+    max-width: 88vw;
+    padding: 7px 8px;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    background: #f8fafc;
+  }
+
+  .o_ztyres_cotizador .mobile-promo-chip-dot {
+    width: 7px;
+    height: 34px;
+    flex: 0 0 7px;
+    border-radius: 5px;
+  }
+
+  .o_ztyres_cotizador .mobile-promo-chip-copy {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    line-height: 1.2;
+  }
+
+  .o_ztyres_cotizador .mobile-promo-chip-name {
+    overflow: hidden;
+    color: #172033;
+    font-size: 11px;
+    font-weight: 850;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .o_ztyres_cotizador .mobile-promo-chip-tier {
+    margin-top: 2px;
+    overflow: hidden;
+    color: #64748b;
+    font-size: 10px;
+    font-weight: 700;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .o_ztyres_cotizador .mobile-promo-chip-close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    margin-left: auto;
+    flex: 0 0 32px;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: #64748b;
+    font-size: 19px;
+    line-height: 1;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .o_ztyres_cotizador .mobile-promo-chip-close:active { background: #e2e8f0; }
+}
+
+@media (max-width: 480px) {
+  .o_ztyres_cotizador .mobile-promo-capsule {
+    top: 4px;
+    margin-bottom: 8px;
+    padding: 7px 8px;
+    border-radius: 12px;
+  }
+  .o_ztyres_cotizador .mobile-promo-capsule-title { font-size: 9px; }
+  .o_ztyres_cotizador .mobile-promo-chip { min-width: min(100%, 290px); }
+  .o_ztyres_cotizador .mobile-promo-chip-name { font-size: 10.5px; }
+  .o_ztyres_cotizador .mobile-promo-chip-tier { font-size: 9.5px; }
+}
+
+/* =====================================================================
+   v8 — MÓVIL PREMIUM: COLOR DE PROMOCIÓN POR PRODUCTO + FILTROS
+   ---------------------------------------------------------------------
+   Las tarjetas móviles heredan el mismo lenguaje visual de la tabla web:
+   tinte suave, borde de acento y texto de marca/precio en el color de la
+   promoción. Con varias promos se conserva la señal mediante una banda
+   sutil, sin sacrificar legibilidad.
+   ===================================================================== */
+@media (max-width: 1100px) {
+  .o_ztyres_cotizador .ztyres-mobile-card.in-promo {
+    border-color: color-mix(in srgb, var(--promo-b, var(--line)) 55%, #fff) !important;
+    background: var(--promo-card-bg, var(--promo-t, var(--paper))) !important;
+    box-shadow:
+      inset 4px 0 0 var(--promo-b, var(--line)),
+      0 2px 8px rgba(20,22,28,.07) !important;
+  }
+
+  .o_ztyres_cotizador .ztyres-mobile-card.in-promo .zmc-head {
+    background: color-mix(in srgb, var(--promo-t, #f8fafc) 55%, #fff) !important;
+    border-radius: 8px;
+  }
+
+  .o_ztyres_cotizador .ztyres-mobile-card.in-promo .zmc-brand-highlight,
+  .o_ztyres_cotizador .ztyres-mobile-card.in-promo .zmc-fullname,
+  .o_ztyres_cotizador .ztyres-mobile-card.in-promo .zmc-promo strong {
+    color: var(--promo-c, var(--ink)) !important;
+  }
+
+  .o_ztyres_cotizador .ztyres-mobile-card.in-promo .zmc-code-inline {
+    color: color-mix(in srgb, var(--promo-c, var(--ink-soft)) 70%, #64748b) !important;
+  }
+
+  .o_ztyres_cotizador .ztyres-mobile-card.in-promo .zmc-promo {
+    border-left: 2px solid var(--promo-b, var(--line));
+    padding-left: 8px;
+  }
+
+  /* Evita que el fondo multicolor pierda contraste en bloques internos. */
+  .o_ztyres_cotizador .ztyres-mobile-card.in-promo .zmc-info-row > span,
+  .o_ztyres_cotizador .ztyres-mobile-card.in-promo .zmc-stock > div {
+    background: color-mix(in srgb, #fff 72%, var(--promo-t, #f8fafc)) !important;
+  }
+
+  /* ---------------- Filtros móviles ---------------- */
+  .o_ztyres_cotizador .filters-row {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    overflow: visible !important;
+    padding: 8px 8px 7px !important;
+  }
+
+  .o_ztyres_cotizador .xls-filter-bar {
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    gap: 6px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    overflow-x: auto !important;
+    overflow-y: visible !important;
+    padding: 1px 1px 3px !important;
+    scrollbar-width: none !important;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-x;
+  }
+  .o_ztyres_cotizador .xls-filter-bar::-webkit-scrollbar { display: none; }
+
+  .o_ztyres_cotizador .xls-filter-label {
+    flex: 0 0 auto !important;
+    width: auto !important;
+    margin: 0 2px 0 0 !important;
+    font-size: 9px !important;
+    letter-spacing: .05em !important;
+  }
+
+  .o_ztyres_cotizador .xls-filter-field {
+    flex: 0 0 auto !important;
+    position: relative !important;
+  }
+
+  .o_ztyres_cotizador .xls-filter-btn {
+    min-height: 36px !important;
+    padding: 7px 11px !important;
+    border-radius: 999px !important;
+    font-size: 11px !important;
+    white-space: nowrap !important;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .o_ztyres_cotizador .xls-filter-btn.active {
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--rubber-dark) 12%, transparent);
+  }
+
+  .o_ztyres_cotizador .xls-filter-clear {
+    flex: 0 0 auto !important;
+    width: auto !important;
+    margin: 0 0 0 2px !important;
+    padding: 8px 6px !important;
+    font-size: 10px !important;
+  }
+
+  /* Selector de valores: en móvil se comporta como bottom sheet compacto.
+     Así no depende de dónde esté el botón dentro del documento y nunca se
+     sale de la pantalla. */
+  .o_ztyres_cotizador .xls-filter-pop {
+    position: fixed !important;
+    left: 8px !important;
+    right: 8px !important;
+    top: auto !important;
+    bottom: calc(8px + env(safe-area-inset-bottom)) !important;
+    width: auto !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    max-height: min(68vh, 520px) !important;
+    overflow: hidden !important;
+    z-index: 2100 !important;
+    border-radius: 16px !important;
+    box-shadow: 0 18px 50px rgba(15,23,42,.24) !important;
+  }
+
+  .o_ztyres_cotizador .xls-filter-pop-actions {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 1 !important;
+    padding: 10px !important;
+    background: var(--paper) !important;
+  }
+
+  .o_ztyres_cotizador .xls-filter-pop-actions button {
+    min-height: 36px !important;
+    padding: 6px 11px !important;
+  }
+
+  .o_ztyres_cotizador .xls-filter-pop-list {
+    max-height: calc(min(68vh, 520px) - 58px) !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+
+  .o_ztyres_cotizador .xls-filter-opt {
+    min-height: 44px !important;
+    padding: 9px 13px !important;
+    grid-template-columns: minmax(0,1fr) auto 22px !important;
+    gap: 9px !important;
+  }
+
+  .o_ztyres_cotizador .xls-filter-opt-box {
+    width: 20px !important;
+    height: 20px !important;
+  }
+}
+
+@media (max-width: 430px) {
+  .o_ztyres_cotizador .ztyres-mobile-card.in-promo {
+    box-shadow: inset 3px 0 0 var(--promo-b, var(--line)), 0 1px 5px rgba(20,22,28,.06) !important;
+  }
+
+  .o_ztyres_cotizador .xls-filter-btn {
+    min-height: 34px !important;
+    padding: 6px 9px !important;
+    font-size: 10.5px !important;
+  }
+
+  .o_ztyres_cotizador .xls-filter-label { font-size: 8px !important; }
+}
+
+/* =====================================================================
+   v9 — MÓVIL: promoción integrada en la tarjeta + controles limpios
+   ===================================================================== */
+@media (max-width: 1100px) {
+  /* La promoción vive dentro de la ficha del producto. La cápsula
+     superior anterior ya no existe y no consume espacio vertical. */
+  .o_ztyres_cotizador .zmc-head {
+    align-items: flex-start !important;
+    gap: 8px !important;
+  }
+  .o_ztyres_cotizador .zmc-product-line {
+    min-width: 0;
+    flex: 1 1 auto;
+    line-height: 1.25;
+  }
+  .o_ztyres_cotizador .zmc-head-status {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 5px;
+    flex: 0 0 auto;
+    max-width: 46%;
+  }
+  .o_ztyres_cotizador .zmc-promo-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    max-width: 100%;
+    min-height: 24px;
+    padding: 4px 8px;
+    border: 1px solid color-mix(in srgb, var(--promo-b, var(--line)) 55%, #fff);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--promo-t, #f8fafc) 68%, #fff);
+    color: var(--promo-c, var(--ink));
+    font-size: 9px;
+    font-weight: 850;
+    line-height: 1.1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .o_ztyres_cotizador .zmc-promo-dot {
+    width: 7px;
+    height: 7px;
+    flex: 0 0 7px;
+    border-radius: 50%;
+    background: var(--promo-b, var(--rubber-dark));
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--promo-b, var(--rubber-dark)) 14%, transparent);
+  }
+
+  /* La tarjeta se tiñe con el mismo color, pero de forma muy sutil para
+     conservar contraste y evitar que parezca un bloque de publicidad. */
+  .o_ztyres_cotizador .ztyres-mobile-card.in-promo {
+    background: color-mix(in srgb, var(--promo-t, #fff) 18%, #fff) !important;
+    border-color: color-mix(in srgb, var(--promo-b, var(--line)) 38%, var(--line)) !important;
+    box-shadow: inset 3px 0 0 var(--promo-b, var(--line)), 0 2px 7px rgba(20,22,28,.06) !important;
+  }
+  .o_ztyres_cotizador .ztyres-mobile-card.in-promo .zmc-price-block.zmc-promo {
+    background: color-mix(in srgb, var(--promo-t, #fff) 52%, #fff);
+    border-radius: 8px;
+    padding: 5px 7px;
+    margin: -3px 0 0;
+  }
+
+  /* ---------------- Fila de controles ----------------
+     Filtros ocupan su propia fila; IVA y descarga quedan abajo,
+     separados y con ancho suficiente para tocarse sin montarse. */
+  .o_ztyres_cotizador .filters-row {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+    grid-template-areas:
+      "filters filters"
+      "iva download" !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+    padding: 9px !important;
+    overflow: visible !important;
+  }
+  .o_ztyres_cotizador .filters-row > .xls-filter-bar {
+    grid-area: filters;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+  .o_ztyres_cotizador .filters-row > .iva-toggle {
+    grid-area: iva;
+    width: 100% !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    justify-content: center;
+  }
+  .o_ztyres_cotizador .filters-row > .btn-download-filters {
+    grid-area: download;
+    width: 100% !important;
+    min-width: 0 !important;
+    margin: 0 !important;
+    min-height: 40px !important;
+    padding: 7px 9px !important;
+    font-size: 11px !important;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .o_ztyres_cotizador .filters-row .iva-toggle button {
+    flex: 1 1 0;
+    min-width: 0;
+    min-height: 40px !important;
+    padding: 7px 8px !important;
+    font-size: 11px !important;
+  }
+  .o_ztyres_cotizador .xls-filter-bar {
+    padding: 0 0 3px !important;
+    gap: 6px !important;
+  }
+  .o_ztyres_cotizador .xls-filter-btn {
+    min-height: 38px !important;
+  }
+
+  /* Cuando el ancho es muy pequeño, apilamos IVA y descarga para que
+     nunca haya compresión ni texto truncado. */
+  .o_ztyres_cotizador .xls-filter-pop {
+    max-width: calc(100vw - 16px) !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .o_ztyres_cotizador .zmc-head-status { max-width: 42%; }
+  .o_ztyres_cotizador .zmc-promo-pill {
+    max-width: 150px;
+    font-size: 8.5px;
+    padding-inline: 7px;
+  }
+  .o_ztyres_cotizador .filters-row {
+    gap: 7px !important;
+    padding: 8px !important;
+  }
+  .o_ztyres_cotizador .filters-row > .btn-download-filters {
+    font-size: 10px !important;
+  }
+}
+
+@media (max-width: 360px) {
+  .o_ztyres_cotizador .filters-row {
+    grid-template-columns: 1fr !important;
+    grid-template-areas:
+      "filters"
+      "iva"
+      "download" !important;
+  }
+  .o_ztyres_cotizador .zmc-promo-pill { max-width: 125px; }
+}
+
+/* =====================================================================
+   v10 — MOBILE PREMIUM PROMOS + PRECIO / PR PROMO
+   ---------------------------------------------------------------------
+   Objetivos:
+   1) La promoción seleccionada se reconoce directamente en la "fila"
+      del producto, igual que en la tabla de escritorio.
+   2) El bloque de promociones no reserva altura artificial en móvil.
+   3) Precio y Pr Promo se leen juntos y muestran el ahorro real.
+   ===================================================================== */
+
+@media (max-width: 1100px) {
+  /* ---------- PROMOCIONES: altura natural en móvil ---------- */
+  .o_ztyres_cotizador .side-left .promos-panel {
+    width: 100% !important;
+    max-width: 100% !important;
+    height: auto !important;
+    max-height: none !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+    padding: 8px !important;
+    margin: 0 0 8px !important;
+    box-sizing: border-box !important;
+  }
+
+  .o_ztyres_cotizador .side-left .promos-panel h2 {
+    position: static !important;
+    height: auto !important;
+    min-height: 34px !important;
+    margin: 0 0 8px !important;
+    padding: 8px 12px !important;
+    border-radius: 999px !important;
+    display: flex !important;
+    align-items: center !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Una promoción por renglón. El 49% heredado era el responsable de
+     dejar huecos enormes y de partir la lectura en teléfonos. */
+  .o_ztyres_cotizador .side-left .promos-panel .facet,
+  .o_ztyres_cotizador .promos-panel .facet {
+    display: block !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 0 7px !important;
+    box-sizing: border-box !important;
+  }
+
+  .o_ztyres_cotizador .side-left .promos-panel .facet-head {
+    min-height: 46px !important;
+    padding: 6px 8px !important;
+  }
+
+  .o_ztyres_cotizador .side-left .promos-panel .promo-headline {
+    padding: 3px 0 !important;
+  }
+
+  .o_ztyres_cotizador .side-left .promos-panel .facet-body {
+    padding: 2px 8px 8px !important;
+    gap: 2px !important;
+  }
+
+  .o_ztyres_cotizador .side-left .promos-panel .promo-compact-meta {
+    display: none !important;
+  }
+
+  .o_ztyres_cotizador .side-left .promos-panel .promo-step {
+    min-height: 38px !important;
+    padding: 6px 7px !important;
+    border-radius: 8px !important;
+  }
+
+  /* El tramo elegido se pinta con el color de ESA promoción, no con el
+     verde global. Es la misma señal cromática que tendrá el producto. */
+  .o_ztyres_cotizador .side-left .promos-panel .promo-step.sel {
+    background: var(--promo-t) !important;
+    box-shadow: inset 3px 0 0 var(--promo-c) !important;
+  }
+
+  .o_ztyres_cotizador .side-left .promos-panel .promo-step.sel .step-range,
+  .o_ztyres_cotizador .side-left .promos-panel .promo-step.sel .step-rule,
+  .o_ztyres_cotizador .side-left .promos-panel .promo-step.sel .step-value {
+    color: var(--promo-c) !important;
+  }
+
+  /* ---------- PRODUCTO: fila completa teñida por la promo ---------- */
+  .o_ztyres_cotizador .ztyres-mobile-card.in-promo {
+    position: relative !important;
+    overflow: hidden !important;
+    border-width: 1px 1px 1px 3px !important;
+    border-left-color: var(--promo-b, var(--line)) !important;
+    border-color: color-mix(in srgb, var(--promo-b, var(--line)) 45%, var(--line)) !important;
+    background: var(--promo-card-bg, var(--paper)) !important;
+    box-shadow:
+      inset 0 0 0 1px color-mix(in srgb, var(--promo-b, var(--line)) 10%, transparent),
+      0 2px 8px rgba(20,22,28,.07) !important;
+  }
+
+  /* Una banda superior muy fina funciona como el borde cromático de la
+     fila de escritorio y sigue siendo elegante en móvil. */
+  .o_ztyres_cotizador .ztyres-mobile-card.in-promo::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: 3px;
+    background: var(--promo-c, var(--rubber-dark));
+    opacity: .9;
+    pointer-events: none;
+  }
+
+  .o_ztyres_cotizador .ztyres-mobile-card.in-promo .zmc-brand-highlight,
+  .o_ztyres_cotizador .ztyres-mobile-card.in-promo .zmc-fullname {
+    color: var(--promo-c, var(--ink)) !important;
+  }
+
+  /* Las tres zonas de información forman también "renglones" de la
+     misma ficha: se les da apenas un tinte, no bloques chillones. */
+  .o_ztyres_cotizador .ztyres-mobile-card.in-promo .zmc-info-row > span,
+  .o_ztyres_cotizador .ztyres-mobile-card.in-promo .zmc-stock > div,
+  .o_ztyres_cotizador .ztyres-mobile-card.in-promo .zmc-specs > div {
+    background: color-mix(in srgb, var(--promo-t, #f8fafc) 42%, #fff) !important;
+  }
+
+  .o_ztyres_cotizador .ztyres-mobile-card.in-promo .zmc-promo-pill {
+    border-color: color-mix(in srgb, var(--promo-b, var(--line)) 70%, #fff) !important;
+    background: color-mix(in srgb, var(--promo-t, #f8fafc) 78%, #fff) !important;
+    color: var(--promo-c, var(--ink)) !important;
+  }
+
+  .o_ztyres_cotizador .ztyres-mobile-card.in-promo .zmc-promo-dot {
+    background: var(--promo-c, var(--rubber-dark)) !important;
+  }
+
+  /* ---------- PRECIO / PR PROMO ---------- */
+  .o_ztyres_cotizador .zmc-commerce.zmc-prices {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.12fr) !important;
+    gap: 0 !important;
+    margin-top: 8px !important;
+    padding-top: 8px !important;
+    border-top: 1px dashed rgba(20,22,28,.15) !important;
+  }
+
+  .o_ztyres_cotizador .zmc-base-price {
+    padding-right: 10px !important;
+  }
+
+  .o_ztyres_cotizador .zmc-promo {
+    padding-left: 10px !important;
+    border-left: 1px solid color-mix(in srgb, var(--promo-b, #2e7d32) 30%, transparent) !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+  }
+
+  .o_ztyres_cotizador .zmc-price-block span {
+    font-size: 8px !important;
+    font-weight: 900 !important;
+    letter-spacing: .45px !important;
+  }
+
+  .o_ztyres_cotizador .zmc-price-block strong {
+    font-size: 14px !important;
+    line-height: 1.1 !important;
+  }
+
+  .o_ztyres_cotizador .zmc-base-price strong.has-promo {
+    font-size: 12px !important;
+    color: var(--ink-soft) !important;
+    text-decoration: line-through !important;
+    opacity: .72 !important;
+  }
+
+  .o_ztyres_cotizador .zmc-promo strong {
+    color: var(--promo-c, #1b5e3a) !important;
+    font-size: 18px !important;
+    font-weight: 950 !important;
+  }
+
+  .o_ztyres_cotizador .zmc-savings {
+    display: block !important;
+    margin-top: 2px !important;
+    color: var(--promo-c, #1b5e3a) !important;
+    font-size: 8px !important;
+    line-height: 1.2 !important;
+    font-weight: 900 !important;
+  }
+
+  /* Si no hay promo, el precio base vuelve a ocupar visualmente todo el
+     ancho sin dejar una segunda columna fantasma. */
+  .o_ztyres_cotizador .zmc-price-block:only-child {
+    grid-column: 1 / -1 !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .o_ztyres_cotizador .side-left .promos-panel {
+    padding: 6px !important;
+  }
+
+  .o_ztyres_cotizador .side-left .promos-panel h2 {
+    min-height: 32px !important;
+    padding: 7px 11px !important;
+    margin-bottom: 6px !important;
+  }
+
+  .o_ztyres_cotizador .side-left .promos-panel .facet-head {
+    min-height: 43px !important;
+  }
+
+  .o_ztyres_cotizador .ztyres-mobile-card.in-promo {
+    border-left-width: 3px !important;
+  }
+
+  .o_ztyres_cotizador .zmc-commerce.zmc-prices {
+    grid-template-columns: minmax(0, .92fr) minmax(0, 1.08fr) !important;
+  }
+
+  .o_ztyres_cotizador .zmc-promo strong {
+    font-size: 17px !important;
+  }
+}
+
+/* =====================================================================
+   v11 — PROMO CARD VISIBILITY / CROSS-BROWSER FALLBACK
+   ---------------------------------------------------------------------
+   The promo map is keyed by numeric product_id. These rules intentionally
+   use the plain custom properties emitted by MobileProductCard instead of
+   relying exclusively on color-mix(), so the selected promotion remains
+   visible on mobile/tablet browsers that implement color-mix differently.
+   ===================================================================== */
+@media (max-width: 1100px) {
+  .o_ztyres_cotizador .ztyres-mobile-card.in-promo {
+    position: relative !important;
+    overflow: hidden !important;
+    background: var(--promo-t, #f8fafc) !important;
+    border: 1px solid var(--promo-b, #dbe3ea) !important;
+    box-shadow: inset 4px 0 0 var(--promo-b, #dbe3ea), 0 2px 8px rgba(20,22,28,.07) !important;
+  }
+  .o_ztyres_cotizador .ztyres-mobile-card.in-promo .zmc-head {
+    background: var(--promo-t, #f8fafc) !important;
+  }
+  .o_ztyres_cotizador .ztyres-mobile-card.in-promo .zmc-brand-highlight,
+  .o_ztyres_cotizador .ztyres-mobile-card.in-promo .zmc-fullname,
+  .o_ztyres_cotizador .ztyres-mobile-card.in-promo .zmc-promo strong,
+  .o_ztyres_cotizador .ztyres-mobile-card.in-promo .zmc-savings {
+    color: var(--promo-c, #334155) !important;
+  }
+  .o_ztyres_cotizador .ztyres-mobile-card.in-promo .zmc-promo-pill {
+    border-color: var(--promo-b, #cbd5e1) !important;
+    background: var(--promo-t, #f8fafc) !important;
+    color: var(--promo-c, #334155) !important;
+  }
+  .o_ztyres_cotizador .ztyres-mobile-card.in-promo .zmc-promo-dot {
+    background: var(--promo-c, #334155) !important;
+  }
+  .o_ztyres_cotizador .ztyres-mobile-card.in-promo .zmc-info-row > span {
+    background: rgba(255,255,255,.62) !important;
+  }
+  .o_ztyres_cotizador .ztyres-mobile-card.in-promo .zmc-price-block.zmc-promo {
+    background: rgba(255,255,255,.78) !important;
+    border-left: 3px solid var(--promo-b, #cbd5e1) !important;
+  }
+}
+
+
+/* =====================================================================
+   v15 — PROMO STATE FINAL
+   ===================================================================== */
+@media (max-width: 1100px) {
+  .o_ztyres_cotizador .ztyres-mobile-card.in-promo {
+    position: relative !important;
+    overflow: hidden !important;
+    background: var(--promo-t, #f8fafc) !important;
+    border: 1px solid var(--promo-b, #cbd5e1) !important;
+    box-shadow: inset 5px 0 0 var(--promo-b, #cbd5e1), 0 2px 9px rgba(15,23,42,.08) !important;
+  }
+  .o_ztyres_cotizador .ztyres-mobile-card.in-promo::after {
+    content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 5px;
+    background: var(--promo-b, #cbd5e1); pointer-events: none;
+  }
+  .o_ztyres_cotizador .ztyres-mobile-card.in-promo .zmc-head {
+    background: var(--promo-t, #f8fafc) !important;
+  }
+  .o_ztyres_cotizador .ztyres-mobile-card.in-promo .zmc-brand-highlight,
+  .o_ztyres_cotizador .ztyres-mobile-card.in-promo .zmc-fullname {
+    color: var(--promo-c, #334155) !important;
+  }
+  .o_ztyres_cotizador .ztyres-mobile-card.in-promo .zmc-promo-pill {
+    display: inline-flex !important; border-color: var(--promo-b, #cbd5e1) !important;
+    background: #fff !important; color: var(--promo-c, #334155) !important;
+  }
+  .o_ztyres_cotizador .ztyres-mobile-card.in-promo .zmc-promo-dot {
+    background: var(--promo-b, #cbd5e1) !important;
+  }
+  .o_ztyres_cotizador .ztyres-mobile-card.in-promo .zmc-price-block.zmc-promo {
+    display: flex !important; min-width: 0 !important; background: #fff !important;
+    border-left: 3px solid var(--promo-b, #cbd5e1) !important;
+    border-radius: 8px !important; padding: 6px 8px !important;
+  }
+  .o_ztyres_cotizador .ztyres-mobile-card.in-promo .zmc-promo strong,
+  .o_ztyres_cotizador .ztyres-mobile-card.in-promo .zmc-savings {
+    color: var(--promo-c, #1b5e3a) !important;
+  }
+}
+
+
+/* v22 — PROMO CARD / PRICE AUTHORITY
+   La card se pinta con el mismo alcance que usa el precio. No depende de
+   que CatalogTable haya generado un mapa intermedio. */
+@media (max-width: 1100px) {
+  .o_ztyres_cotizador .ztyres-mobile-card.in-promo {
+    background: var(--promo-t, #f8fafc) !important;
+    border-color: var(--promo-b, #cbd5e1) !important;
+    box-shadow: inset 5px 0 0 var(--promo-b, #cbd5e1), 0 2px 9px rgba(15,23,42,.08) !important;
+  }
+  .o_ztyres_cotizador .ztyres-mobile-card.in-promo .zmc-head {
+    background: var(--promo-t, #f8fafc) !important;
+  }
+  .o_ztyres_cotizador .ztyres-mobile-card.in-promo .zmc-brand-highlight,
+  .o_ztyres_cotizador .ztyres-mobile-card.in-promo .zmc-fullname {
+    color: var(--promo-c, #334155) !important;
+  }
+  .o_ztyres_cotizador .ztyres-mobile-card.in-promo .zmc-promo-pill {
+    display: inline-flex !important;
+    border-color: var(--promo-b, #cbd5e1) !important;
+    color: var(--promo-c, #334155) !important;
+  }
+  .o_ztyres_cotizador .ztyres-mobile-card.in-promo .zmc-promo-dot {
+    background: var(--promo-b, #cbd5e1) !important;
+  }
+  .o_ztyres_cotizador .ztyres-mobile-card.in-promo .zmc-info-row > span {
+    background: color-mix(in srgb, #fff 68%, var(--promo-t, #f8fafc)) !important;
+  }
+  .o_ztyres_cotizador .ztyres-mobile-card.in-promo .zmc-base-price strong.has-promo {
+    text-decoration: line-through !important;
+    opacity: .65 !important;
+  }
+  .o_ztyres_cotizador .ztyres-mobile-card.in-promo .zmc-price-block.zmc-promo {
+    display: flex !important;
+    background: #fff !important;
+    border-left: 3px solid var(--promo-b, #cbd5e1) !important;
+    border-radius: 8px !important;
+    padding: 6px 8px !important;
+  }
+  .o_ztyres_cotizador .ztyres-mobile-card.in-promo .zmc-promo strong,
+  .o_ztyres_cotizador .ztyres-mobile-card.in-promo .zmc-savings {
+    color: var(--promo-c, #1b5e3a) !important;
+  }
+}
+
+
+/* V24 — Renderizado móvil diferido: el navegador no pinta/layouta
+   tarjetas que todavía están fuera del viewport al abrir una medida.
+   El DOM y toda la funcionalidad siguen existiendo; solo se difiere
+   el trabajo visual de las tarjetas lejanas. */
+@media (max-width: 1100px) {
+  .o_ztyres_cotizador .zmc-cards {
+    contain: content;
+  }
+  .o_ztyres_cotizador .ztyres-mobile-card {
+    content-visibility: auto;
+    contain-intrinsic-size: 190px;
+  }
+}
+
+
+/* V26 — inventario ampliado: stock libre + tránsito. */
+@media (max-width: 1100px) {
+  .ztyres-mobile-card .zmc-inventory > span:nth-child(4) { min-width: 0; }
+}

@@ -137,11 +137,11 @@ class PaymentDiscountMixin(models.AbstractModel):
         bridgestone_id = 2
         if hasattr(record, 'invoice_line_ids'):  # Es una factura
             sum_subtotal_lines = sum(record.invoice_line_ids.filtered(lambda line: line.product_id.product_tmpl_id.manufacturer_id.id == bridgestone_id and line.sale_line_ids.list_origin in ['MAYOREO']
-                and line.product_id.id not in [50959]).mapped('price_subtotal'))
+                and line.product_id.id not in [50959, 66933]).mapped('price_subtotal'))
             return sum_subtotal_lines - (sum_subtotal_lines*.90)
         else:  # Es una orden de venta
             sum_subtotal_lines = sum(record.order_line.filtered(lambda line: line.product_id.product_tmpl_id.manufacturer_id.id == bridgestone_id and line.list_origin in ['MAYOREO']
-                and line.product_id.id not in [50959]).mapped('price_subtotal') )
+                and line.product_id.id not in [50959, 66933]).mapped('price_subtotal') )
             return sum_subtotal_lines - (sum_subtotal_lines*.90)
     #endregion
     
@@ -153,7 +153,7 @@ class PaymentDiscountMixin(models.AbstractModel):
             filtered_lines = record.invoice_line_ids.filtered(
             lambda line: (
                 line.sale_line_ids.list_origin in ['MAYOREO','PROMOCIÓN','PROMOCIÓN DOT', 'LISTA PROMO DOT','OUTLET']
-                and line.product_id.id not in [50959]
+                and line.product_id.id not in [50959, 66933]
             )
         )
             total_quantity = sum(record.invoice_line_ids.mapped('quantity'))
@@ -161,7 +161,7 @@ class PaymentDiscountMixin(models.AbstractModel):
             filtered_lines = record.order_line.filtered(
             lambda line: (
                 line.list_origin in ['MAYOREO','PROMOCIÓN','PROMOCIÓN DOT', 'LISTA PROMO DOT','OUTLET']
-                and line.product_id.id not in [50959]
+                and line.product_id.id not in [50959, 66933]
             )
         )
             total_quantity = sum(record.order_line.mapped('product_uom_qty'))
@@ -188,10 +188,10 @@ class PaymentDiscountMixin(models.AbstractModel):
         Calcula el total con IVA, dependiendo de si es una factura o una orden.
         """
         if hasattr(record, 'invoice_line_ids'):  # Es una factura
-            subtotal_lines = record.invoice_line_ids.filtered(lambda line: line.product_id.id == 50959).mapped('price_subtotal')
+            subtotal_lines = record.invoice_line_ids.filtered(lambda line: line.product_id.id in [50959, 66933]).mapped('price_subtotal')
             iva_amount = (sum(subtotal_lines) * 1.16) - sum(subtotal_lines)
         else:  # Es una orden de venta
-            subtotal_lines = record.order_line.filtered(lambda line: line.product_id.id == 50959).mapped('price_subtotal')
+            subtotal_lines = record.order_line.filtered(lambda line: line.product_id.id in [50959, 66933]).mapped('price_subtotal')
             iva_amount = (sum(subtotal_lines) * 1.16) - sum(subtotal_lines)
         
         return sum(subtotal_lines) + iva_amount

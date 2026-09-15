@@ -100,13 +100,9 @@ class reportescxc(models.TransientModel):
 
         # Extrae nombres de los registros relacionados
         for record in records:
-            
             lineas = record.line_ids.filtered(lambda l: l.account_id.reconcile)
-
             partials = lineas.matched_credit_ids
-
             notas_credito_pr = partials.filtered(lambda pr: pr.credit_move_id.move_id.move_type == 'out_refund')
-
             total_nc = sum(notas_credito_pr.mapped('amount'))
             #print (total_nc)
             

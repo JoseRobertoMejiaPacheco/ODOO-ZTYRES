@@ -10,6 +10,120 @@ _logger = logging.getLogger(__name__)
 
 
 class PromotionsExternalAPI(http.Controller):
+    """Controlador del cotizador.
+
+    La API /external/* sigue siendo una integración servidor-a-servidor
+    protegida por API key. El cotizador dentro de Odoo (/cotizador/*)
+    requiere sesión de usuario: nunca debe quedar como auth=public porque
+    las respuestas contienen catálogo, existencias y promociones.
+    """
+
+    def _cotizador_access(self):
+        """Permite al usuario interno autorizado o a cualquier usuario Portal.
+
+        El menú backend sigue protegido por group_cotizador_access. Para
+        portal no se concede acceso a modelos ni al backend: solo a estas
+        rutas del cotizador, que son de lectura/cálculo y usan sudo() de
+        forma deliberada detrás de esta barrera de sesión.
+        """
+        user = request.env.user
+        return (
+            user.has_group('ztyres_promotions.group_cotizador_access')
+            or user.has_group('base.group_portal')
+        )
+
+    def _require_cotizador_access(self):
+        if not self._cotizador_access():
+            return self._json({'error': 'No tienes permiso para usar el cotizador'}, 403)
+        return None
+
+    def _portal_product_ids(self, product_ids=None):
+        """IDs de variantes de llanta que el portal puede consultar.
+
+        Se valida directamente contra product.template.tire y solo contra
+        los IDs solicitados; nunca reconstruye el catálogo completo en un
+        refresh de stock o en cada línea del carrito.
+        """
+        domain = [('product_tmpl_id.tire', '=', True)]
+        if product_ids is not None:
+            product_ids = list({int(x) for x in product_ids})
+            if not product_ids:
+                return set()
+            domain.append(('id', 'in', product_ids))
+        return set(request.env['product.product'].sudo().search(domain).ids)
+
+    def _sanitize_lines(self, lines):
+        """Normaliza y limita líneas recibidas desde el navegador.
+
+        Para portal se evita que un usuario pueda consultar por ID productos
+        ajenos al catálogo publicado o enviar cantidades absurdamente grandes.
+        Para internos también se valida el shape para que el endpoint sea
+        robusto ante payloads manipulados.
+        """
+        if not isinstance(lines, list) or len(lines) > 100:
+            return None
+        allowed = None
+        clean = []
+        for line in lines:
+            if not isinstance(line, dict):
+                return None
+            try:
+                product_id = int(line.get('product_id') or 0)
+                qty = float(line.get('qty') or 0)
+            except (TypeError, ValueError):
+                return None
+            if product_id <= 0 or qty <= 0 or qty > 100000:
+                return None
+            clean.append({'product_id': product_id, 'qty': qty})
+        if request.env.user.has_group('base.group_portal'):
+            allowed = self._portal_product_ids([line['product_id'] for line in clean])
+            if len(allowed) != len({line['product_id'] for line in clean}):
+                return None
+        return clean
+
+    def _validate_portal_cart(self, cart):
+        if not request.env.user.has_group('base.group_portal'):
+            return cart
+        if not isinstance(cart, dict) or len(cart) > 100:
+            return None
+        requested_ids = []
+        clean = {}
+        for key, value in cart.items():
+            try:
+                product_id = int(key)
+                qty = float(value)
+            except (TypeError, ValueError):
+                return None
+            if qty <= 0 or qty > 100000:
+                return None
+            requested_ids.append(product_id)
+            clean[product_id] = qty
+        allowed = self._portal_product_ids(requested_ids)
+        if len(allowed) != len(requested_ids):
+            return None
+        return clean
+
+    def _require_same_origin(self):
+        """Defensa adicional para POST JSON con csrf=False.
+
+        El frontend oficial manda X-Ztyres-Cotizador=1. Un formulario o
+        script de un sitio externo no puede añadir este header en una
+        petición cross-origin sin pasar por CORS/preflight. Se valida
+        además Origin/Referer cuando el navegador los proporciona.
+        """
+        if request.httprequest.headers.get('X-Ztyres-Cotizador') != '1':
+            return False
+        host = request.httprequest.host
+        origin = request.httprequest.headers.get('Origin')
+        referer = request.httprequest.headers.get('Referer')
+        if origin and origin.rstrip('/') != request.httprequest.host_url.rstrip('/'):
+            return False
+        if not origin and referer:
+            from urllib.parse import urlparse
+            if urlparse(referer).netloc != host:
+                return False
+        return True
+
     """Dos familias de rutas, a propósito separadas:
 
     /ztyres_promotions/external/*  — para el cotizador HTML/JS que
@@ -190,9 +304,9 @@ class PromotionsExternalAPI(http.Controller):
             return self._json({'error': 'JSON inválido en el body'}, 400)
 
         partner_id = payload.get('partner_id') or 0
-        lines = payload.get('lines') or []
+        lines = self._sanitize_lines(payload.get('lines') or [])
         if not lines:
-            return self._json({'error': 'Faltan lines'}, 400)
+            return self._json({'error': 'Líneas inválidas o vacías'}, 400)
 
         try:
             result = self._get_quote(partner_id, lines)
@@ -231,9 +345,15 @@ class PromotionsExternalAPI(http.Controller):
     # static/src/cotizador_owl/public_main.js.
     # ============================================================
     @http.route('/ztyres_promotions/cotizador', type='http',
-                auth='public', methods=['GET'], csrf=False)
+                auth='user', methods=['GET'], csrf=False)
     def cotizador_public_page(self, **kw):
-        return request.render('ztyres_promotions.cotizador_public_page', {})
+        denied = self._require_cotizador_access()
+        if denied:
+            return denied
+        return request.render('ztyres_promotions.cotizador_public_page', {
+            'ztyres_cotizador_uid': request.env.user.id,
+            'ztyres_cotizador_partner_id': request.env.user.partner_id.id,
+        })
 
     # ============================================================
     # /cotizador/* — datos para la app Owl, consumidos tanto por la
@@ -242,29 +362,47 @@ class PromotionsExternalAPI(http.Controller):
     # Sin API key: la conexión ya es directa con Odoo (mismo origen),
     # así que pedir una key ahí no protege nada que la propia ruta
     # pública no esté ya exponiendo. El día que se quiera exigir
-    # login para estos datos, basta cambiar auth='public' por
+    # login para estos datos, basta cambiar auth='user' por
     # auth='user' aquí.
     # ============================================================
     @http.route('/ztyres_promotions/cotizador/catalog', type='http',
-                auth='public', methods=['GET'], csrf=False)
+                auth='user', methods=['GET'], csrf=False)
     def cotizador_catalog(self, **kw):
+        denied = self._require_cotizador_access()
+        if denied:
+            return denied
         return self._json(self._get_catalog())
 
     @http.route('/ztyres_promotions/cotizador/partners', type='http',
-                auth='public', methods=['GET'], csrf=False)
+                auth='user', methods=['GET'], csrf=False)
     def cotizador_partners(self, **kw):
+        denied = self._require_cotizador_access()
+        if denied:
+            return denied
+        if request.env.user.has_group('base.group_portal'):
+            p = request.env.user.partner_id
+            return self._json([{'id': p.id, 'name': p.display_name, 'vat': p.vat or ''}])
         return self._json(self._get_partners())
 
     @http.route('/ztyres_promotions/cotizador/promos', type='http',
-                auth='public', methods=['GET'], csrf=False)
+                auth='user', methods=['GET'], csrf=False)
     def cotizador_promos(self, **kw):
-        """Promociones vigentes (ztyres_promo) con rangos y productos
-        que aplican — para las facetas/simulador del cotizador."""
+        """Promociones vigentes para el catálogo.
+
+        La selección de una promoción es estado local del navegador y
+        queda aislada por usuario; no se guarda en una variable global
+        del servidor."""
+        denied = self._require_cotizador_access()
+        if denied:
+            return denied
         return self._json(self._get_promos())
 
     @http.route('/ztyres_promotions/cotizador/image/<int:product_id>',
-                type='http', auth='public', methods=['GET'], csrf=False)
+                type='http', auth='user', methods=['GET'], csrf=False)
     def cotizador_product_image(self, product_id, **kw):
+        denied = self._require_cotizador_access()
+        if denied:
+            return denied
         image_bytes = self._get_image_bytes(
             product_id, big=request.httprequest.args.get('size') == 'big'
         )
@@ -275,14 +413,21 @@ class PromotionsExternalAPI(http.Controller):
         return resp
 
     @http.route('/ztyres_promotions/cotizador/quote', type='http',
-                auth='public', methods=['POST'], csrf=False)
+                auth='user', methods=['POST'], csrf=False)
     def cotizador_quote(self, **kw):
+        denied = self._require_cotizador_access()
+        if denied:
+            return denied
+        if not self._require_same_origin():
+            return self._json({'error': 'Solicitud no autorizada'}, 403)
         try:
             payload = json.loads(request.httprequest.data or b'{}')
         except ValueError:
             return self._json({'error': 'JSON inválido en el body'}, 400)
 
         partner_id = payload.get('partner_id') or 0
+        if request.env.user.has_group('base.group_portal'):
+            partner_id = request.env.user.partner_id.id
         lines = payload.get('lines') or []
         if not lines:
             return self._json({'error': 'Faltan lines'}, 400)
@@ -296,7 +441,7 @@ class PromotionsExternalAPI(http.Controller):
         return self._json(result)
 
     @http.route('/ztyres_promotions/cotizador/download/<string:kind>',
-                type='http', auth='public', methods=['POST'], csrf=False)
+                type='http', auth='user', methods=['POST'], csrf=False)
     def cotizador_download(self, kind, **kw):
         """Descarga XLSX del cotizador. `kind` = 'list' | 'order'.
         El body es un JSON con el estado actual del cotizador
@@ -304,12 +449,24 @@ class PromotionsExternalAPI(http.Controller):
         pedido — el carrito). El nombre del archivo lo dictamina
         el modo y el toggle IVA para que el usuario sepa a golpe
         de vista qué está descargando."""
+        denied = self._require_cotizador_access()
+        if denied:
+            return denied
+        if not self._require_same_origin():
+            return request.make_response('Solicitud no autorizada', [('Content-Type', 'text/plain')], status=403)
         try:
             payload = json.loads(request.httprequest.data or b'{}')
         except ValueError:
             return request.make_response('JSON inválido', [('Content-Type', 'text/plain')], status=400)
         if kind not in ('list', 'order'):
             return request.make_response('kind desconocido', [('Content-Type', 'text/plain')], status=400)
+        if request.env.user.has_group('base.group_portal'):
+            payload['partner_id'] = request.env.user.partner_id.id
+            if kind == 'order':
+                cart = self._validate_portal_cart(payload.get('cart') or {})
+                if cart is None:
+                    return request.make_response('Carrito no autorizado', [('Content-Type', 'text/plain')], status=403)
+                payload['cart'] = cart
         try:
             Order = request.env['sale.order'].sudo()
             data = (Order.download_pricelist_xlsx(payload) if kind == 'list'
@@ -329,14 +486,30 @@ class PromotionsExternalAPI(http.Controller):
         ])
 
     @http.route('/ztyres_promotions/cotizador/stock', type='http',
-                auth='public', methods=['POST'], csrf=False)
+                auth='user', methods=['POST'], csrf=False)
     def cotizador_stock_refresh(self, **kw):
+        denied = self._require_cotizador_access()
+        if denied:
+            return denied
+        if not self._require_same_origin():
+            return self._json({'error': 'Solicitud no autorizada'}, 403)
         try:
             payload = json.loads(request.httprequest.data or b'{}')
         except ValueError:
             return self._json({'error': 'JSON inválido en el body'}, 400)
+        product_ids = payload.get('product_ids') or []
         try:
-            result = self._get_stock_refresh(payload.get('product_ids'))
+            product_ids = [int(x) for x in product_ids]
+        except (TypeError, ValueError):
+            return self._json({'error': 'product_ids inválidos'}, 400)
+        if len(product_ids) > 100:
+            return self._json({'error': 'Demasiados productos'}, 400)
+        if request.env.user.has_group('base.group_portal'):
+            allowed = self._portal_product_ids(product_ids)
+            if not set(product_ids).issubset(allowed):
+                return self._json({'error': 'Producto no autorizado'}, 403)
+        try:
+            result = self._get_stock_refresh(product_ids)
         except Exception as e:
             _logger.exception('Error refrescando disponibilidad (cotizador Owl)')
             return self._json({'error': str(e)}, 400)

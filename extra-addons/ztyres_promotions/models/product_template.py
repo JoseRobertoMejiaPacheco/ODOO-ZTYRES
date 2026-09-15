@@ -20,9 +20,22 @@ class ProductTemplate(models.Model):
     # -----------------------------------------------------------------
     def _batch_price_and_stock(self, variants):
         sol_model = self.env['sale.order.line']
-        out = {v.id: {'price': 0.0, 'free_qty': 0.0, 'dot_range': 'N/A'} for v in variants}
+        out = {v.id: {'price': 0.0, 'free_qty': 0.0, 'dot_range': 'N/A', 'transit_qty': 0.0, 'backorder_qty': 0.0} for v in variants}
         if not variants:
             return out
+
+        # Tránsito: ubicaciones específicas de mercancía en tránsito.
+        # Se agrupa por product.template para que coincida con la clave
+        # que usa el catálogo. No se mezcla con Inv/disponible.
+        transit_rows = self.get_transit_qty(variants.mapped('product_tmpl_id').ids)
+        transit_by_tmpl = {int(r['id']): float(r['transito'] or 0.0) for r in transit_rows}
+
+        # Backorder de compras: cantidad comprada pendiente de recibir.
+        # Se agrupa por product.template, igual que Tránsito, para que
+        # cualquier producto con Stock O Tránsito O Backorder pueda
+        # aparecer en el cotizador.
+        backorder_rows = self.get_purchase_backorder_qty(variants.mapped('product_tmpl_id').ids)
+        backorder_by_tmpl = {int(r['id']): float(r['purchase_backorder'] or 0.0) for r in backorder_rows}
 
         # ---- Precio: igual que get_catalog_price_for_product, pero
         # para TODOS los templates de una vez. Mismas listas de
@@ -69,6 +82,8 @@ class ProductTemplate(models.Model):
                 'price': tmpl_price if tmpl_price else v.lst_price,
                 'free_qty': qty_by_variant.get(v.id, 0.0),
                 'dot_range': sol_model.rango_fechas(lots_by_variant.get(v.id, [])),
+                'transit_qty': transit_by_tmpl.get(v.product_tmpl_id.id, 0.0),
+                'backorder_qty': backorder_by_tmpl.get(v.product_tmpl_id.id, 0.0),
             }
         return out
 
@@ -131,13 +146,13 @@ class ProductTemplate(models.Model):
             catalog_price = info.get('price', 0.0)
             free_qty = info.get('free_qty', 0.0)
             dot_range = info.get('dot_range', 'N/A')
+            transit_qty = info.get('transit_qty', 0.0)
+            backorder_qty = info.get('backorder_qty', 0.0)
 
-            # Si no hay precio válido o no hay stock libre, el producto
-            # no se puede cotizar de verdad — se omite del catálogo
-            # externo en vez de mostrarlo con $0.00 o "0 disp.", que
-            # solo confunde al vendedor. No afecta el catálogo interno
-            # de Odoo, solo lo que ve el cotizador.
-            if not catalog_price or not free_qty:
+            # Un producto es publicable en el cotizador si tiene precio
+            # válido y al menos una fuente de disponibilidad: Stock,
+            # Tránsito o Backorder.
+            if not catalog_price or not (free_qty or transit_qty or backorder_qty):
                 continue
 
             out.append({
@@ -170,6 +185,8 @@ class ProductTemplate(models.Model):
                     and p.id in mayoreo_template_ids
                 ) else 0.0,
                 'free_qty': free_qty,
+                'transit_qty': transit_qty,
+                'backorder_qty': backorder_qty,
                 'dot_range': dot_range,
                 # variant.weight puede venir vacío si nunca se
                 # capturó a nivel variante (caso normal: la mayoría de
@@ -206,6 +223,47 @@ class ProductTemplate(models.Model):
             })
         return out
 
+    def get_purchase_backorder_qty(self, product_tmpl_ids):
+        """Cantidad pendiente de recibir en órdenes de compra confirmadas.
+
+        Agrupa por product.template para mantener la misma granularidad
+        del catálogo. Solo considera renglones con cantidad pendiente
+        de recibir, tal como el cálculo usado por el reporte existente.
+        """
+        if not product_tmpl_ids:
+            return []
+        query = """
+        SELECT
+            pp.product_tmpl_id as id,
+            SUM(pol.product_qty - pol.qty_received) as purchase_backorder
+        FROM purchase_order_line pol
+        JOIN product_product AS pp ON pol.product_id = pp.id
+        JOIN purchase_order po ON pol.order_id = po.id
+        WHERE
+            po.state IN ('purchase') AND
+            po.invoice_status NOT IN ('cancel') AND
+            (pol.product_qty - pol.qty_received) > 0 AND
+            pp.product_tmpl_id IN %s
+        GROUP BY pp.product_tmpl_id
+        """
+        self.env.cr.execute(query, (tuple(product_tmpl_ids),))
+        return self.env.cr.dictfetchall()
+
+    def get_transit_qty(self, product_tmpl_ids):
+        query = """
+        SELECT
+            pp.product_tmpl_id as id,
+            SUM(sq.quantity) AS transito
+        FROM stock_quant sq
+        JOIN product_product AS pp ON sq.product_id = pp.id
+        WHERE location_id in (53, 24686, 24687)
+          AND pp.product_tmpl_id IN %s
+        GROUP BY pp.product_tmpl_id
+        """
+        params = (tuple(product_tmpl_ids),)
+        self.env.cr.execute(query, params)
+        return self.env.cr.dictfetchall()
+
     @api.model
     def get_stock_refresh(self, product_ids):
         """Refresca SOLO disponibilidad/rango de DOT/precio para una
@@ -232,6 +290,8 @@ class ProductTemplate(models.Model):
                 'free_qty': stock_price[v.id]['free_qty'],
                 'dot_range': stock_price[v.id]['dot_range'],
                 'price': stock_price[v.id]['price'],
+                'transit_qty': stock_price[v.id].get('transit_qty', 0.0),
+                'backorder_qty': stock_price[v.id].get('backorder_qty', 0.0),
             }
             for v in variants
         }

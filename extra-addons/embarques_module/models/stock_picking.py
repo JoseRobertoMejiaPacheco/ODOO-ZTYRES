@@ -150,6 +150,22 @@ class StockPicking(models.Model):
             picking.pedimento_names = ', '.join(pedimentos)
             picking.source_location_names = ', '.join(locations)
 
+    @api.onchange('requested_discount_percentage')
+    def _onchange_requested_discount_percentage(self):
+        """Refleja inmediatamente en la vista el estado de la solicitud.
+
+        En una lista editable dentro del embarque, el cliente web no vuelve a
+        leer automáticamente los campos readonly que modifica ``write``.
+        Marcarlos aquí evita que el usuario tenga que recargar la página para
+        ver que la solicitud quedó como pendiente de autorización.
+        """
+        for picking in self:
+            if picking.requested_discount_percentage:
+                picking.discount_state = 'to_approve'
+                picking.discount_requested_by = self.env.user
+                picking.discount_approved_by = False
+                picking.discount_approval_date = False
+
     def write(self, vals):
         protected = {
             'load_order', 'partner_id', 'sale_id', 'state',
@@ -172,16 +188,22 @@ class StockPicking(models.Model):
                         delivered.mapped('display_name')))
         if vals.get('requested_discount_percentage') and not self.env.context.get('embarque_internal_write'):
             for picking in self:
+                # En la lista editable ``pedidos_ids`` Odoo puede guardar el
+                # stock.picking antes de ejecutar el comando Many2many del
+                # embarque. En ese instante ``embarque_ids`` todavía puede
+                # venir vacío aunque el traslado ya esté agregado en pantalla.
+                # No se debe bloquear con un falso "debe pertenecer"; el
+                # tope se valida aquí sólo cuando la relación ya existe y se
+                # vuelve a validar al guardar el embarque.
                 embarque = picking.embarque_ids[:1]
-                if not embarque:
-                    raise UserError(_('El traslado debe pertenecer a un embarque.'))
-                solicitado = vals['requested_discount_percentage']
-                tope = embarque._max_manual_percentage_for_picking(picking)
-                if tope is not False and solicitado > tope:
-                    raise UserError(_(
-                        'El descuento solicitado (%.2f%%) supera el máximo '
-                        'permitido de %.2f%% para %s.') % (
-                            solicitado, tope, picking.display_name))
+                if embarque:
+                    solicitado = vals['requested_discount_percentage']
+                    tope = embarque._max_manual_percentage_for_picking(picking)
+                    if tope is not False and solicitado > tope:
+                        raise UserError(_(
+                            'El descuento solicitado (%.2f%%) supera el máximo '
+                            'permitido de %.2f%% para %s.') % (
+                                solicitado, tope, picking.display_name))
             vals.update({
                 'discount_state': 'to_approve',
                 'discount_requested_by': self.env.user.id,

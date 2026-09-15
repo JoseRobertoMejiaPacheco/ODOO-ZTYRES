@@ -220,16 +220,53 @@ class SaleOrder(models.Model):
             for promo in promos:
                 matched = []
                 matched_variants = {}
+
+                # 1) Match del motor real: incluye promociones por marca,
+                # medida, rin, tier, etc.
                 for v in variants:
                     try:
                         if promo._promo_line_matches(_NcEvalLine(0, v)):
                             matched.append(v.id)
                             matched_variants[v.id] = v
                     except Exception:
-                        # Si un producto falla el match (campo faltante,
-                        # relación rota), se ignora — mejor devolver la
-                        # promo sin ese producto que no devolver nada.
-                        pass
+                        # Un fallo aislado de un registro no debe impedir
+                        # que el resto de la promoción llegue al cotizador.
+                        _logger.debug(
+                            'No se pudo evaluar _promo_line_matches para promo %s / variante %s',
+                            promo.id, v.id, exc_info=True,
+                        )
+
+                # 2) IMPORTANTE: algunas promociones tienen productos
+                # seleccionados explícitamente en `product_ids`. No debemos
+                # depender exclusivamente de _promo_line_matches para esos
+                # productos: el motor puede exigir datos de una línea real
+                # que el adaptador del cotizador no tiene (cantidad, lista,
+                # origen de lista, etc.).
+                #
+                # Serializamos SIEMPRE esos productos como variantes del
+                # catálogo. Así frontend y XLSX reciben el mismo universo y
+                # una promo seleccionada puede pintar inmediatamente la
+                # tarjeta y mostrar su precio promocional.
+                explicit_products = getattr(promo, 'product_ids', False)
+                if explicit_products:
+                    for record in explicit_products:
+                        try:
+                            if record._name == 'product.product':
+                                candidates = record
+                            else:
+                                candidates = record.product_variant_id
+                            for variant in candidates:
+                                if variant and variant.id and variant.id in {v.id for v in variants}:
+                                    matched_variants[variant.id] = variant
+                                    if variant.id not in matched:
+                                        matched.append(variant.id)
+                        except Exception:
+                            _logger.debug(
+                                'No se pudo serializar product_ids explícitos de promo %s',
+                                promo.id, exc_info=True,
+                            )
+
+                matched.sort()
                 # Los nombres efectivos importan para registros heredados:
                 # el alcance puede inferirse de product_ids y Cupones/Rin
                 # fuerzan su política. Es la misma resolución que usa el
@@ -483,7 +520,7 @@ class SaleOrder(models.Model):
         """Devuelve únicamente porcentajes autorizados por categoría."""
         allowed = {
             'volumen': {0.0, 1.0, 2.0, 3.0},
-            'logistico': {0.0, 2.0, 4.0},
+            'logistico': {0.0, 2.0, 3.0, 4.0, 5.0},
             'financiero': {0.0, 2.0, 3.0},
         }
         try:
@@ -836,6 +873,8 @@ class SaleOrder(models.Model):
         if mode == 'list':
             headers += [
                 'Inv.',
+                'Tránsito',
+                'Backorder',
                 'Precio',
                 'Pr Promo',
                 'Tarjeta de regalo',
@@ -843,6 +882,9 @@ class SaleOrder(models.Model):
         else:
             headers += [
                 'Cant.',
+                'Inv.',
+                'Tránsito',
+                'Backorder',
                 'Precio',
                 'Pr Promo',
                 '% Desc.',
@@ -1062,6 +1104,8 @@ class SaleOrder(models.Model):
             if mode == 'list':
                 row_values = cells + [
                     p.get('free_qty') if p.get('free_qty') is not None else '',
+                    p.get('transit_qty') if p.get('transit_qty') is not None else '',
+                    p.get('backorder_qty') if p.get('backorder_qty') is not None else '',
                     base * iva_factor,
                     final * iva_factor if ahorro > 0 else '',
                     gift_card * iva_factor if gift_card > 0 else '',
@@ -1073,7 +1117,11 @@ class SaleOrder(models.Model):
                 ahorro_unit = base - final
                 pct_desc = (ahorro_unit / base * 100) if base > 0 else 0
                 row_values = cells + [
-                    qty, base * iva_factor,
+                    qty,
+                    p.get('free_qty') if p.get('free_qty') is not None else '',
+                    p.get('transit_qty') if p.get('transit_qty') is not None else '',
+                    p.get('backorder_qty') if p.get('backorder_qty') is not None else '',
+                    base * iva_factor,
                     final * iva_factor if ahorro_unit > 0.005 else '',
                     round(pct_desc, 1) if ahorro_unit > 0.005 else '',
                     subtotal * iva_factor,
@@ -1319,7 +1367,7 @@ class SaleOrder(models.Model):
         widths = {
             'Código': 13, 'Tier': 7, 'Medida': 14, 'Marca': 16, 'Modelo': 22,
             'Cap/Cara': 11, 'Vel/Ind': 10, 'Seg': 8, 'Tipo': 10, 'DOT': 8,
-            'Eq. Original': 18, 'Inv.': 9, 'Cant.': 9,
+            'Eq. Original': 18, 'Inv.': 9, 'Tránsito': 10, 'Backorder': 11, 'Cant.': 9,
             'Precio': 16, 'Pr Promo': 15,
             '% Desc.': 10, 'Subtotal': 16,
             'Tarjeta de regalo': 17, 'NC estimada': 15,

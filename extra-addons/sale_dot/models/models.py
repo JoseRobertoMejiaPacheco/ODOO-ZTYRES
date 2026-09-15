@@ -99,7 +99,7 @@ class SaleOrder(models.Model):
             
 
     def _remove_delivery_z(self):
-        product_lines = self.order_line.filtered(lambda l: l.product_id.id == 50959)
+        product_lines = self.order_line.filtered(lambda l: l.product_id.id in [50959, 66933])
         if product_lines:
             self.order_line = [(2, line.id, 0) for line in product_lines]
     

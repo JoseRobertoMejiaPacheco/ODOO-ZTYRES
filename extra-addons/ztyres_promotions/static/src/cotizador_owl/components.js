@@ -4,7 +4,7 @@
    ============================================================ */
 import { Component, useState, useRef, useExternalListener, onMounted, onPatched, onWillUnmount, xml } from "@odoo/owl";
 
-import { IconPlus, IconMinus, IconTrash } from './icons.js';
+import { IconPlus, IconMinus, IconTrash, IconCheck, IconZoom, IconNoImage } from './icons.js';
 import {
   EXTRA_COLUMNS, SF_FIELDS, PROFILE_FIELDS, money, formatDot, formatColumnValue, normalizeSearchText, setPromoSim, policyFactor, policyLabel, IVA_RATE, setShowIva, promoColorFor,
 } from './constants.js';
@@ -22,14 +22,40 @@ function promoPercentForProduct(promo, tier, productId) {
      _cotizador_promo_discount en sale_order.py — si cambia una, cambia
      la otra o el XLSX deja de cuadrar con la pantalla. */
   if (Number(tier.key_size_discount || 0) > 0
-      && (promo.key_size_product_ids || []).includes(Number(productId))) {
+      && (promo.key_size_product_ids || []).some((id) => Number(id) === Number(productId))) {
+    return Number(tier.key_size_discount);
+  }
+  return Number(tier.discount || 0);
+}
+
+function promoAppliesToProduct(promo, product) {
+  if (!promo || !product) return false;
+  const variantId = Number(product.product_id);
+  const templateId = Number(product.tmpl_id);
+  const ids = Array.isArray(promo.product_ids) ? promo.product_ids : [];
+  return ids.some((raw) => {
+    const id = Number(raw);
+    return Number.isFinite(id) && (id === variantId || id === templateId);
+  });
+}
+
+function promoProductPercent(promo, tier, product) {
+  const pid = Number(product && product.product_id);
+  const tmpl = Number(product && product.tmpl_id);
+  if (!tier) return 0;
+  if (tier.product_discounts) {
+    const direct = Number(tier.product_discounts[String(pid)] ?? tier.product_discounts[String(tmpl)] ?? 0);
+    if (direct > 0) return direct;
+  }
+  if (Number(tier.key_size_discount || 0) > 0
+      && (promo.key_size_product_ids || []).some((id) => Number(id) === pid || Number(id) === tmpl)) {
     return Number(tier.key_size_discount);
   }
   return Number(tier.discount || 0);
 }
 
 function promoUnitDiscount(promo, tier, product, listPrice) {
-  if (!product || !(promo.product_ids || []).includes(Number(product.product_id))) return 0;
+  if (!promoAppliesToProduct(promo, product)) return 0;
   if (promo.promo_type === 'coupons') {
     // Cupón / apoyo fijo por pieza: SÍ es un descuento sobre la llanta
     // (tiene tope de piezas y se refleja en la NC del pedido).
@@ -45,7 +71,7 @@ function promoUnitDiscount(promo, tier, product, listPrice) {
      de lo que se cobra. Vive en su propia columna, vía
      giftCardAmountFor. */
   if (promo.reward_type === 'gift_card') return 0;
-  const percent = promoPercentForProduct(promo, tier, product.product_id);
+  const percent = promoProductPercent(promo, tier, product);
   const rawPms = (promo.pms_price_by_product || {})[String(product.product_id)];
   if (rawPms != null) {
     // Base PMS: el porcentaje se calcula sobre el precio PMS pactado,
@@ -88,7 +114,7 @@ function basePriceOf(product, listPrice) {
    precio. Por eso vive en su propia columna y NO entra al precio. */
 function giftCardAmountFor(promo, product) {
   if (promo.reward_type !== 'gift_card') return 0;
-  if (!product || !(promo.product_ids || []).includes(Number(product.product_id))) return 0;
+  if (!promoAppliesToProduct(promo, product)) return 0;
   const card = (promo.coupons || []).find((item) => item.tmpl_id === product.tmpl_id);
   return card ? Number(card.amount || 0) : 0;
 }
@@ -167,6 +193,7 @@ export class CatalogRow extends Component {
       <td class="flat-td-attr" t-foreach="props.extraColumns" t-as="col" t-key="col.key" t-att-data-label="col.label"
           t-esc="formatColumnValue(col.key, props.product[col.key])"/>
       <td class="flat-td-disp" data-label="Inv" t-esc="props.product.free_qty != null ? props.product.free_qty : '—'"/>
+      <td class="flat-td-transit" data-label="Tránsito" t-esc="props.product.transit_qty != null ? props.product.transit_qty : '—'"/>
       <!-- Precio base. En Bridgestone/Firestone de la lista Mayoreo ya
            trae aplicado el −10%: es el precio desde el que se calcula
            todo lo demás, no el de lista publicada. -->
@@ -293,7 +320,9 @@ export class CatalogRow extends Component {
     return `Ya incluye Mayoreo −10% · Precio de lista ${money(list * this.props.iva)}`;
   }
   finalPrice() {
-    if (this.props.promo) return this.props.promo.price;
+    if (this.props.promo && Number(this.props.promo.price) < this.basePrice() - 0.005) {
+      return Number(this.props.promo.price);
+    }
     const base = this.basePrice();
     // Política se calcula SOBRE LISTA (no sobre `base`, que ya trae
     // Mayoreo restado) y se resta junto con Mayoreo — no en cascada.
@@ -305,6 +334,11 @@ export class CatalogRow extends Component {
       return Math.max(base - policyDisc, 0);
     }
     return 0;
+  }
+  savings() {
+    const final = this.finalPrice();
+    if (!final) return 0;
+    return Math.max(this.basePrice() - final, 0);
   }
   finalTitle() {
     if (this.props.promo) return this.props.promo.label;
@@ -322,6 +356,220 @@ export class CatalogRow extends Component {
   }
 }
 
+class MobileProductBadge extends Component {
+  static template = xml`
+    <div class="zmc-badge" aria-hidden="true">
+      <span class="zmc-badge-ring">R<t t-esc="props.product.rim || '—'"/></span>
+      <span class="zmc-badge-label">LLANTA</span>
+    </div>`;
+}
+
+export function buildMobilePromoIndex(state, simOverride = null) {
+  const promos = state && state.promos || [];
+  const sim = simOverride || (state && state.promoSim) || {};
+  const catalog = state && state.catalog || [];
+  const byVariant = new Map();
+  const byTemplate = new Map();
+  for (const product of catalog) {
+    const pid = Number(product && product.product_id);
+    const tid = Number(product && product.tmpl_id);
+    if (pid > 0) byVariant.set(pid, product);
+    if (tid > 0 && !byTemplate.has(tid)) byTemplate.set(tid, []);
+    if (tid > 0) byTemplate.get(tid).push(product);
+  }
+
+  const index = Object.create(null);
+  for (const promo of promos) {
+    const selected = sim[promo.id];
+    if (!selected || !selected.on) continue;
+    const tier = selectedTierForPromo(state, promo, selected);
+    const color = promoColorFor(promo.id);
+    const ids = Array.isArray(promo.product_ids) ? promo.product_ids : [];
+    const seen = new Set();
+
+    for (const raw of ids) {
+      const id = Number(raw);
+      if (!(id > 0)) continue;
+      const direct = byVariant.get(id);
+      const candidates = direct ? [direct] : (byTemplate.get(id) || []);
+      for (const product of candidates) {
+        const pid = Number(product.product_id);
+        if (seen.has(pid)) continue;
+        seen.add(pid);
+        const disc = Number(promoUnitDiscount(promo, tier, product, Number(product.price || 0)) || 0);
+        const pct = promoProductPercent(promo, tier, product);
+        const current = index[pid] || { applicable: [], discount: 0, palette: [], giftAmount: 0, giftNames: [] };
+        current.applicable.push({ promo, tier, discount: disc, color });
+        current.discount += disc;
+        if (!current.palette.some((c) => c.text === color.text)) current.palette.push(color);
+        const gift = giftCardAmountFor(promo, product);
+        if (gift > 0) {
+          current.giftAmount += gift;
+          current.giftNames.push(promo.display_label || promo.name);
+        }
+        current.applicable[current.applicable.length - 1].pct = pct;
+        index[pid] = current;
+      }
+    }
+  }
+
+  for (const pid of Object.keys(index)) {
+    const value = index[pid];
+    value.winner = value.applicable.reduce(
+      (best, item) => !best || item.discount > best.discount ? item : best,
+      null,
+    )?.color || value.palette[0] || null;
+    if (value.giftAmount > 0) {
+      value.giftCard = { amount: value.giftAmount, promoName: value.giftNames.join(' + '), active: true };
+    }
+    value.labels = value.applicable.map((item) => {
+      const base = item.promo.display_label || item.promo.name;
+      return item.pct > 0 ? `${base} ${item.pct}%` : base;
+    }).filter(Boolean);
+    // No conservamos referencias innecesarias para que el mapa sea ligero.
+    delete value.giftNames;
+  }
+  return index;
+}
+
+export class MobileProductCard extends Component {
+  static template = xml`
+    <article class="ztyres-mobile-card" t-att-class="{ 'in-cart': props.qty > 0, 'in-promo': hasApplicablePromo() }" t-att-style="promoStyle()">
+      <!-- Línea 1: Marca + Código + nombre completo -->
+      <header class="zmc-head">
+        <div class="zmc-product-line">
+          <span class="zmc-brand-highlight" t-esc="props.product.brand || 'Marca'"/>
+          <span class="zmc-code-inline">[<t t-esc="props.product.code || '—'"/>]</span>
+          <span class="zmc-fullname" t-esc="displayName()"/>
+        </div>
+        <div class="zmc-head-status">
+          <span t-if="promoLabels().length" class="zmc-promo-pill"
+                t-att-title="promoLabels().join(' · ')">
+            <span class="zmc-promo-dot" aria-hidden="true"></span>
+            <t t-esc="promoLabels().length === 1 ? promoLabels()[0] : promoLabels().length + ' promociones'"/>
+          </span>
+          <span t-if="props.qty > 0" class="zmc-cart"><IconCheck/> <t t-esc="props.qty"/></span>
+        </div>
+      </header>
+
+      <!-- Línea 2: Propiedades -->
+      <div class="zmc-info-row zmc-properties">
+        <span><b>Cap / Cara</b><strong><t t-esc="capCara()"/></strong></span>
+        <span><b>Vel / Índ.</b><strong><t t-esc="velInd()"/></strong></span>
+        <span><b>Segmento</b><strong><t t-esc="props.product.segment || '—'"/></strong></span>
+        <span><b>Tipo</b><strong><t t-esc="props.product.type || '—'"/></strong></span>
+        <span><b>Equipo orig.</b><strong><t t-esc="props.product.original_equipment || '—'"/></strong></span>
+      </div>
+
+      <!-- Línea 3: Inventario -->
+      <div class="zmc-info-row zmc-inventory">
+        <span><b>Disponible</b><strong><t t-esc="props.product.free_qty != null ? props.product.free_qty : '—'"/></strong></span>
+        <span><b>Tránsito</b><strong><t t-esc="props.product.transit_qty != null ? props.product.transit_qty : '—'"/></strong></span>
+        <span><b>DOT</b><strong><t t-esc="formatDot(props.product.dot_range)"/></strong></span>
+      </div>
+
+      <div class="zmc-commerce zmc-prices">
+        <div class="zmc-price-block zmc-base-price">
+          <span>Precio</span>
+          <strong t-att-class="{ 'has-promo': hasPromoPrice() }" t-esc="money(basePrice() * props.iva)"/>
+        </div>
+        <div class="zmc-price-block zmc-promo" t-if="hasPromoPrice()">
+          <span>Pr Promo</span>
+          <strong t-esc="money(finalPrice() * props.iva)"/>
+          <small class="zmc-savings" t-if="savings() > 0">Ahorra <t t-esc="money(savings() * props.iva)"/></small>
+        </div>
+        <div class="zmc-gift" t-if="giftCard()">
+          <span>Tarjeta de regalo</span>
+          <strong t-att-class="{ pending: !giftCard().active }" t-esc="money(giftCard().amount * props.iva)"/>
+        </div>
+      </div>
+
+      <footer class="zmc-action">
+        <button t-if="!props.qty" class="add-btn" t-on-click="() => props.onAdd(props.product.product_id)"><IconPlus/> Agregar al pedido</button>
+        <div t-else="" class="qty-stepper">
+          <button class="step-btn" t-on-click="() => props.onDec(props.product.product_id)"><IconMinus/></button>
+          <input type="number" min="1" class="step-input" t-att-value="props.qty" t-on-change="(ev) => props.onSetQty(props.product.product_id, ev.target.value)"/>
+          <button class="step-btn" t-on-click="() => props.onInc(props.product.product_id)"><IconPlus/></button>
+        </div>
+      </footer>
+    </article>`
+  static components = { MobileProductBadge, IconPlus, IconMinus, IconCheck };
+  money = money;
+  formatDot = formatDot;
+
+  formatColumnValue = formatColumnValue;
+
+  promoInfo() {
+    const state = this.props.state;
+    const product = this.props.product || {};
+    if (!state) return { applicable: [], discount: 0, winner: null, palette: [], labels: [], giftCard: null };
+    const index = state.mobilePromoIndex;
+    const cached = index ? index[Number(product.product_id)] : null;
+    return cached || { applicable: [], discount: 0, winner: null, palette: [], labels: [], giftCard: null };
+  }
+
+  hasApplicablePromo() {
+    return this.promoInfo().applicable.length > 0;
+  }
+  promoLabels() { return this.promoInfo().labels || []; }
+
+  giftCard() { return this.promoInfo().giftCard || null; }
+
+  promoStyle() {
+    const info = this.promoInfo();
+    const winner = info.winner;
+    if (!winner) return '';
+    return `--promo-c:${winner.text};--promo-b:${winner.border};--promo-t:${winner.tint};background-color:${winner.tint};border-left-color:${winner.border};`;
+  }
+
+  basePrice() { return basePriceOf(this.props.product); }
+
+  hasPromoPrice() {
+    const info = this.promoInfo();
+    if (!info.applicable.length || !(info.discount > 0)) return false;
+    const base = this.basePrice();
+    const list = Number(this.props.product && this.props.product.price || 0);
+    const final = Math.max(base - info.discount, 0);
+    return final < base - 0.005;
+  }
+
+  finalPrice() {
+    const base = this.basePrice();
+    const info = this.promoInfo();
+    if (info.applicable.length && info.discount > 0) {
+      const list = Number(this.props.product && this.props.product.price || 0);
+      return Math.max(base - info.discount, 0);
+    }
+    return base;
+  }
+
+  savings() {
+    return Math.max(this.basePrice() - this.finalPrice(), 0);
+  }
+
+  displayName() {
+    const p = this.props.product || {};
+    let name = String(p.name || p.model || 'Producto').trim();
+    const code = String(p.code || '').trim();
+    // Odoo puede devolver display_name como '[SKU] nombre'.
+    // El SKU ya se pinta en su propia columna, así que eliminamos SOLO
+    // ese prefijo exacto. Así nunca aparece [F0674HB] dos veces.
+    if (code) {
+      const prefix = '[' + code + ']';
+      if (name.slice(0, prefix.length).toLowerCase() === prefix.toLowerCase()) {
+        name = name.slice(prefix.length).trim();
+      }
+    }
+    return name || 'Producto';
+  }
+  capCara() { const p=this.props.product; return [p.layer,p.face].filter(Boolean).join('-') || '—'; }
+  velInd() { const p=this.props.product; return [p.speed,p.index_of_load].filter(Boolean).join('') || '—'; }
+  tierNum() { const m=String(this.props.product.tier || '').match(/\d+/); return m ? parseInt(m[0],10) : 0; }
+  tierShort() { return this.tierNum() || (this.props.product.tier || '—'); }
+  get tierColor() { const n=this.tierNum(); return n===1?'#facc15':n===2?'#38bdf8':n===3?'#94a3b8':n===4?'#ef4444':'var(--card)'; }
+  get tierTextColor() { const n=this.tierNum(); return n===1||n===3?'#000':'#fff'; }
+}
+
 export class CatalogTable extends Component {
   static template = xml`
     <div class="flat-empty-state" t-if="!rows.length">
@@ -329,91 +577,62 @@ export class CatalogTable extends Component {
       <p class="empty-state-title">Sin productos que coincidan</p>
       <p class="empty-state-hint">Prueba quitando algún filtro o ajustando la búsqueda.</p>
     </div>
-    <table class="flat-table" t-else="">
+
+    <!-- ESCRITORIO: se conserva la tabla actual SIN cambios. -->
+    <table class="flat-table" t-if="rows.length and !ui.isMobile">
       <thead>
         <tr>
-          <th class="flat-th-clave">Código</th>
-          <th class="flat-th-tier">Tier</th>
-          <th class="flat-th-medida">Medida</th>
-          <th class="flat-th-marca">Marca</th>
-          <th class="flat-th-modelo">Modelo</th>
-          <th class="flat-th-capcara" title="Capas / Cara">Cap/Cara</th>
-          <th class="flat-th-velind" title="Velocidad / Índice de carga">Vel/Ind</th>
-          <th class="flat-th-seg">Seg</th>
-          <th class="flat-th-tipo">Tipo</th>
-          <th class="flat-th-dot">DOT</th>
+          <th class="flat-th-clave">Código</th><th class="flat-th-tier">Tier</th><th class="flat-th-medida">Medida</th>
+          <th class="flat-th-marca">Marca</th><th class="flat-th-modelo">Modelo</th>
+          <th class="flat-th-capcara" title="Capas / Cara">Cap/Cara</th><th class="flat-th-velind" title="Velocidad / Índice de carga">Vel/Ind</th>
+          <th class="flat-th-seg">Seg</th><th class="flat-th-tipo">Tipo</th><th class="flat-th-dot">DOT</th>
           <th class="flat-th-eqorig" title="Equipo original">Eq. Orig.</th>
           <th t-foreach="extraColumns" t-as="col" t-key="col.key" t-att-title="col.label" t-esc="col.short || col.label"/>
-          <th class="flat-th-disp">Inv</th>
-          <th class="flat-th-price" title="Precio por pieza desde el que se calcula todo. En Bridgestone/Firestone de la lista Mayoreo ya incluye el −10%.">Precio</th>
-          <th class="flat-th-promo" title="Precio efectivo por pieza considerando la promoción vigente (NC estimada del pedido actual)">Pr Promo</th>
-          <th class="flat-th-giftcard" title="Monto de tarjeta de regalo por pieza. Es un beneficio aparte: no baja el precio de la llanta.">Tarjeta</th>
-          <th class="flat-th-action">Agregar</th>
+          <th class="flat-th-disp">Inv</th><th class="flat-th-transit">Tránsito</th><th class="flat-th-price">Precio</th>
+          <th class="flat-th-promo">Pr Promo</th><th class="flat-th-giftcard">Tarjeta</th><th class="flat-th-action">Agregar</th>
         </tr>
       </thead>
-      <tbody t-if="ui.isMobile" class="grouped-body">
-        <t t-foreach="mobileGroups" t-as="rg" t-key="rg.key">
-          <tr class="grp-row grp-rim" t-att-class="{ open: open.rims[rg.key] }"
-              t-on-click="() => this.toggleRim(rg)">
-            <td colspan="99">
-              <span class="grp-caret">▸</span>
-              <span class="grp-title" t-esc="rg.label"/>
-              <span class="grp-sub"><t t-esc="rg.medidas.length"/> medidas</span>
-              <span class="grp-count" t-esc="rg.count"/>
-            </td>
-          </tr>
-          <t t-if="open.rims[rg.key]">
-            <t t-foreach="rg.medidas" t-as="mg" t-key="mg.key">
-              <tr class="grp-row grp-medida" t-att-class="{ open: open.meds[mg.key] }"
-                  t-on-click="() => this.toggleMed(mg)">
-                <td colspan="99">
-                  <span class="grp-caret">▸</span>
-                  <span class="grp-title" t-esc="mg.label"/>
-                  <span class="grp-count" t-esc="mg.count"/>
-                </td>
-              </tr>
-              <t t-if="open.meds[mg.key]">
-                <CatalogRow t-foreach="mg.products" t-as="product" t-key="product.product_id"
-                            product="product"
-                            qty="props.state.cart[product.product_id] or 0"
-                            promo="promoEntry(product)"
-                            giftCard="giftCardFor(product)"
-                            color="colorFor(product)"
-                            factor="factor"
-                            iva="iva"
-                            policyText="policyText"
-                            extraColumns="extraColumns"
-                            onAdd="props.onAdd" onInc="props.onInc" onDec="props.onDec" onSetQty="props.onSetQty"/>
-              </t>
-            </t>
-          </t>
-        </t>
-      </tbody>
-      <tbody t-else="">
+      <tbody>
         <CatalogRow t-foreach="rows" t-as="product" t-key="product.product_id"
-                    product="product"
-                    qty="props.state.cart[product.product_id] or 0"
-                    promo="promoEntry(product)"
-                    giftCard="giftCardFor(product)"
-                    color="colorFor(product)"
-                    factor="factor"
-                    iva="iva"
-                    policyText="policyText"
-                    extraColumns="extraColumns"
-                    onAdd="props.onAdd" onInc="props.onInc" onDec="props.onDec" onSetQty="props.onSetQty"/>
+          product="product" qty="props.state.cart[product.product_id] or 0"
+          promo="promoEntry(product)" giftCard="giftCardFor(product)" color="colorFor(product)"
+          factor="factor" iva="iva" policyText="policyText" extraColumns="extraColumns"
+          onAdd="props.onAdd" onInc="props.onInc" onDec="props.onDec" onSetQty="props.onSetQty"/>
       </tbody>
     </table>
-    <div class="grp-foot" t-if="ui.isMobile and anyGroupOpen">
-      <button type="button" class="btn-sec" t-on-click="() => this.collapseAll()">Contraer todo</button>
+
+    <!-- MÓVIL: NO es una tabla. Es la interfaz de ztyres_promotions_movil
+         trasladada al módulo funcional actual. El <table> ni siquiera se
+         crea en el DOM, por eso jamás pueden aparecer sus encabezados. -->
+    <div class="ztyres-mobile-catalog" t-if="rows.length and ui.isMobile">
+      <div class="zmc-rim" t-foreach="mobileGroups" t-as="rg" t-key="rg.key">
+        <button type="button" class="zmc-rim-head" t-att-class="{ open: open.rims[rg.key] }" t-on-click="() => this.toggleRim(rg)">
+          <span class="zmc-caret">▶</span><strong t-esc="rg.label"/><span class="zmc-rim-meta"><t t-esc="rg.medidas.length"/> medidas · <b t-esc="rg.count"/></span>
+        </button>
+        <div class="zmc-measures" t-if="open.rims[rg.key]">
+          <div class="zmc-med" t-foreach="rg.medidas" t-as="mg" t-key="mg.key">
+            <button type="button" class="zmc-med-head" t-att-class="{ open: open.meds[mg.key] }" t-on-click="() => this.toggleMed(mg)">
+              <span class="zmc-caret">▶</span><strong t-esc="mg.label"/><span class="zmc-med-count" t-esc="mg.count"/>
+            </button>
+            <div class="zmc-cards" t-if="open.meds[mg.key]">
+              <MobileProductCard t-foreach="mg.products" t-as="product"
+                t-key="product.product_id"
+                product="product" qty="props.state.cart[product.product_id] or 0" state="props.state"
+                factor="factor" iva="iva" extraColumns="extraColumns"
+                onAdd="props.onAdd" onInc="props.onInc" onDec="props.onDec" onSetQty="props.onSetQty" onZoom="props.onZoom"/>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="zmc-collapse" t-if="anyGroupOpen"><button type="button" class="btn-sec" t-on-click="collapseAll">Contraer todo</button></div>
     </div>
+
     <div class="load-more" t-if="!ui.isMobile and hiddenCount > 0" t-ref="loadMoreBar">
-      <span class="load-more-info">
-        Mostrando <t t-esc="rows.length"/> de <t t-esc="totalRows"/> llantas · se cargan más al hacer scroll
-      </span>
+      <span class="load-more-info">Mostrando <t t-esc="rows.length"/> de <t t-esc="totalRows"/> llantas · se cargan más al hacer scroll</span>
       <button type="button" class="btn-sec" t-on-click.stop="() => this.loadMore(300)">Cargar 300 más</button>
       <button type="button" class="btn-sec" t-on-click.stop="() => this.loadMore(999999)">Mostrar todas</button>
     </div>`;
-  static components = { CatalogRow };
+  static components = { CatalogRow, MobileProductCard };
 
   get extraColumns() {
     return EXTRA_COLUMNS.filter((c) => this.props.state.visibleColumns.includes(c.key));
@@ -441,17 +660,19 @@ export class CatalogTable extends Component {
       .sort(([a], [b]) => Number(a) - Number(b))
       .map(([id, qty]) => `${id}:${qty}`).join(',');
     const stamp = simKeys.map((k) => k + ':' + (st.promoSim[k].tier || 0)).join(',')
-      + '|' + policyFactor(st.profile) + '|' + cartStamp;
+      + '|' + policyFactor(st.profile) + '|' + cartStamp
+      + '|rev:' + String(this.props.promoRevision || 0);
     const c = this._pmCache;
     if (c && c.promos === st.promos && c.catalog === st.catalog
-        && c.quote === st.quote && c.stamp === stamp) {
+        && c.quote === st.quote && c.stamp === stamp
+        && c.promoRevision === (this.props.promoRevision || 0)) {
       return c.maps;
     }
 
     // Índice del catálogo (id → producto), cacheado por identidad.
     if (!this._byId || this._byIdSrc !== st.catalog) {
       this._byIdSrc = st.catalog;
-      this._byId = new Map(st.catalog.map((p) => [p.product_id, p]));
+      this._byId = new Map(st.catalog.map((p) => [Number(p.product_id), p]));
     }
 
     // (1) Mapa REAL: pocas entradas (solo líneas del carrito con NC).
@@ -515,9 +736,14 @@ export class CatalogTable extends Component {
       if (!sel || !sel.on) continue;
       const tier = selectedTierForPromo(st, pr, sel);
       const color = promoColorFor(pr.id);
-      for (const pid of pr.product_ids) {
-        const prod = this._byId.get(pid);
-        if (!prod) continue;
+      // Recorremos el catálogo y usamos la misma regla de alcance que
+      // utiliza colorFor/promoEntry. Así, tanto el color de la card como
+      // el precio promocional apuntan al MISMO producto, aunque el
+      // backend haya serializado el alcance como variante o template.
+      for (const prod of st.catalog) {
+        if (!promoAppliesToProduct(pr, prod)) continue;
+        const pid = Number(prod && prod.product_id);
+        if (!Number.isFinite(pid) || pid <= 0) continue;
         const lista = prod.price || 0;
         const disc = promoUnitDiscount(pr, tier, prod, lista);
         let partLabel = '';
@@ -565,35 +791,135 @@ export class CatalogTable extends Component {
       const winner = parts.reduce((a, b) => (a.disc >= b.disc ? a : b)).color;
       colors.set(pid, { winner, palette });
     }
-    // Al activar una promoción se identifican todos sus productos,
-    // aunque el pedido aún no alcance un tramo. El precio solo cambia
-    // cuando selectedTierForPromo encuentra un rango válido.
-    for (const pr of st.promos) {
+    // Al activar una promoción se identifican TODOS los productos del
+    // catálogo que realmente cumplen su alcance. No dependemos únicamente
+    // de que product_ids venga como variante o como template:
+    // promoAppliesToProduct() es la única función de verdad para este match.
+    // Esto corrige el caso en que la promo sí aparece seleccionada pero la
+    // card no recibe color porque los IDs serializados no coinciden con la
+    // clave product.product_id de la fila.
+    const activePromos = st.promos.filter((pr) => {
       const sel = st.promoSim[pr.id];
-      if (!sel || !sel.on) continue;
-      const color = promoColorFor(pr.id);
-      for (const pid of pr.product_ids || []) {
-        const current = colors.get(pid);
-        if (!current) {
-          colors.set(pid, { winner: color, palette: [color] });
-        } else if (!current.palette.some((item) => item.text === color.text)) {
-          current.palette.push(color);
+      return !!(sel && sel.on);
+    });
+    if (activePromos.length) {
+      for (const product of st.catalog) {
+        const pid = Number(product && product.product_id);
+        if (!Number.isFinite(pid) || pid <= 0) continue;
+        for (const pr of activePromos) {
+          if (!promoAppliesToProduct(pr, product)) continue;
+          const color = promoColorFor(pr.id);
+          const current = colors.get(pid);
+          if (!current) {
+            colors.set(pid, { winner: color, palette: [color] });
+          } else if (!current.palette.some((item) => item.text === color.text)) {
+            current.palette.push(color);
+          }
         }
       }
     }
     const maps = { real, sim, colors };
-    this._pmCache = { promos: st.promos, catalog: st.catalog, quote: st.quote, stamp, maps };
+    this._pmCache = { promos: st.promos, catalog: st.catalog, quote: st.quote, stamp, promoRevision: (this.props.promoRevision || 0), maps };
     return maps;
   }
+  promoLabelsFor(product) {
+    const pid = Number(product && product.product_id);
+    if (!pid) return [];
+    return (this.props.state.promos || [])
+      .filter((pr) => {
+        const sel = this.props.state.promoSim[pr.id];
+        return sel && sel.on && promoAppliesToProduct(pr, product);
+      })
+      .map((pr) => pr.display_label || pr.name)
+      .filter(Boolean);
+  }
   colorFor(product) {
-    return this._promoMaps.colors.get(product.product_id) || null;
+    const pid = Number(product && product.product_id);
+    if (!pid) return null;
+    const maps = this._promoMaps;
+    const mapped = maps.colors.get(pid);
+    if (mapped) return mapped;
+
+    // Fallback directo: si una promoción está seleccionada y el producto
+    // pertenece a su alcance, la tarjeta DEBE pintarse aunque todavía no
+    // exista un precio simulado (por ejemplo, un tramo de beneficio 0%,
+    // una promo por tarjeta de regalo o un dato de precio que no permita
+    // generar descuento). La selección de la promo es una señal visual
+    // independiente del cálculo monetario.
+    const activeColors = [];
+    for (const pr of (this.props.state.promos || [])) {
+      const sel = this.props.state.promoSim[pr.id];
+      if (!sel || !sel.on) continue;
+      if (!promoAppliesToProduct(pr, product)) continue;
+      const color = promoColorFor(pr.id);
+      if (!activeColors.some((c) => c.text === color.text)) activeColors.push(color);
+    }
+    if (!activeColors.length) return null;
+    return { winner: activeColors[0], palette: activeColors };
   }
   promoEntry(product) {
     const maps = this._promoMaps;
-    // Al elegir una condición, el vendedor está pidiendo ver ESA
-    // simulación (incluida su base PMS y % Key Size). La NC real del
-    // carrito queda como respaldo cuando no hay simulación seleccionada.
-    return maps.sim.get(product.product_id) || maps.real.get(product.product_id) || null;
+    const pid = Number(product && product.product_id);
+    if (!pid) return null;
+
+    // Primero usamos el mapa simulado, que es la ruta rápida para el
+    // catálogo completo. Si existe, ya contiene el descuento acumulado y
+    // sus colores.
+    const simulated = maps.sim.get(pid);
+    if (simulated) return simulated;
+
+    /* Ruta determinista por producto.
+       IMPORTANTE: el color y la condición visual de una promoción NO deben
+       depender de que el descuento haya podido calcularse. Una promo puede
+       aplicar al producto aunque el beneficio monetario sea 0 (tarjeta,
+       cupón, tramo pendiente, etc.). En ese caso devolvemos una entrada
+       visual sin inventar un precio promocional. */
+    const st = this.props.state;
+    const activeParts = [];
+    let promoDisc = 0;
+    let hasApplicablePromo = false;
+
+    for (const pr of (st.promos || [])) {
+      const sel = st.promoSim[pr.id];
+      if (!sel || !sel.on || !promoAppliesToProduct(pr, product)) continue;
+      hasApplicablePromo = true;
+
+      const tier = selectedTierForPromo(st, pr, sel);
+      const disc = promoUnitDiscount(pr, tier, product, Number(product.price || 0));
+      const pct = promoProductPercent(pr, tier, product);
+      const color = promoColorFor(pr.id);
+      activeParts.push({
+        promoId: pr.id,
+        color,
+        disc: Number(disc || 0),
+        pct,
+        label: `${pr.display_label || pr.name}${pct > 0 ? ` ${pct}%` : ''}`,
+      });
+      promoDisc += Number(disc || 0);
+    }
+
+    if (!hasApplicablePromo) return maps.real.get(pid) || null;
+
+    const list = Number(product.price || 0);
+    const base = basePriceOf(product);
+    if (promoDisc > 0) {
+      const final = Math.max(base - promoDisc, 0);
+      return {
+        price: final,
+        label: `Simulado · ${activeParts.map((p) => p.label).filter(Boolean).join(' + ')}`,
+        parts: activeParts,
+      };
+    }
+
+    // Entrada visual: pinta la tarjeta y la cápsula de la promo aunque
+    // esta condición no produzca una reducción monetaria. NO se muestra
+    // Pr Promo porque sería engañoso mostrar el mismo precio como ahorro.
+    return {
+      price: base,
+      visualOnly: true,
+      label: activeParts.map((p) => p.label).filter(Boolean).join(' + '),
+      parts: activeParts,
+    };
   }
   /* Tarjeta de regalo por pieza. Se muestra siempre que el producto
      tenga una configurada en alguna promo vigente — no solo cuando la
@@ -692,10 +1018,15 @@ export class CatalogTable extends Component {
        versión vieja — acordeón Rin → Medida → llantas — y por eso
        tampoco hace falta la ventana de renderLimit: lo que acota el
        DOM es que los grupos nacen cerrados. */
-    this.ui = useState({ isMobile: window.matchMedia('(max-width: 700px)').matches });
+    const mobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent || '');
+    const mobileViewport = window.innerWidth <= 1100;
+    this.ui = useState({ isMobile: mobileDevice || mobileViewport });
     this.open = useState({ rims: {}, meds: {} });
-    const mq = window.matchMedia('(max-width: 700px)');
-    this._onMq = (ev) => { this.ui.isMobile = ev.matches; };
+    const mq = window.matchMedia('(max-width: 1024px)');
+    this._onMq = (ev) => {
+      const mobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent || '');
+      this.ui.isMobile = mobileDevice || ev.matches;
+    };
     mq.addEventListener('change', this._onMq);
     onWillUnmount(() => mq.removeEventListener('change', this._onMq));
 
@@ -732,7 +1063,10 @@ export class CatalogTable extends Component {
       this._observedEl = el;
     };
     onMounted(reconnect);
-    onPatched(reconnect);
+    onPatched(() => {
+      reconnect();
+      this._syncMobileOpen();
+    });
     onWillUnmount(() => {
       if (this._observer) this._observer.disconnect();
     });
@@ -796,7 +1130,6 @@ export class CatalogTable extends Component {
     const groups = [...byRim.values()];
     groups.forEach((g) => { delete g.medMap; });
     this._mgCache = { catalog: st.catalog, stamp, groups };
-    this._autoOpen(groups, stamp);
     return groups;
   }
 
@@ -822,19 +1155,49 @@ export class CatalogTable extends Component {
     this.open.meds = meds;
   }
 
+  _syncMobileOpen() {
+    // Nunca cambiamos estado dentro de mobileGroups: Owl está renderizando
+    // en ese momento y una mutación reactiva desde un getter puede dejar
+    // el acordeón sin repintar (y, en móvil, dar la impresión de que el
+    // toque no hizo nada). El ajuste se hace después del render.
+    const groups = this.mobileGroups;
+    const st = this.props.state;
+    const stamp = st.search + '|' + JSON.stringify(st.sfFilters);
+    if (this._autoOpenStamp === stamp) return;
+    this._autoOpen(groups, stamp);
+  }
+
   get anyGroupOpen() {
     return Object.values(this.open.rims).some(Boolean);
   }
 
   toggleRim = (rg) => {
-    const on = !this.open.rims[rg.key];
-    this.open.rims[rg.key] = on;
-    // Un rin con una sola medida no merece un segundo toque.
-    if (on && rg.medidas.length === 1) this.open.meds[rg.medidas[0].key] = true;
+    const nextRims = { ...this.open.rims };
+    const nextMeds = { ...this.open.meds };
+    const on = !Boolean(nextRims[rg.key]);
+
+    // En móvil solo dejamos un Rin abierto a la vez. Así el usuario no
+    // termina con una pared enorme de medidas y mantiene claro dónde está.
+    for (const key of Object.keys(nextRims)) nextRims[key] = false;
+    nextRims[rg.key] = on;
+
+    // Si se cierra o cambia de Rin, limpiamos todas las medidas abiertas
+    // que no pertenecen al Rin activo.
+    for (const key of Object.keys(nextMeds)) delete nextMeds[key];
+
+    // Si el Rin tiene una sola medida, la abrimos automáticamente.
+    if (on && rg.medidas.length === 1) {
+      nextMeds[rg.medidas[0].key] = true;
+    }
+
+    this.open.rims = nextRims;
+    this.open.meds = nextMeds;
   };
 
   toggleMed = (mg) => {
-    this.open.meds[mg.key] = !this.open.meds[mg.key];
+    const nextMeds = { ...this.open.meds };
+    nextMeds[mg.key] = !Boolean(nextMeds[mg.key]);
+    this.open.meds = nextMeds;
   };
 
   collapseAll = () => {
@@ -1376,19 +1739,26 @@ export class PromoStrip extends Component {
   colorFor(pr) { return promoColorFor(pr.id); }
 
   pickTier = (pr, index) => {
-    const simAll = this.props.state.promoSim;
+    /* IMPORTANTE: no mutar el objeto reactivo existente. En móvil, la
+       selección podía verse en el radio por CSS pero CatalogTable no
+       recibía un cambio de referencia y por eso no recalculaba color ni
+       Pr Promo. Trabajamos de forma inmutable para forzar el render de
+       OWL y mantener sincronizados panel + tarjetas + precios. */
+    const previous = this.props.state.promoSim || {};
+    const simAll = { ...previous };
     const current = simAll[pr.id];
     if (current && current.on && (current.tier != null ? current.tier : 0) === index) {
-      // APAGAR: eliminar la entrada por completo — con {on:false}
-      // guardado, el JSON.stringify del cache producía la MISMA
-      // huella tras re-activar (mismo shape antes y después) y el
-      // mapa memoizado devolvía datos viejos. Sin la entrada, la
-      // huella cambia limpio y siempre recalcula.
       delete simAll[pr.id];
     } else {
       simAll[pr.id] = { on: true, tier: index };
     }
-    setPromoSim(simAll);
+    if (this.props.onChange) {
+      this.props.onChange(simAll);
+    } else {
+      // Compatibilidad con cualquier instancia antigua del componente.
+      this.props.state.promoSim = { ...simAll };
+      setPromoSim(this.props.state.promoSim);
+    }
   };
 }
 

@@ -113,138 +113,136 @@ class SaleOrder(models.Model):
     
     def cancel_old_quotation_picking(self):
         now = fields.Datetime.now()
-        five_days_ago = now - timedelta(days=5)
-        
-        quotation_orders = self.search([
-            ('keep', '!=', True),
-            ('state', 'in', ['draft']),
-            ('create_date', '<=', five_days_ago),
-        ])    
+        five_business_days_ago = now
+        business_days = 0
+        while business_days < 5:
+            five_business_days_ago -= timedelta(days=1)
+            if five_business_days_ago.weekday() < 5:
+                business_days += 1
+        quotation_orders = self.search(
+            [
+                ("keep", "!=", True),
+                ("state", "in", ["draft"]),
+                ("create_date", "<=", five_business_days_ago),
+            ]
+        )
         cancelled = []
         unreserved = []
-
         for order in quotation_orders:
-            print (order.name)
+            print(order.name)
             pickings = order.picking_ids.filtered(
                 lambda p: (
-                    p.state not in ('done', 'cancel')
-                    and not (p.x_studio_related_field_Ksn7B or '').strip()
+                    p.state not in ("done", "cancel")
+                    and not (p.x_studio_related_field_Ksn7B or "").strip()
                 )
             )
             details = []
+
             for p in pickings:
                 for m in p.move_ids:
-                    details.append({
-                        'product': m.product_id.display_name,
-                        'qty': m.product_uom_qty,
-                        'location': m.location_id.display_name,
-                    })
-
+                    details.append(
+                        {
+                            "product": m.product_id.display_name,
+                            "qty": m.product_uom_qty,
+                            "location": m.location_id.display_name,
+                        }
+                    )
             if pickings:
                 pickings.action_cancel()
-            
-            order.write({
-                'sale_reason_cancel_id': [(4, 3)],
-            })
-            
+            order.write(
+                {
+                    "sale_reason_cancel_id": [(4, 3)],
+                }
+            )
             order._action_cancel()
-
-            cancelled.append({
-                'order': order.name,
-                'partner': order.partner_id.display_name,
-                'details': details,
-            })
-            
-        # 📧 Enviar correo si hubo cambios
+            cancelled.append(
+                {
+                    "order": order.name,
+                    "partner": order.partner_id.display_name,
+                    "details": details,
+                }
+            )
         if cancelled or unreserved:
             self._send_cancel_unreserve_email(cancelled, unreserved)
-            
-        sale_orders = self.search([
-            ('keep', '!=', True),
-            ('state', '=', 'sale'),
-            ('confirmation_date', '!=', False),
-            ('confirmation_date', '<=', five_days_ago),
-        ])
-            
+        sale_orders = self.search(
+            [
+                ("keep", "!=", True),
+                ("state", "=", "sale"),
+                ("confirmation_date", "!=", False),
+                ("confirmation_date", "<=", five_business_days_ago),
+            ]
+        )
         cancelled = []
         unreserved = []
         for order in sale_orders:
             product_lines = order.order_line.filtered(
-                lambda l: l.product_id.type == 'product'
+                lambda l: l.product_id.type == "product"
             )
             if not product_lines:
                 continue
-
-            ordered = sum(product_lines.mapped('product_uom_qty'))
-            delivered = sum(product_lines.mapped('qty_delivered'))
-            invoiced = sum(product_lines.mapped('qty_invoiced'))
-
+            ordered = sum(product_lines.mapped("product_uom_qty"))
+            delivered = sum(product_lines.mapped("qty_delivered"))
+            invoiced = sum(product_lines.mapped("qty_invoiced"))
             nothing_delivered = delivered == 0
             nothing_invoiced = invoiced == 0
             partially_delivered = 0 < delivered < ordered
             partially_invoiced = 0 < invoiced < ordered
             fully_delivered = delivered >= ordered
             fully_invoiced = invoiced >= ordered
-
-            # 🟢 No tocar
             if fully_delivered or fully_invoiced:
                 continue
-
-            # 🔴 Cancelar todo
             if nothing_delivered and nothing_invoiced:
                 pickings = order.picking_ids.filtered(
-                    lambda p: p.state not in ('done', 'cancel')
+                    lambda p: p.state not in ("done", "cancel")
                 )
-
                 details = []
                 for p in pickings:
                     for m in p.move_ids:
-                        details.append({
-                            'product': m.product_id.display_name,
-                            'qty': m.product_uom_qty,
-                            'location': m.location_id.display_name,
-                        })
-
+                        details.append(
+                            {
+                                "product": m.product_id.display_name,
+                                "qty": m.product_uom_qty,
+                                "location": m.location_id.display_name,
+                            }
+                        )
                 if pickings:
                     pickings.action_cancel()
-
                 order._action_cancel()
-
-                cancelled.append({
-                    'order': order.name,
-                    'partner': order.partner_id.display_name,
-                    'details': details,
-                })
+                cancelled.append(
+                    {
+                        "order": order.name,
+                        "partner": order.partner_id.display_name,
+                        "details": details,
+                    }
+                )
                 continue
-
-            # 🟡 Liberar reserva
             if partially_delivered or partially_invoiced:
                 moves = order.picking_ids.move_ids.filtered(
-                    lambda m: m.state in ('assigned', 'confirmed')
+                    lambda m: m.state in ("assigned", "confirmed")
                     and m.reserved_availability > 0
                 )
-
                 details = []
                 for m in moves:
-                    details.append({
-                        'product': m.product_id.display_name,
-                        'qty': m.reserved_availability,
-                        'location': m.location_id.display_name,
-                    })
-
+                    details.append(
+                        {
+                            "product": m.product_id.display_name,
+                            "qty": m.reserved_availability,
+                            "location": m.location_id.display_name,
+                        }
+                    )
                 if moves:
                     moves._do_unreserve()
-                    moves.write({'procure_method': 'make_to_order'})
-
-                    unreserved.append({
-                        'order': order.name,
-                        'partner': order.partner_id.display_name,
-                        'details': details,
-                    })
-
-        # 📧 Enviar correo si hubo cambios
+                    moves.write({"procure_method": "make_to_order"})
+                    unreserved.append(
+                        {
+                            "order": order.name,
+                            "partner": order.partner_id.display_name,
+                            "details": details,
+                        }
+                    )
         if cancelled or unreserved:
             self._send_cancel_unreserve_email(cancelled, unreserved)
+    
 
     def _send_cancel_unreserve_email(self, cancelled, unreserved):
         body = "<h3>Resumen de pedidos afectados</h3>"
