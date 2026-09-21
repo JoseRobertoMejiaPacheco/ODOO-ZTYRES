@@ -1,0 +1,55 @@
+<odoo>
+    <record id="view_it_brand_tree" model="ir.ui.view">
+        <field name="name">ztyres.it.brand.tree</field>
+        <field name="model">ztyres.it.brand</field>
+        <field name="arch" type="xml"><tree><field name="name"/><field name="active"/></tree></field>
+    </record>
+    <record id="view_it_brand_form" model="ir.ui.view">
+        <field name="name">ztyres.it.brand.form</field>
+        <field name="model">ztyres.it.brand</field>
+        <field name="arch" type="xml"><form><sheet><group><field name="name"/><field name="active"/></group></sheet></form></field>
+    </record>
+    <record id="view_it_program_tree" model="ir.ui.view">
+        <field name="name">ztyres.it.program.tree</field>
+        <field name="model">ztyres.it.program</field>
+        <field name="arch" type="xml"><tree><field name="name"/><field name="active"/></tree></field>
+    </record>
+    <record id="view_it_program_form" model="ir.ui.view">
+        <field name="name">ztyres.it.program.form</field>
+        <field name="model">ztyres.it.program</field>
+        <field name="arch" type="xml"><form><sheet><group><field name="name"/><field name="description"/><field name="active"/></group></sheet></form></field>
+    </record>
+    <record id="view_it_accessory_type_tree" model="ir.ui.view">
+        <field name="name">ztyres.it.accessory.type.tree</field>
+        <field name="model">ztyres.it.accessory.type</field>
+        <field name="arch" type="xml"><tree><field name="sequence"/><field name="name"/><field name="active"/></tree></field>
+    </record>
+    <record id="view_it_accessory_type_form" model="ir.ui.view">
+        <field name="name">ztyres.it.accessory.type.form</field>
+        <field name="model">ztyres.it.accessory.type</field>
+        <field name="arch" type="xml"><form><sheet><group><field name="name"/><field name="sequence"/><field name="active"/></group></sheet></form></field>
+    </record>
+    <record id="view_it_state_tree" model="ir.ui.view">
+        <field name="name">ztyres.it.state.tree</field>
+        <field name="model">ztyres.it.state</field>
+        <field name="arch" type="xml"><tree><field name="sequence"/><field name="name"/><field name="active"/></tree></field>
+    </record>
+    <record id="view_it_state_form" model="ir.ui.view">
+        <field name="name">ztyres.it.state.form</field>
+        <field name="model">ztyres.it.state</field>
+        <field name="arch" type="xml"><form><sheet><group><field name="name"/><field name="sequence"/><field name="active"/></group></sheet></form></field>
+    </record>
+
+    <record id="action_it_brand" model="ir.actions.act_window">
+        <field name="name">Marcas</field><field name="res_model">ztyres.it.brand</field><field name="view_mode">tree,form</field>
+    </record>
+    <record id="action_it_program" model="ir.actions.act_window">
+        <field name="name">Programas / Sistemas</field><field name="res_model">ztyres.it.program</field><field name="view_mode">tree,form</field>
+    </record>
+    <record id="action_it_accessory_type" model="ir.actions.act_window">
+        <field name="name">Tipos de accesorios</field><field name="res_model">ztyres.it.accessory.type</field><field name="view_mode">tree,form</field>
+    </record>
+    <record id="action_it_state" model="ir.actions.act_window">
+        <field name="name">Estados</field><field name="res_model">ztyres.it.state</field><field name="view_mode">tree,form</field>
+    </record>
+</odoo>

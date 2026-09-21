@@ -1,0 +1,32 @@
+<odoo>
+    <record id="seq_it_equipment" model="ir.sequence">
+        <field name="name">Equipo TI</field>
+        <field name="code">ztyres.it.equipment</field>
+        <field name="prefix">TI-EQ-</field>
+        <field name="padding">5</field>
+    </record>
+    <record id="seq_it_mobile" model="ir.sequence">
+        <field name="name">Celular TI</field>
+        <field name="code">ztyres.it.mobile</field>
+        <field name="prefix">TI-CEL-</field>
+        <field name="padding">5</field>
+    </record>
+    <record id="seq_it_accessory" model="ir.sequence">
+        <field name="name">Accesorio TI</field>
+        <field name="code">ztyres.it.accessory</field>
+        <field name="prefix">TI-ACC-</field>
+        <field name="padding">5</field>
+    </record>
+    <record id="seq_it_service" model="ir.sequence">
+        <field name="name">Servicio TI</field>
+        <field name="code">ztyres.it.service</field>
+        <field name="prefix">TI-SER-</field>
+        <field name="padding">5</field>
+    </record>
+    <record id="seq_it_maintenance" model="ir.sequence">
+        <field name="name">Mantenimiento TI</field>
+        <field name="code">ztyres.it.maintenance</field>
+        <field name="prefix">TI-MANT-</field>
+        <field name="padding">5</field>
+    </record>
+</odoo>

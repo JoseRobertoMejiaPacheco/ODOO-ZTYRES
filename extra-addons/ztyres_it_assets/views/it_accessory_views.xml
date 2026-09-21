@@ -1,0 +1,57 @@
+<odoo>
+    <record id="view_it_accessory_tree" model="ir.ui.view">
+        <field name="name">ztyres.it.accessory.tree</field>
+        <field name="model">ztyres.it.accessory</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="inventory_number"/>
+                <field name="name"/>
+                <field name="type_id"/>
+                <field name="brand_id"/>
+                <field name="model"/>
+                <field name="user_id"/>
+                <field name="equipment_id"/>
+                <field name="state_id"/>
+            </tree>
+        </field>
+    </record>
+    <record id="view_it_accessory_form" model="ir.ui.view">
+        <field name="name">ztyres.it.accessory.form</field>
+        <field name="model">ztyres.it.accessory</field>
+        <field name="arch" type="xml">
+            <form string="Accesorio">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="inventory_number"/>
+                            <field name="serial_number"/>
+                            <field name="type_id"/>
+                        </group>
+                        <group>
+                            <field name="brand_id"/>
+                            <field name="model"/>
+                            <field name="acquisition_date"/>
+                            <field name="state_id"/>
+                        </group>
+                    </group>
+                    <group string="Asignación">
+                        <field name="equipment_id"/>
+                        <field name="user_id"/>
+                    </group>
+                    <field name="notes"/>
+                </sheet>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids"/>
+                    <field name="activity_ids"/>
+                    <field name="message_ids"/>
+                </div>
+            </form>
+        </field>
+    </record>
+    <record id="action_it_accessory" model="ir.actions.act_window">
+        <field name="name">Accesorios</field>
+        <field name="res_model">ztyres.it.accessory</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+</odoo>

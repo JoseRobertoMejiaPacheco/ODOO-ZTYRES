@@ -1,0 +1,12 @@
+<odoo>
+    <record id="group_it_assets_user" model="res.groups">
+        <field name="name">TI / Usuario</field>
+        <field name="category_id" ref="base.module_category_tools"/>
+    </record>
+
+    <record id="group_it_assets_manager" model="res.groups">
+        <field name="name">TI / Administrador</field>
+        <field name="category_id" ref="base.module_category_tools"/>
+        <field name="implied_ids" eval="[(4, ref('ztyres_it_assets.group_it_assets_user'))]"/>
+    </record>
+</odoo>

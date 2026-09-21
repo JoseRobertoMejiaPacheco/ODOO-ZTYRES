@@ -25,7 +25,9 @@ codes_pirelli = [
 ]
 
 codes_goodyear = [
-66851, 66850, 50389, 19576, 57684, 64894, 48906, 63169, 62648, 57681, 66854, 64893, 48869, 48980, 66855, 63370, 58473, 57686, 57245, 57246, 59265, 62646, 59250
+66851, 66850, 50389, 19576, 57684, 64894, 48906, 63169, 62648, 57681, 
+66854, 64893, 48869, 48980, 66855, 63370, 58473, 57686, 57245, 57246, 
+59265, 62646, 59250
 ]
 
 codes_kumho = [
@@ -166,9 +168,7 @@ class ListaDePrecios(models.TransientModel):
                                                                          (S{row_idx}*IF(ISNUMBER(IFERROR(FIND(UPPER(F{row_idx}),UPPER($K$7)),"")),$K$10,0)) -
                                                                          (S{row_idx}*IF(ISNUMBER(IFERROR(FIND(UPPER(F{row_idx}),UPPER($L$7)),"")),$L$10,0)) -
                                                                          (S{row_idx}*IF(ISNUMBER(IFERROR(FIND(UPPER(C{row_idx}),UPPER($O$7)),"")),$O$10,0))-
-                                                                         (S{row_idx}*IF($A$8 = 0, 0, IF(ISNUMBER(IFERROR(FIND(UPPER(F{row_idx}),UPPER($M$7)),"")),
-                                                                         IF(AND(G{row_idx}>=VALUE(MID($M$9,2,FIND("-",$M$9)-2)), G{row_idx}<=VALUE(RIGHT($M$9,LEN($M$9)-FIND("-",$M$9)-1))),
-                                                                         $M$10, IF(G{row_idx} >= VALUE(SUBSTITUTE(SUBSTITUTE($N$9,"R",""),"+","")), $N$10, 0))))) -
+                                                                         (S{row_idx}*IF($A$8 = 0, 0, IF(ISNUMBER(IFERROR(FIND(UPPER(F{row_idx}),UPPER($M$7)),"")), $M$10, 0))) -
                                                                          (S{row_idx}* IF(V{row_idx} = "SI", IF(ISNUMBER(IFERROR(FIND(UPPER(F{row_idx}),UPPER($P$7)),"")),$P$10,0), 0))
                                                                           ''' 
                 
@@ -185,6 +185,10 @@ class ListaDePrecios(models.TransientModel):
                 # - 
                 #     (S{row_idx}* IF(AND(ISNUMBER(IFERROR(FIND(F{row_idx},UPPER($K$7)),"")), V{row_idx} = "SI"), $K$10, 0))
                 #   ''' 
+                #RESTA POR RANGO DE RIN
+                # (S{row_idx}*IF($A$8 = 0, 0, IF(ISNUMBER(IFERROR(FIND(UPPER(F{row_idx}),UPPER($M$7)),"")),
+                #  IF(AND(G{row_idx}>=VALUE(MID($M$9,2,FIND("-",$M$9)-2)), G{row_idx}<=VALUE(RIGHT($M$9,LEN($M$9)-FIND("-",$M$9)-1))),
+                #  $M$10, IF(G{row_idx} >= VALUE(SUBSTITUTE(SUBSTITUTE($N$9,"R",""),"+","")), $N$10, 0))))) -
                 
                 # f'''=S{row_idx} -
                 # (IF(OR($A$8=1,$A$8=150,$A$8=350,$A$8=600), ((S{row_idx}*$D$8) + (S{row_idx}*$E$8) + (S{row_idx}*$F$8)), 0)) -
@@ -995,9 +999,9 @@ class ListaDePrecios(models.TransientModel):
             {'cell_ref': 'K7:K8', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "JINYU", 'data_type': 'string'},
             {'cell_ref': 'K9', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': f"""=IF($A$8 = 1, "", IF($A$8= 100, "Min. 8 Medidas", IF($A$8 = 200, "Min. 12 Medidas", IF($A$8 = 400, "Min. 16 Medidas", IF($A$8 = 700, "Min. 20 Medidas", "")))))""", 'data_type': 'string'},
             {'cell_ref': 'L7:L9', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "PIRELLI", 'data_type': 'string'},
-            {'cell_ref': 'M7:N8', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "DUNLOP / FALKEN", 'data_type': 'string'},
-            {'cell_ref': 'M9', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "R13-R15", 'data_type': 'string'},
-            {'cell_ref': 'N9', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "R16+", 'data_type': 'string'},
+            {'cell_ref': 'M7:N9', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "DUNLOP / FALKEN", 'data_type': 'string'},
+            #{'cell_ref': 'M9', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "R13-R15", 'data_type': 'string'},
+            #{'cell_ref': 'N9', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "R16+", 'data_type': 'string'},
             {'cell_ref': 'O7:O9', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "TIER 3", 'data_type': 'string'},
             
             {'cell_ref': 'P7:S8', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': 'FDE9D9', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "KUMHO", 'data_type': 'string'},
@@ -1007,8 +1011,8 @@ class ListaDePrecios(models.TransientModel):
             {'cell_ref': 'J10:J11', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '0%', 'value': f"""=IF($A$8 = 1, 2%, IF($A$8= 100, 3%, IF($A$8 = 200, 3%, IF($A$8 = 400, 5%, IF($A$8 = 700, 5%, 0%)))))""", 'data_type': 'string'},
             {'cell_ref': 'K10:K11', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '0%', 'value': f"""=IF($A$8 = 1, 0%, IF($A$8= 100, 1%, IF($A$8 = 200, 3%, IF($A$8 = 400, 5%, IF($A$8 = 700, 8%, 0%)))))""", 'data_type': 'string'},
             {'cell_ref': 'L10:L11', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '0%', 'value': f"""=IF($A$8 = 1, 2%, IF($A$8= 100, 2%, IF($A$8 = 200, 2%, IF($A$8 = 400, 2%, IF($A$8 = 700, 2%, 0%)))))""", 'data_type': 'string'},
-            {'cell_ref': 'M10:M11', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '0%', 'value': f"""=IF($A$8 = 1, 1%, IF($A$8= 100, 2%, IF($A$8 = 200, 3%, IF($A$8 = 400, 3%, IF($A$8 = 700, 4%, 0%)))))""", 'data_type': 'string'},
-            {'cell_ref': 'N10:N11', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '0%', 'value': f"""=IF($A$8 = 1, 2%, IF($A$8= 100, 3%, IF($A$8 = 200, 4%, IF($A$8 = 400, 4%, IF($A$8 = 700, 5%, 0%)))))""", 'data_type': 'string'},
+            {'cell_ref': 'M10:N11', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '0%', 'value': f"""=IF($A$8 = 1, 1%, IF($A$8= 100, 2%, IF($A$8 = 200, 3%, IF($A$8 = 400, 3%, IF($A$8 = 700, 4%, 0%)))))""", 'data_type': 'string'},
+            # {'cell_ref': 'N10:N11', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '0%', 'value': f"""=IF($A$8 = 1, 2%, IF($A$8= 100, 4%, IF($A$8 = 200, 4%, IF($A$8 = 400, 5%, IF($A$8 = 700, 5%, 0%)))))""", 'data_type': 'string'},
             {'cell_ref': 'O10:O11', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '0%', 'value': f"""=IF($A$8 = 1, 2%, IF($A$8= 100, 2%, IF($A$8 = 200, 3%, IF($A$8 = 400, 4%, IF($A$8 = 700, 5%, 0%)))))""", 'data_type': 'string'},
             {'cell_ref': 'P10:S11', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': 'FDE9D9', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '0%', 'value': '0%', 'data_type': 'string'},
                         

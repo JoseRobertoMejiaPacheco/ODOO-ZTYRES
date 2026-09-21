@@ -1,0 +1,63 @@
+<odoo noupdate="1">
+    <record id="state_available" model="ztyres.it.state">
+        <field name="name">Disponible</field>
+        <field name="sequence">10</field>
+    </record>
+    <record id="state_in_use" model="ztyres.it.state">
+        <field name="name">En uso</field>
+        <field name="sequence">20</field>
+    </record>
+    <record id="state_repair" model="ztyres.it.state">
+        <field name="name">En reparación</field>
+        <field name="sequence">30</field>
+    </record>
+    <record id="state_maintenance" model="ztyres.it.state">
+        <field name="name">En mantenimiento</field>
+        <field name="sequence">40</field>
+    </record>
+    <record id="state_loaned" model="ztyres.it.state">
+        <field name="name">Prestado</field>
+        <field name="sequence">50</field>
+    </record>
+    <record id="state_lost" model="ztyres.it.state">
+        <field name="name">Extraviado</field>
+        <field name="sequence">60</field>
+    </record>
+    <record id="state_retired" model="ztyres.it.state">
+        <field name="name">Baja</field>
+        <field name="sequence">70</field>
+    </record>
+
+    <record id="accessory_monitor" model="ztyres.it.accessory.type">
+        <field name="name">Monitor</field>
+        <field name="sequence">10</field>
+    </record>
+    <record id="accessory_mouse" model="ztyres.it.accessory.type">
+        <field name="name">Mouse</field>
+        <field name="sequence">20</field>
+    </record>
+    <record id="accessory_keyboard" model="ztyres.it.accessory.type">
+        <field name="name">Teclado</field>
+        <field name="sequence">30</field>
+    </record>
+    <record id="accessory_printer" model="ztyres.it.accessory.type">
+        <field name="name">Impresora</field>
+        <field name="sequence">40</field>
+    </record>
+    <record id="accessory_charger" model="ztyres.it.accessory.type">
+        <field name="name">Cargador</field>
+        <field name="sequence">50</field>
+    </record>
+    <record id="accessory_dock" model="ztyres.it.accessory.type">
+        <field name="name">Dock / Base</field>
+        <field name="sequence">60</field>
+    </record>
+    <record id="accessory_headset" model="ztyres.it.accessory.type">
+        <field name="name">Audífonos</field>
+        <field name="sequence">70</field>
+    </record>
+    <record id="accessory_other" model="ztyres.it.accessory.type">
+        <field name="name">Otro</field>
+        <field name="sequence">100</field>
+    </record>
+</odoo>

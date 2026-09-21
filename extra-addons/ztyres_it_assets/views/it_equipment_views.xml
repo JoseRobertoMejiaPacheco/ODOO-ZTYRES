@@ -1,0 +1,157 @@
+<odoo>
+    <record id="view_it_equipment_tree" model="ir.ui.view">
+        <field name="name">ztyres.it.equipment.tree</field>
+        <field name="model">ztyres.it.equipment</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="inventory_number"/>
+                <field name="name"/>
+                <field name="user_id"/>
+                <field name="area"/>
+                <field name="equipment_type"/>
+                <field name="brand_id"/>
+                <field name="model"/>
+                <field name="state_id"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="view_it_equipment_search" model="ir.ui.view">
+        <field name="name">ztyres.it.equipment.search</field>
+        <field name="model">ztyres.it.equipment</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="inventory_number"/>
+                <field name="name"/>
+                <field name="user_id"/>
+                <field name="area"/>
+                <field name="brand_id"/>
+                <field name="model"/>
+                <field name="state_id"/>
+                <filter name="active" string="Activos" domain="[('active','=',True)]"/>
+                <filter name="laptop" string="Laptops" domain="[('equipment_type','=','laptop')]"/>
+                <filter name="desktop" string="Escritorio" domain="[('equipment_type','=','desktop')]"/>
+                <group expand="0" string="Agrupar por">
+                    <filter name="group_area" string="Área" context="{'group_by':'area'}"/>
+                    <filter name="group_user" string="Usuario" context="{'group_by':'user_id'}"/>
+                    <filter name="group_brand" string="Marca" context="{'group_by':'brand_id'}"/>
+                    <filter name="group_state" string="Estado" context="{'group_by':'state_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="view_it_equipment_form" model="ir.ui.view">
+        <field name="name">ztyres.it.equipment.form</field>
+        <field name="model">ztyres.it.equipment</field>
+        <field name="arch" type="xml">
+            <form string="Equipo de TI">
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_services" type="object" class="oe_stat_button" icon="fa-wrench">
+                            <field name="service_count" widget="statinfo" string="Servicios"/>
+                        </button>
+                        <button name="action_view_maintenances" type="object" class="oe_stat_button" icon="fa-calendar">
+                            <field name="maintenance_count" widget="statinfo" string="Mantenimientos"/>
+                        </button>
+                        <button name="action_view_accessories" type="object" class="oe_stat_button" icon="fa-desktop">
+                            <field name="accessory_count" widget="statinfo" string="Accesorios"/>
+                        </button>
+                        <button name="action_view_assignments" type="object" class="oe_stat_button" icon="fa-users">
+                            <field name="assignment_count" widget="statinfo" string="Asignaciones"/>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <label for="name" class="oe_edit_only"/>
+                        <h1><field name="name" placeholder="Ej. Laptop Juan Pérez"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="inventory_number"/>
+                            <field name="serial_number"/>
+                            <field name="equipment_type"/>
+                            <field name="state_id"/>
+                        </group>
+                        <group>
+                            <field name="user_id"/>
+                            <field name="area"/>
+                            <field name="position"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Características">
+                            <group>
+                                <group>
+                                    <field name="brand_id"/>
+                                    <field name="model"/>
+                                    <field name="acquisition_date"/>
+                                    <field name="acquisition_year"/>
+                                    <field name="processor"/>
+                                </group>
+                                <group>
+                                    <field name="ram"/>
+                                    <field name="storage"/>
+                                    <field name="disk_type"/>
+                                    <field name="operating_system"/>
+                                    <field name="os_version"/>
+                                </group>
+                            </group>
+                            <group string="Batería">
+                                <field name="battery_state"/>
+                                <field name="battery_health"/>
+                                <field name="battery_cycles"/>
+                            </group>
+                        </page>
+                        <page string="Red">
+                            <group>
+                                <field name="hostname"/>
+                                <field name="mac_address"/>
+                                <field name="ip_address"/>
+                            </group>
+                        </page>
+                        <page string="Programas / Sistemas">
+                            <field name="program_ids" widget="many2many_tags"/>
+                        </page>
+                        <page string="Accesorios">
+                            <field name="accessory_ids">
+                                <tree editable="bottom">
+                                    <field name="name"/>
+                                    <field name="inventory_number"/>
+                                    <field name="type_id"/>
+                                    <field name="brand_id"/>
+                                    <field name="model"/>
+                                    <field name="state_id"/>
+                                </tree>
+                            </field>
+                        </page>
+                        <page string="Asignaciones">
+                            <field name="assignment_ids">
+                                <tree>
+                                    <field name="user_id"/>
+                                    <field name="date_from"/>
+                                    <field name="date_to"/>
+                                    <field name="reason"/>
+                                </tree>
+                            </field>
+                        </page>
+                        <page string="Observaciones">
+                            <field name="notes"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids"/>
+                    <field name="activity_ids"/>
+                    <field name="message_ids"/>
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_it_equipment" model="ir.actions.act_window">
+        <field name="name">Equipos</field>
+        <field name="res_model">ztyres.it.equipment</field>
+        <field name="view_mode">tree,form</field>
+        <field name="search_view_id" ref="view_it_equipment_search"/>
+    </record>
+</odoo>

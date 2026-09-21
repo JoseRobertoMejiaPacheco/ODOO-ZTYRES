@@ -1,0 +1,87 @@
+<odoo>
+    <record id="view_it_mobile_tree" model="ir.ui.view">
+        <field name="name">ztyres.it.mobile.tree</field>
+        <field name="model">ztyres.it.mobile</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="inventory_number"/>
+                <field name="name"/>
+                <field name="user_id"/>
+                <field name="phone_number"/>
+                <field name="brand_id"/>
+                <field name="model"/>
+                <field name="state_id"/>
+            </tree>
+        </field>
+    </record>
+    <record id="view_it_mobile_form" model="ir.ui.view">
+        <field name="name">ztyres.it.mobile.form</field>
+        <field name="model">ztyres.it.mobile</field>
+        <field name="arch" type="xml">
+            <form string="Celular">
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_services" type="object" class="oe_stat_button" icon="fa-wrench">
+                            <field name="service_count" widget="statinfo" string="Servicios"/>
+                        </button>
+                        <button name="action_view_maintenances" type="object" class="oe_stat_button" icon="fa-calendar">
+                            <field name="maintenance_count" widget="statinfo" string="Mantenimientos"/>
+                        </button>
+                        <button name="action_view_assignments" type="object" class="oe_stat_button" icon="fa-users">
+                            <field name="assignment_count" widget="statinfo" string="Asignaciones"/>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <h1><field name="name" placeholder="Ej. Celular Juan Pérez"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="inventory_number"/>
+                            <field name="serial_number"/>
+                            <field name="state_id"/>
+                            <field name="user_id"/>
+                        </group>
+                        <group>
+                            <field name="area"/>
+                            <field name="position"/>
+                            <field name="phone_number"/>
+                            <field name="carrier"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Características">
+                            <group>
+                                <group>
+                                    <field name="brand_id"/>
+                                    <field name="model"/>
+                                    <field name="imei_1"/>
+                                    <field name="imei_2"/>
+                                </group>
+                                <group>
+                                    <field name="operating_system"/>
+                                    <field name="os_version"/>
+                                    <field name="ram"/>
+                                    <field name="storage"/>
+                                    <field name="acquisition_date"/>
+                                </group>
+                            </group>
+                        </page>
+                        <page string="Observaciones">
+                            <field name="notes"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids"/>
+                    <field name="activity_ids"/>
+                    <field name="message_ids"/>
+                </div>
+            </form>
+        </field>
+    </record>
+    <record id="action_it_mobile" model="ir.actions.act_window">
+        <field name="name">Celulares</field>
+        <field name="res_model">ztyres.it.mobile</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+</odoo>

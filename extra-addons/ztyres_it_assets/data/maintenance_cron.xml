@@ -1,0 +1,12 @@
+<odoo noupdate="1">
+    <record id="ir_cron_it_maintenance" model="ir.cron">
+        <field name="name">TI - Avisos de mantenimiento</field>
+        <field name="model_id" ref="model_ztyres_it_maintenance"/>
+        <field name="state">code</field>
+        <field name="code">model._cron_maintenance_activities()</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">days</field>
+        <field name="numbercall">-1</field>
+        <field name="active">True</field>
+    </record>
+</odoo>

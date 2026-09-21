@@ -1,0 +1,28 @@
+<odoo>
+    <menuitem id="menu_it_assets_root" name="Equipo de TI" sequence="10"
+              groups="ztyres_it_assets.group_it_assets_user"/>
+
+    <menuitem id="menu_it_assets_equipment" name="Equipos" parent="menu_it_assets_root"
+              action="action_it_equipment" sequence="10"/>
+    <menuitem id="menu_it_assets_mobile" name="Celulares" parent="menu_it_assets_root"
+              action="action_it_mobile" sequence="20"/>
+    <menuitem id="menu_it_assets_accessory" name="Accesorios" parent="menu_it_assets_root"
+              action="action_it_accessory" sequence="30"/>
+    <menuitem id="menu_it_assets_assignment" name="Asignaciones" parent="menu_it_assets_root"
+              action="action_it_assignment" sequence="40"/>
+    <menuitem id="menu_it_assets_service" name="Servicios / Historial" parent="menu_it_assets_root"
+              action="action_it_service" sequence="50"/>
+    <menuitem id="menu_it_assets_maintenance" name="Mantenimientos" parent="menu_it_assets_root"
+              action="action_it_maintenance" sequence="60"/>
+
+    <menuitem id="menu_it_assets_config" name="Configuración" parent="menu_it_assets_root"
+              sequence="100" groups="ztyres_it_assets.group_it_assets_manager"/>
+    <menuitem id="menu_it_assets_brand" name="Marcas" parent="menu_it_assets_config"
+              action="action_it_brand" sequence="10"/>
+    <menuitem id="menu_it_assets_program" name="Programas / Sistemas" parent="menu_it_assets_config"
+              action="action_it_program" sequence="20"/>
+    <menuitem id="menu_it_assets_accessory_type" name="Tipos de accesorios" parent="menu_it_assets_config"
+              action="action_it_accessory_type" sequence="30"/>
+    <menuitem id="menu_it_assets_state" name="Estados" parent="menu_it_assets_config"
+              action="action_it_state" sequence="40"/>
+</odoo>
