@@ -185,6 +185,12 @@ class ZtyresMsSqlExcelReports(http.Controller):
         data = {"Mensaje": "Reporte actualizado correctamente"}
         return Response(json.dumps(data), content_type='application/json;charset=utf-8', status=200)
     
+    @http.route('/desglose_por_cliente', auth='public', methods=['GET'], website=True)
+    def desglose_por_cliente(self):
+        request.env['desglose_por_cliente'].sudo().get_report()
+        data = {"Mensaje": "Reporte actualizado correctamente"}
+        return Response(json.dumps(data), content_type='application/json;charset=utf-8', status=200)
+    
     @http.route('/reportes_cxc/<string:mes>/<int:anio>', auth='public', methods=['GET'], website=True)
     def reportes_cxc(self, mes, anio):
         request.env['reportes_cobranza'].sudo().get_report(mes, anio)

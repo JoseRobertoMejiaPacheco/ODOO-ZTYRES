@@ -42,3 +42,4 @@ from . import reporte_plan_comercial
 from . import Reporte_ventas_direccion2
 from . import reports_direccion_ventas
 from . import reports_ventas
+from . import desglose_por_cliente
