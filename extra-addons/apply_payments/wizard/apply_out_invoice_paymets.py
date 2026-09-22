@@ -147,7 +147,9 @@ class ApplyOutInvoicePayments(models.Model):
             record.outstanding_amount = currency.round(
                 sum(line.apm_residual() for line in lines))
 
-    @api.depends('lines.payment_amount', 'partner_id', 'payment_id.line_ids')
+    @api.depends('lines.payment_amount', 'partner_id', 'payment_id.line_ids',
+                 'payment_id.move_id.line_ids.amount_residual',
+                 'lines.invoice_id.amount_residual')
     def _compute_amount_pending(self):
         for record in self:
             currency = (record.currency_id or record.company_id.currency_id
@@ -155,15 +157,35 @@ class ApplyOutInvoicePayments(models.Model):
             applied = sum(record.lines.mapped('payment_amount'))
             # Antes: round(..., 3) sobre una moneda de 2 decimales.
             record.amount_applied = currency.round(applied)
-            record.amount_pending = currency.round(
-                record.outstanding_amount - applied)
+            record.amount_pending = 0.0 if record._is_fully_applied() else \
+                currency.round(record.outstanding_amount - applied)
 
-    @api.depends('payment_id', 'payment_id.l10n_mx_edi_cfdi_uuid')
+    @api.depends('payment_id', 'payment_id.l10n_mx_edi_cfdi_uuid',
+                 'payment_id.move_id.line_ids.amount_residual',
+                 'lines.invoice_id.amount_residual', 'lines.payment_amount')
     def _calcular_state(self):
         for record in self:
             record.state = 'done' if (
                 record.payment_id and record.payment_id.l10n_mx_edi_cfdi_uuid
-            ) else 'draft'
+            ) or record._is_fully_applied() else 'draft'
+
+    def _is_fully_applied(self):
+        self.ensure_one()
+        if not self.payment_id or not self.lines:
+            return False
+        currency = self.currency_id or self.company_id.currency_id \
+            or self.env.company.currency_id
+        applied = currency.round(sum(self.lines.mapped('payment_amount')))
+        if currency.is_zero(applied):
+            return False
+        payment_open = currency.round(sum(
+            line.apm_residual()
+            for line in self.payment_id.get_open_receivable_lines()))
+        invoice_open = currency.round(sum(
+            abs(line.invoice_id.amount_residual)
+            for line in self.lines
+            if line.invoice_id))
+        return currency.is_zero(payment_open) and currency.is_zero(invoice_open)
 
     # ------------------------------------------------------------------
     # Onchange

@@ -341,7 +341,45 @@ class payments(models.Model):
         else:  # 'amount'
             amount = self.nc_value or 0.0
 
-        return currency.round(max(amount, 0.0))
+        return self._cap_new_nc_amount(amount)
+
+    def _cap_new_nc_amount(self, amount):
+        """Tope fiscal para NC nuevas: no emitir más de lo aplicable.
+
+        Si el cálculo da 745.78 pero la factura/pago sólo admiten 745.77, la
+        NC debe nacer por 745.77. El ajuste 888 queda para documentos ya
+        existentes, no para inflar una NC recién generada y compensarla.
+        """
+        self.ensure_one()
+        currency = self._get_currency()
+        amount = currency.round(max(amount or 0.0, 0.0))
+        invoice = self._get_invoice_record()
+        candidates = [amount]
+        if invoice:
+            candidates.append(currency.round(abs(invoice.move_amount_residual)))
+            invoice_line = invoice.move_id.get_open_receivable_lines()[:1]
+            if invoice_line:
+                candidates.append(currency.round(invoice_line.apm_residual()))
+            other_nc = self.payment_form_id.payment_ids.filtered(
+                lambda l: l != self and l.payment_name == 'out_refund')
+            available_in_form = (
+                self.payment_form_id.invoice_amount_total
+                - self.payment_form_id.total_payments
+                - sum(other_nc.mapped('amount_to_apply')))
+            candidates.append(currency.round(max(available_in_form, 0.0)))
+        apm = self._get_apm()
+        if apm:
+            pending = self.payment_form_id.payment_amount_pending
+            if not pending and self.payment_form_id:
+                applied_new = sum(
+                    apm.lines.payment_form_id.payment_ids
+                    .filtered(lambda l: l.payment_name == 'entry'
+                              and l.payment_origin == 'new')
+                    .mapped('amount_to_apply'))
+                pending = apm.payment_id.amount - applied_new
+            if pending:
+                candidates.append(currency.round(abs(pending)))
+        return currency.round(min(candidates))
 
     # ------------------------------------------------------------------
     # Conciliación
@@ -404,7 +442,7 @@ class payments(models.Model):
             )
 
     def _create_adjustment_entry(self):
-        """Ajuste de la diferencia de centavos en la FACTURA.
+        """Ajuste de diferencias de centavos en facturas y notas de crédito.
 
         Antes:
             if 0.01 <= record.move_id.amount_residual <= 0.05:
@@ -412,19 +450,23 @@ class payments(models.Model):
         Ese tope de 0.05 es exactamente por lo que una diferencia de 0.07 nunca
         se ajustaba. Además la cuenta ('888.88.8888.8888.8888') y el diario
         (id=140) estaban en duro. Ahora se delega en el motor de ajuste del
-        módulo base, con tolerancia y cuentas configurables.
+        módulo base, con tolerancia y cuentas configurables. También cubre
+        notas de crédito: si una NC por 745.78 sólo puede conciliar 745.77
+        porque la factura tenía ese saldo real, el centavo restante debe ir al
+        ajuste y no quedar como residual abierto.
         """
         for record in self:
-            if not (record.payment_name == 'out_invoice'
-                    and record.payment_origin == 'prev'):
+            if record.payment_name not in ('out_invoice', 'out_refund'):
                 continue
             apm = record._get_apm()
             if not apm:
                 continue
             target = record.move_id.get_open_receivable_lines()[:1]
+            if not target:
+                continue
             apm.settle_residual(target, _(
-                "Ajuste por redondeo - %(inv)s / %(pay)s",
-                inv=record.move_id.name or '',
+                "Ajuste por redondeo - %(doc)s / %(pay)s",
+                doc=record.move_id.name or '',
                 pay=apm.payment_id.name or ''))
 
     def _generate_edi_docs(self):
@@ -452,13 +494,15 @@ class payments(models.Model):
             invoice = record._get_invoice_record()
             invoice.ensure_one()
             currency = record._get_currency()
-            amount = currency.round(record.amount_to_apply)
+            amount = record._cap_new_nc_amount(record.amount_to_apply)
+            record.amount_to_apply = amount
             if currency.is_zero(amount):
                 continue
 
             tax = self.env['account.tax'].browse(NC_TAX_ID).exists()
+            apply_tax = bool(invoice.move_id.amount_tax > 0 and tax)
             price_unit = amount
-            if invoice.move_id.amount_tax > 0 and tax:
+            if apply_tax:
                 # La tasa se toma del impuesto (antes se asumía 16% en duro).
                 unit = tax.compute_all(
                     1.0, currency=currency, quantity=1.0,
@@ -472,8 +516,10 @@ class payments(models.Model):
                 'name': record.nc_reason,
                 'price_unit': price_unit,
             }
-            if tax:
+            if apply_tax:
                 line_vals['tax_ids'] = [(6, 0, tax.ids)]
+            else:
+                line_vals['tax_ids'] = [(6, 0, [])]
 
             credit_note_vals = {
                 'move_type': 'out_refund',

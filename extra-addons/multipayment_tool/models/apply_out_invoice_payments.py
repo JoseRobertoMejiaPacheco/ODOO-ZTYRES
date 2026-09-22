@@ -86,7 +86,9 @@ class ApplyOutInvoicePayments(models.Model):
             record.amount_resudual_payments = sum(
                 record.lines.payment_form_id.mapped('amount_residual'))
 
-    @api.depends('lines.payment_amount', 'partner_id', 'payment_id.line_ids')
+    @api.depends('lines.payment_amount', 'partner_id', 'payment_id.line_ids',
+                 'payment_id.move_id.line_ids.amount_residual',
+                 'lines.invoice_id.amount_residual')
     def _compute_amount_pending(self):
         """Antes: `round(..., 2)` con float nativo. Ahora se redondea con la
         precisión de la moneda del pago."""
@@ -95,8 +97,8 @@ class ApplyOutInvoicePayments(models.Model):
                         or self.env.company.currency_id)
             applied = sum(record.lines.mapped('payment_amount'))
             record.amount_applied = currency.round(applied)
-            record.amount_pending = currency.round(
-                record.outstanding_amount - applied)
+            record.amount_pending = 0.0 if record._is_fully_applied() else \
+                currency.round(record.outstanding_amount - applied)
 
     def get_detailed_info(self):
         for record in self:
