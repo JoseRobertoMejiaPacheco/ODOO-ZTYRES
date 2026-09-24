@@ -14,6 +14,10 @@ class StockPicking(models.Model):
     embarque_ids = fields.Many2many(
         'embarques.embarques', 'embarques_embarque_picking_rel',
         'picking_id', 'embarque_id', string='Embarques', readonly=True)
+    charge_paqueteria = fields.Boolean(
+        string='Cobrar paquetería', default=True, tracking=True,
+        help='Desactívalo cuando este traslado no debe cobrar paquetería en '
+             'la factura del cliente.')
 
     destino_id = fields.Many2one(
         'embarques.destino', string='Destino Detectado',
@@ -211,6 +215,15 @@ class StockPicking(models.Model):
                 'discount_approval_date': False,
             })
         res = super().write(vals)
+        if 'charge_paqueteria' in vals:
+            embarques = self.mapped('embarque_ids')
+            for order in self.mapped('sale_id'):
+                embarque = embarques.filtered(
+                    lambda e: order in e.pedidos_ids.mapped('sale_id'))[:1]
+                ctx = {'paqueteria_update': True}
+                if embarque:
+                    ctx['embarque_paqueteria_id'] = embarque.id
+                order.with_context(**ctx)._update_paqueteria_line()
         # Cambios que alteran las llantas o el destino obligan a reevaluar el
         # descuento del embarque completo, no sólo el de este traslado.
         if (not self.env.context.get('embarque_internal_write')

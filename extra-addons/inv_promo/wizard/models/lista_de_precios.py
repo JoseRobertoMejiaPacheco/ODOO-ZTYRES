@@ -20,7 +20,6 @@ import io
 import re
 from datetime import date
 
-
 codes_pirelli = [
 ]
 
@@ -167,10 +166,16 @@ class ListaDePrecios(models.TransientModel):
                                                                          (S{row_idx}*IF(ISNUMBER(IFERROR(FIND(UPPER(F{row_idx}),UPPER($J$7)),"")),$J$10,0)) -
                                                                          (S{row_idx}*IF(ISNUMBER(IFERROR(FIND(UPPER(F{row_idx}),UPPER($K$7)),"")),$K$10,0)) -
                                                                          (S{row_idx}*IF(ISNUMBER(IFERROR(FIND(UPPER(F{row_idx}),UPPER($L$7)),"")),$L$10,0)) -
-                                                                         (S{row_idx}*IF(ISNUMBER(IFERROR(FIND(UPPER(C{row_idx}),UPPER($O$7)),"")),$O$10,0))-
+                                                                         (S{row_idx}*IF(ISNUMBER(IFERROR(FIND(UPPER(C{row_idx}),UPPER($O$7)),"")),$O$10,0)) -
                                                                          (S{row_idx}*IF($A$8 = 0, 0, IF(ISNUMBER(IFERROR(FIND(UPPER(F{row_idx}),UPPER($M$7)),"")), $M$10, 0))) -
                                                                          (S{row_idx}* IF(V{row_idx} = "SI", IF(ISNUMBER(IFERROR(FIND(UPPER(F{row_idx}),UPPER($P$7)),"")),$P$10,0), 0))
                                                                           ''' 
+                #(S14*SI($A$8 = 0, 0, SI(ESNUMERO(SI.ERROR(ENCONTRAR(MAYUSC(F14),MAYUSC($M$7)),"")), $M$10, 0))) -
+                
+                # (S{row_idx}*IF($A$8 = 0, 0, IF(ISNUMBER(IFERROR(FIND(UPPER(F{row_idx}),UPPER($M$7)),"")),
+                # IF(AND(G{row_idx}>=VALUE(MID($M$9,2,FIND("-",$M$9)-2)), G{row_idx}<=VALUE(RIGHT($M$9,LEN($M$9)-FIND("-",$M$9)-1))),
+                # $M$10, IF(G{row_idx} >= VALUE(SUBSTITUTE(SUBSTITUTE($N$9,"R",""),"+","")), $N$10, 0))))) -
+                
                 
                 # f'''=S{row_idx}-
                 #     (IF(OR($A$8=1,$A$8=150,$A$8=350,$A$8=600),((S{row_idx}*$C$8)+(S{row_idx}*$E$8)+(S{row_idx}*$F$8)),0))-
@@ -185,10 +190,6 @@ class ListaDePrecios(models.TransientModel):
                 # - 
                 #     (S{row_idx}* IF(AND(ISNUMBER(IFERROR(FIND(F{row_idx},UPPER($K$7)),"")), V{row_idx} = "SI"), $K$10, 0))
                 #   ''' 
-                #RESTA POR RANGO DE RIN
-                # (S{row_idx}*IF($A$8 = 0, 0, IF(ISNUMBER(IFERROR(FIND(UPPER(F{row_idx}),UPPER($M$7)),"")),
-                #  IF(AND(G{row_idx}>=VALUE(MID($M$9,2,FIND("-",$M$9)-2)), G{row_idx}<=VALUE(RIGHT($M$9,LEN($M$9)-FIND("-",$M$9)-1))),
-                #  $M$10, IF(G{row_idx} >= VALUE(SUBSTITUTE(SUBSTITUTE($N$9,"R",""),"+","")), $N$10, 0))))) -
                 
                 # f'''=S{row_idx} -
                 # (IF(OR($A$8=1,$A$8=150,$A$8=350,$A$8=600), ((S{row_idx}*$D$8) + (S{row_idx}*$E$8) + (S{row_idx}*$F$8)), 0)) -
@@ -261,7 +262,7 @@ class ListaDePrecios(models.TransientModel):
                 elif header == "Desc. R13-R16":
                     sheet.cell(row=row_idx, column=col_idx).value = f'''=IF(W{row_idx} <> "", IF($I$8 = "Sin bono", 0, IF($I$8 = "Facturación de 150 mil pesos", W{row_idx}, IF($I$8 = "Facturación de 300 mil pesos", X{row_idx}, IF($I$8 = "Facturación de 600 mil pesos", Y{row_idx}, IF($I$8 = "Facturación de 1¸2 millones de pesos", Z{row_idx}, 0))))), 0)'''
                 elif header == "tarjeta regalo":
-                    sheet.cell(row=row_idx, column=col_idx).value = f'''=IF(AA{row_idx} <> "", IF($I$8 = "Sin bono", 0, IF($I$8 = "Facturación de 150 mil pesos", AA{row_idx}, IF($I$8 = "Facturación de 300 mil pesos", AB{row_idx}, IF($I$8 = "Facturación de 600 mil pesos", AC{row_idx}, IF($I$8 = "Facturación de 1¸2 millones de pesos", AD{row_idx}, 0))))), 0)'''
+                    sheet.cell(row=row_idx, column=col_idx).value = f'''=IF(AA{row_idx} <> "", IF($I$8 = "Sin bono", 0, IF($I$8 = "Facturación de 150 mil pesos", AA{row_idx}, IF(OR($I$8 = "Facturación de 300 mil pesos", $I$8 = "Facturación de 600 mil pesos", $I$8 = "Facturación de 1¸2 millones de pesos"), AB{row_idx}, 0))), 0)'''
                 elif header == "FACTURACIÓN":
                     sheet.cell(row=row_idx, column=col_idx).value = f'=IF(Z{row_idx} = "", "", Z{row_idx}*U{row_idx})'   
                 else:
@@ -412,7 +413,6 @@ class ListaDePrecios(models.TransientModel):
         # Adjust column width based on content length
         start_col, start_row = start_ref[0], int(start_ref[1:])
         
-        
         end_col = end_ref[0] if merged_cells else start_col
         end_row = int(end_ref[1:]) if merged_cells else start_row
 
@@ -457,7 +457,6 @@ class ListaDePrecios(models.TransientModel):
         start_column2 = 'A'
         end_column2 = 'O'
         
-        
         for row in sheet.iter_rows(min_row=14):  # Start from row 2 to skip header
             outlet_cell = row[outlet_col_idx - 1]  # Adjust index to zero-based
             # Example condition: Color 'Outlet' column yellow if cell value is not empty
@@ -499,7 +498,6 @@ class ListaDePrecios(models.TransientModel):
         column_end_bonus_cards = 'T'
         cupones = 'R'
         rin = 'V'
-        
         
         for row in sheet.iter_rows(min_row=14):
             cupon_cell = row[column_index_from_string(ids_in_codes_brig) - 1]
@@ -697,64 +695,55 @@ class ListaDePrecios(models.TransientModel):
                     bonus_cards = {t[0]: t[1] for t in codes_bridgestone_promo if t[3] == "SI"}
                     if obj.product_id.id in bonus_cards:
                         if obj.product_id.id in key_sizes:
-                            data_dict.update({'Rango 1': ((bonus_cards[obj.product_id.id] * 0.024) * 1.16).__round__(2)})
-                            data_dict.update({'Rango 2': ((bonus_cards[obj.product_id.id] * 0.032) * 1.16).__round__(2)})
-                            data_dict.update({'Rango 3': ((bonus_cards[obj.product_id.id] * 0.04) * 1.16).__round__(2)})
-                            data_dict.update({'Rango 4': ((bonus_cards[obj.product_id.id] * 0.048) * 1.16).__round__(2)})
+                            data_dict.update({'Rango 1': ((bonus_cards[obj.product_id.id] * 0.03) * 1.16).__round__(2)})
+                            data_dict.update({'Rango 2': ((bonus_cards[obj.product_id.id] * 0.05) * 1.16).__round__(2)})
+                            data_dict.update({'Rango 3': ((bonus_cards[obj.product_id.id] * 0.055) * 1.16).__round__(2)})
+                            data_dict.update({'Rango 4': ((bonus_cards[obj.product_id.id] * 0.06) * 1.16).__round__(2)})
                         
                         elif int(resultado) >= 13 and int(resultado) <= 16:
-                            data_dict.update({'Rango 1': ((bonus_cards[obj.product_id.id] * 0.016) * 1.16).__round__(2)})
-                            data_dict.update({'Rango 2': ((bonus_cards[obj.product_id.id] * 0.024) * 1.16).__round__(2)})
-                            data_dict.update({'Rango 3': ((bonus_cards[obj.product_id.id] * 0.032) * 1.16).__round__(2)})
-                            data_dict.update({'Rango 4': ((bonus_cards[obj.product_id.id] * 0.04) * 1.16).__round__(2)})
-
+                            data_dict.update({'Rango 1': ((bonus_cards[obj.product_id.id] * 0.02) * 1.16).__round__(2)})
+                            data_dict.update({'Rango 2': ((bonus_cards[obj.product_id.id] * 0.04) * 1.16).__round__(2)})
+                            data_dict.update({'Rango 3': ((bonus_cards[obj.product_id.id] * 0.04) * 1.16).__round__(2)})
+                            data_dict.update({'Rango 4': ((bonus_cards[obj.product_id.id] * 0.05) * 1.16).__round__(2)})
                     else:
                         data_dict.update({'Rango 1': ''})
                         data_dict.update({'Rango 2': ''})
                         data_dict.update({'Rango 3': ''})
                         data_dict.update({'Rango 4': ''})
-                        
+
                     if obj.product_id.id in vol_sizes:
-                        data_dict.update({'VolSize 1': ((bonus_cards[obj.product_id.id] * 0.024) * 1.16).__round__(2)})
-                        data_dict.update({'VolSize 2': ((bonus_cards[obj.product_id.id] * 0.032) * 1.16).__round__(2)})
-                        data_dict.update({'VolSize 3': ((bonus_cards[obj.product_id.id] * 0.04) * 1.16).__round__(2)})
-                        data_dict.update({'VolSize 4': ((bonus_cards[obj.product_id.id] * 0.048) * 1.16).__round__(2)})
+                        data_dict.update({'VolSize 1': ((bonus_cards[obj.product_id.id] * 0.03) * 1.16).__round__(2)})
+                        data_dict.update({'VolSize 2': ((bonus_cards[obj.product_id.id] * 0.05) * 1.16).__round__(2)})
                     else:
                         data_dict.update({'VolSize 1': ''})
                         data_dict.update({'VolSize 2': ''})
-                        data_dict.update({'VolSize 3': ''})
-                        data_dict.update({'VolSize 4': ''})
 
                 else:
                     if obj.product_id.id in bonus_cards:
                         if obj.product_id.id in key_sizes:
-                            data_dict.update({'Rango 1': ((bonus_cards[obj.product_id.id] * 0.024) * 1.16).__round__(2)})
-                            data_dict.update({'Rango 2': ((bonus_cards[obj.product_id.id] * 0.032) * 1.16).__round__(2)})
-                            data_dict.update({'Rango 3': ((bonus_cards[obj.product_id.id] * 0.04) * 1.16).__round__(2)})
-                            data_dict.update({'Rango 4': ((bonus_cards[obj.product_id.id] * 0.048) * 1.16).__round__(2)})
+                            data_dict.update({'Rango 1': ((bonus_cards[obj.product_id.id] * 0.03) * 1.16).__round__(2)})
+                            data_dict.update({'Rango 2': ((bonus_cards[obj.product_id.id] * 0.05) * 1.16).__round__(2)})
+                            data_dict.update({'Rango 3': ((bonus_cards[obj.product_id.id] * 0.055) * 1.16).__round__(2)})
+                            data_dict.update({'Rango 4': ((bonus_cards[obj.product_id.id] * 0.06) * 1.16).__round__(2)})
                         
                         elif int(resultado) >= 13 and int(resultado) <= 16:
-                            data_dict.update({'Rango 1': ((bonus_cards[obj.product_id.id] * 0.016) * 1.16).__round__(2)})
-                            data_dict.update({'Rango 2': ((bonus_cards[obj.product_id.id] * 0.024) * 1.16).__round__(2)})
-                            data_dict.update({'Rango 3': ((bonus_cards[obj.product_id.id] * 0.032) * 1.16).__round__(2)})
-                            data_dict.update({'Rango 4': ((bonus_cards[obj.product_id.id] * 0.04) * 1.16).__round__(2)})
+                            data_dict.update({'Rango 1': ((bonus_cards[obj.product_id.id] * 0.02) * 1.16).__round__(2)})
+                            data_dict.update({'Rango 2': ((bonus_cards[obj.product_id.id] * 0.04) * 1.16).__round__(2)})
+                            data_dict.update({'Rango 3': ((bonus_cards[obj.product_id.id] * 0.04) * 1.16).__round__(2)})
+                            data_dict.update({'Rango 4': ((bonus_cards[obj.product_id.id] * 0.05) * 1.16).__round__(2)})
 
                     else:
                         data_dict.update({'Rango 1': ''})
                         data_dict.update({'Rango 2': ''})
                         data_dict.update({'Rango 3': ''})
                         data_dict.update({'Rango 4': ''})
-                        
+
                     if obj.product_id.id in vol_sizes:
-                        data_dict.update({'VolSize 1': ((bonus_cards[obj.product_id.id] * 0.024) * 1.16).__round__(2)})
-                        data_dict.update({'VolSize 2': ((bonus_cards[obj.product_id.id] * 0.032) * 1.16).__round__(2)})
-                        data_dict.update({'VolSize 3': ((bonus_cards[obj.product_id.id] * 0.04) * 1.16).__round__(2)})
-                        data_dict.update({'VolSize 4': ((bonus_cards[obj.product_id.id] * 0.048) * 1.16).__round__(2)})
+                        data_dict.update({'VolSize 1': ((bonus_cards[obj.product_id.id] * 0.03) * 1.16).__round__(2)})
+                        data_dict.update({'VolSize 2': ((bonus_cards[obj.product_id.id] * 0.05) * 1.16).__round__(2)})
                     else:
                         data_dict.update({'VolSize 1': ''})
                         data_dict.update({'VolSize 2': ''})
-                        data_dict.update({'VolSize 3': ''})
-                        data_dict.update({'VolSize 4': ''})
                 
                 # if obj.volumen > 0:
                 #     data_dict.update({
@@ -873,7 +862,6 @@ class ListaDePrecios(models.TransientModel):
         promo_bridgestone = self.get_dict_data(objects, 'P. BRIDGESTONE', partner_id)
         transitos_tabla = self.get_dict_data(objects, 'Transitos', partner_id)
         
-        
         wb = Workbook()
         sheet1 = wb.active
         sheet1.title = "Precios Con Iva"
@@ -888,9 +876,9 @@ class ListaDePrecios(models.TransientModel):
         bonus_cards = [
             'Sin bono',
             'Facturación de 150 mil pesos', 
-            'Facturación de 300 mil pesos', 
+            'Facturación de 300 mil pesos',
             'Facturación de 600 mil pesos',
-            'Facturación de 1¸2 millones de pesos',
+            'Facturación de 1¸2 millones de pesos'
             ]
         
         vol_purchase = ['0', '1', '100', '200', '400', '700']
@@ -908,7 +896,6 @@ class ListaDePrecios(models.TransientModel):
             {'cell_ref': 'A8', 'values': vol_purchase},
             
             {'cell_ref': 'P10', 'values': kumho_percent},
-            
         ]
         
         combo_data_sheet3 = [
@@ -940,8 +927,6 @@ class ListaDePrecios(models.TransientModel):
         # sheet1.protection.autoFilter = False
         # sheet1.protection.sort = True  
         # sheet1.protection.enable()
-        
-        
 
         self.set_frames(sheet1)
         
@@ -1000,8 +985,8 @@ class ListaDePrecios(models.TransientModel):
             {'cell_ref': 'K9', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': f"""=IF($A$8 = 1, "", IF($A$8= 100, "Min. 8 Medidas", IF($A$8 = 200, "Min. 12 Medidas", IF($A$8 = 400, "Min. 16 Medidas", IF($A$8 = 700, "Min. 20 Medidas", "")))))""", 'data_type': 'string'},
             {'cell_ref': 'L7:L9', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "PIRELLI", 'data_type': 'string'},
             {'cell_ref': 'M7:N9', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "DUNLOP / FALKEN", 'data_type': 'string'},
-            #{'cell_ref': 'M9', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "R13-R15", 'data_type': 'string'},
-            #{'cell_ref': 'N9', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "R16+", 'data_type': 'string'},
+            # {'cell_ref': 'M9', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "R13-R15", 'data_type': 'string'},
+            # {'cell_ref': 'N9', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "R16+", 'data_type': 'string'},
             {'cell_ref': 'O7:O9', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "TIER 3", 'data_type': 'string'},
             
             {'cell_ref': 'P7:S8', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': 'FDE9D9', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "KUMHO", 'data_type': 'string'},
@@ -1011,12 +996,10 @@ class ListaDePrecios(models.TransientModel):
             {'cell_ref': 'J10:J11', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '0%', 'value': f"""=IF($A$8 = 1, 2%, IF($A$8= 100, 3%, IF($A$8 = 200, 3%, IF($A$8 = 400, 5%, IF($A$8 = 700, 5%, 0%)))))""", 'data_type': 'string'},
             {'cell_ref': 'K10:K11', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '0%', 'value': f"""=IF($A$8 = 1, 0%, IF($A$8= 100, 1%, IF($A$8 = 200, 3%, IF($A$8 = 400, 5%, IF($A$8 = 700, 8%, 0%)))))""", 'data_type': 'string'},
             {'cell_ref': 'L10:L11', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '0%', 'value': f"""=IF($A$8 = 1, 2%, IF($A$8= 100, 2%, IF($A$8 = 200, 2%, IF($A$8 = 400, 2%, IF($A$8 = 700, 2%, 0%)))))""", 'data_type': 'string'},
-            {'cell_ref': 'M10:N11', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '0%', 'value': f"""=IF($A$8 = 1, 1%, IF($A$8= 100, 2%, IF($A$8 = 200, 3%, IF($A$8 = 400, 3%, IF($A$8 = 700, 4%, 0%)))))""", 'data_type': 'string'},
-            # {'cell_ref': 'N10:N11', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '0%', 'value': f"""=IF($A$8 = 1, 2%, IF($A$8= 100, 4%, IF($A$8 = 200, 4%, IF($A$8 = 400, 5%, IF($A$8 = 700, 5%, 0%)))))""", 'data_type': 'string'},
+            {'cell_ref': 'M10:N11', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '0%', 'value': f"""=IF($A$8 = 1, 2%, IF($A$8= 100, 4%, IF($A$8 = 200, 4%, IF($A$8 = 400, 5%, IF($A$8 = 700, 5%, 0%)))))""", 'data_type': 'string'},
+            # {'cell_ref': 'N10:N11', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '0%', 'value': f"""=IF($A$8 = 1, 2%, IF($A$8= 100, 3%, IF($A$8 = 200, 4%, IF($A$8 = 400, 4%, IF($A$8 = 700, 5%, 0%)))))""", 'data_type': 'string'},
             {'cell_ref': 'O10:O11', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': WHITE, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '0%', 'value': f"""=IF($A$8 = 1, 2%, IF($A$8= 100, 2%, IF($A$8 = 200, 3%, IF($A$8 = 400, 4%, IF($A$8 = 700, 5%, 0%)))))""", 'data_type': 'string'},
             {'cell_ref': 'P10:S11', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': 'FDE9D9', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '0%', 'value': '0%', 'data_type': 'string'},
-                        
-            
 
             ########################################################################################################################################################################################################################################################################################################################################
             {'cell_ref': 'A2:D2', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': True, 'fill_color': WHITE, 'border': None, 'align': 'center', 'top_align': 'center', 'wrap_text': True, 'num_format': '#,##0', 'value': "CÓDIGO:", 'data_type': 'string'},   
@@ -1251,8 +1234,8 @@ class ListaDePrecios(models.TransientModel):
                 
                 {'cell_ref': 'K7:L7', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': 'F2DCDB', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': "VOLUMEN MENSUAL R13-R16", 'data_type': 'string'},
                 {'cell_ref': 'I8:L8', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': False, 'fill_color': BLACK, 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '0%', 'value': "Sin bono", 'data_type': 'string'},
-                {'cell_ref': 'K9:L9', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': False, 'fill_color': '00B0F0', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '0%', 'value': f"""=IF(I8 = "Facturación de 150 mil pesos", "Descuento 2.4%", IF(I8 = "Facturación de 300 mil pesos", "Descuento 3.2%", IF(I8 = "Facturación de 600 mil pesos", "Descuento 4%", IF(I8 = "Facturación de 1¸2 millones de pesos", "Descuento 4.8%", "Sin Descuento"))))""", 'data_type': 'string'},
-                {'cell_ref': 'K10:L10', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': 'F2DCDB', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': f"""=IF(I8 = "Facturación de 150 mil pesos", "Descuento 1.6%", IF(I8 = "Facturación de 300 mil pesos", "Descuento 2.4%", IF(I8 = "Facturación de 600 mil pesos", "Descuento 3.2%", IF(I8 = "Facturación de 1¸2 millones de pesos", "Descuento 4%", "Sin Descuento"))))""", 'data_type': 'string'},
+                {'cell_ref': 'K9:L9', 'font_name': 'Calibri', 'font_size': 11, 'font_color': WHITE, 'bold': False, 'fill_color': '00B0F0', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '0%', 'value': f"""=IF(I8 = "Facturación de 150 mil pesos", "Descuento 3%", IF(I8 = "Facturación de 300 mil pesos", "Descuento 5%", "Sin Descuento"))""", 'data_type': 'string'},
+                {'cell_ref': 'K10:L10', 'font_name': 'Calibri', 'font_size': 11, 'font_color': BLACK, 'bold': False, 'fill_color': 'F2DCDB', 'border': 'thin', 'align': 'center', 'top_align': 'center', 'wrap_text': False, 'num_format': '#,##0', 'value': f"""=IF(I8 = "Facturación de 150 mil pesos", "Descuento 2%", IF(I8 = "Facturación de 300 mil pesos", "Descuento 4%", "Sin Descuento"))""", 'data_type': 'string'},
                                                                                                                                                                                                                                                                            
                 ]
 
@@ -1281,7 +1264,6 @@ class ListaDePrecios(models.TransientModel):
                 self.format_cell(sheet3, **data)
             for data in data_for_sheet5:
                 self.format_cell(sheet5, **data)
-                
                   
             # Lista de hojas a formatear
             sheets = [sheet3]
@@ -1357,7 +1339,6 @@ class ListaDePrecios(models.TransientModel):
                 for row in sheet.iter_rows(min_row=start_row, max_row=end_row, min_col=column_index_from_string(start_col), max_col=column_index_from_string(end_col)):
                     for cell in row:
                         cell.border = thin_border
-
 
         # Ajustar el ancho de las columnas en todas las hojas basándose en la fila 1 (por ejemplo)
         for sheet_name in wb.sheetnames:

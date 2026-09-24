@@ -1,6 +1,7 @@
 import unicodedata
 
 from odoo import api, fields, models, _
+from odoo.exceptions import UserError
 
 
 class SaleOrder(models.Model):
@@ -22,7 +23,6 @@ class SaleOrder(models.Model):
         compute='_compute_destino', readonly=True)
     piezas_qty = fields.Float(
         string='Piezas', compute='_compute_destino', readonly=True)
-
     @api.depends('picking_ids')
     def _compute_embarque_ids(self):
         for order in self:
@@ -46,8 +46,11 @@ class SaleOrder(models.Model):
 
     def _prepare_invoice(self):
         vals = super()._prepare_invoice()
-        if self.embarque_ids and 'use_embarque_logistic_nc' in self._fields:
-            vals['use_embarque_logistic_nc'] = True
+        if self.embarque_ids:
+            if 'use_embarque_logistic_nc' in self._fields:
+                vals['use_embarque_logistic_nc'] = True
+            if 'l10n_mx_edi_usage' in self.env['account.move']._fields:
+                vals['l10n_mx_edi_usage'] = 'G01'
         return vals
 
     def _piezas_qty(self):
@@ -61,6 +64,57 @@ class SaleOrder(models.Model):
             and line.product_id.type in ('product', 'consu')
             and line.product_id != producto
         )
+
+    def _embarque_for_paqueteria(self):
+        """Embarque vigente para ajustar la paquetería del pedido."""
+        self.ensure_one()
+        embarque_id = self.env.context.get('embarque_paqueteria_id')
+        if embarque_id:
+            embarque = self.env['embarques.embarques'].browse(embarque_id)
+            if embarque.exists() and self in embarque.pedidos_ids.mapped('sale_id'):
+                return embarque
+        return self.embarque_ids[:1]
+
+    def _piezas_paqueteria_qty(self, embarque=False):
+        """Piezas cobrables para paquetería.
+
+        Si el pedido ya está en un embarque se usan las llantas efectivas del
+        traslado, no la cantidad original del pedido. Esto cubre pedidos con
+        líneas canceladas o surtidas parcialmente antes de facturar.
+        """
+        self.ensure_one()
+        if embarque:
+            pickings = embarque.pedidos_ids.filtered(
+                lambda p: p.sale_id == self and p.charge_paqueteria)
+            if pickings:
+                return sum(embarque._picking_llantas(picking) for picking in pickings)
+            return 0.0
+        return self._piezas_qty()
+
+    def _paqueteria_partner_key(self):
+        """Cliente/dirección que consolida el mínimo de envío gratis."""
+        self.ensure_one()
+        return (
+            self.partner_shipping_id
+            or self.partner_id
+            or self.partner_id.commercial_partner_id
+        )
+
+    def _paqueteria_consolidated_qty(self, destino, embarque=False):
+        """Piezas del mismo cliente/dirección y destino dentro del embarque."""
+        self.ensure_one()
+        if not embarque:
+            return self._piezas_paqueteria_qty()
+        key = self._paqueteria_partner_key()
+        total = 0.0
+        orders = embarque.pedidos_ids.filtered('charge_paqueteria').mapped('sale_id')
+        for order in orders:
+            if not order or order._paqueteria_partner_key() != key:
+                continue
+            if order.destino_id != destino:
+                continue
+            total += order._piezas_paqueteria_qty(embarque=embarque)
+        return total
 
     @api.model
     def _normalizar_forma_entrega(self, value):
@@ -131,26 +185,38 @@ class SaleOrder(models.Model):
     def _update_paqueteria_line(self):
         """Crea, actualiza o quita la línea de paquetería del pedido.
 
-        Sólo toca presupuestos abiertos: una vez confirmado el pedido, cambiar
-        importes por debajo llevaría a facturar algo distinto de lo acordado.
+        En presupuestos abiertos usa la cantidad del pedido. Si el pedido ya
+        está en un embarque y aún no se ha facturado la paquetería, usa piezas
+        efectivas y el total consolidado del embarque para decidir si cobra.
         """
         for order in self:
-            if order.state not in ('draft', 'sent'):
-                continue
             producto = order.company_id.paqueteria_product_id
             linea = order.order_line.filtered(
                 lambda l: producto and l.product_id == producto)
+            if order.state not in ('draft', 'sent') and (
+                    not linea or any(line.qty_invoiced for line in linea)):
+                continue
 
             destino = order.destino_id
-            piezas = order._piezas_qty()
+            embarque = order._embarque_for_paqueteria()
+            piezas = order._piezas_paqueteria_qty(embarque=embarque)
+            piezas_consolidadas = order._paqueteria_consolidated_qty(
+                destino, embarque=embarque) if destino else piezas
             entrega_cliente = order._es_entrega_por_cuenta_del_cliente()
             unitario = (
-                destino._paqueteria_unit_cost(piezas)
-                if destino and not entrega_cliente else 0.0)
+                destino._paqueteria_unit_cost(piezas_consolidadas)
+                if destino and piezas and not entrega_cliente
+                else 0.0)
 
             if not producto or not unitario:
                 if linea:
-                    linea.unlink()
+                    if order.state in ('draft', 'sent'):
+                        linea.unlink()
+                    else:
+                        linea.write({
+                            'product_uom_qty': 0.0,
+                            'price_unit': 0.0,
+                        })
                 continue
 
             vals = {
@@ -197,6 +263,19 @@ class SaleOrder(models.Model):
 
     def action_recalcular_paqueteria(self):
         return self.with_context(paqueteria_update=True)._update_paqueteria_line()
+
+    def action_cancel(self):
+        embarcados = self.filtered(lambda order: order.embarque_ids)
+        if embarcados:
+            detail = ', '.join(
+                '%s (%s)' % (
+                    order.display_name,
+                    ', '.join(order.embarque_ids.mapped('display_name')))
+                for order in embarcados)
+            raise UserError(_(
+                'No se puede cancelar un pedido que ya está embarcado: %s.') %
+                detail)
+        return super().action_cancel()
 
 
 class SaleOrderLine(models.Model):

@@ -5,3 +5,4 @@ from . import it_accessory
 from . import it_assignment
 from . import it_service
 from . import it_maintenance
+from . import it_resguardo

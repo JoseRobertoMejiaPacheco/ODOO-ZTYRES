@@ -111,6 +111,28 @@ class Embarques(models.Model):
         'account.move', string='Facturas', compute='_compute_invoice_ids')
     invoice_count = fields.Integer(
         string='No. Facturas', compute='_compute_invoice_ids')
+    agreement_ids = fields.One2many(
+        'embarques.agreement', 'embarque_id', string='Acuerdos')
+    incident_ids = fields.One2many(
+        'embarques.incident', 'embarque_id', string='Incidencias')
+    operation_line_ids = fields.One2many(
+        'embarques.operation.line', 'embarque_id',
+        string='Avance operativo')
+    incident_picking_domain_ids = fields.Many2many(
+        'stock.picking', 'embarques_incident_picking_domain_rel',
+        'embarque_id', 'picking_id', compute='_compute_incident_domains')
+    incident_sale_order_domain_ids = fields.Many2many(
+        'sale.order', 'embarques_incident_sale_order_domain_rel',
+        'embarque_id', 'order_id', compute='_compute_incident_domains')
+    incident_partner_domain_ids = fields.Many2many(
+        'res.partner', 'embarques_incident_partner_domain_rel',
+        'embarque_id', 'partner_id', compute='_compute_incident_domains')
+    incident_location_domain_ids = fields.Many2many(
+        'stock.location', 'embarques_incident_location_domain_rel',
+        'embarque_id', 'location_id', compute='_compute_incident_domains')
+    incident_product_domain_ids = fields.Many2many(
+        'product.product', 'embarques_incident_product_domain_rel',
+        'embarque_id', 'product_id', compute='_compute_incident_domains')
     logistic_nc_stamp_status = fields.Selection([
         ('no_invoice', 'Sin factura'),
         ('pending', 'Pendiente'),
@@ -181,6 +203,16 @@ class Embarques(models.Model):
         string='Reservado', compute='_compute_totales', store=True)
     qty_done = fields.Float(
         string='Hecho', compute='_compute_totales', store=True)
+    qty_invoiced = fields.Float(
+        string='Facturado', compute='_compute_totales', store=True)
+    maneuver_qty = fields.Float(
+        string='Maniobras pedidas', compute='_compute_totales', store=True)
+    maneuver_done_qty = fields.Float(
+        string='Maniobras entregadas', compute='_compute_totales', store=True)
+    maneuver_charged_qty = fields.Float(
+        string='Maniobras cobradas', compute='_compute_totales', store=True)
+    maneuver_pending_qty = fields.Float(
+        string='Maniobras sin cobrar', compute='_compute_totales', store=True)
     preparation_state = fields.Selection([
         ('empty', 'Sin traslados'),
         ('pending', 'Con diferencias'),
@@ -495,6 +527,24 @@ class Embarques(models.Model):
             rec.invoice_count = len(invoices)
 
     @api.depends(
+        'pedidos_ids',
+        'pedidos_ids.sale_id',
+        'pedidos_ids.partner_id',
+        'pedidos_ids.move_ids_without_package.product_id',
+        'pedidos_ids.move_ids_without_package.location_id',
+    )
+    def _compute_incident_domains(self):
+        for rec in self:
+            moves = rec.pedidos_ids.mapped('move_ids_without_package')
+            rec.incident_picking_domain_ids = rec.pedidos_ids
+            rec.incident_sale_order_domain_ids = rec.pedidos_ids.mapped('sale_id')
+            rec.incident_partner_domain_ids = (
+                rec.pedidos_ids.mapped('sale_id.partner_id')
+                | rec.pedidos_ids.mapped('partner_id'))
+            rec.incident_location_domain_ids = moves.mapped('location_id')
+            rec.incident_product_domain_ids = moves.mapped('product_id')
+
+    @api.depends(
         'pedidos_ids.sale_id.invoice_ids.state',
         'pedidos_ids.sale_id.invoice_ids.l10n_mx_edi_cfdi_uuid',
         'pedidos_ids.sale_id.invoice_ids.embarque_logistic_nc_id',
@@ -587,6 +637,9 @@ class Embarques(models.Model):
         'pedidos_ids.move_ids_without_package.product_id',
         'pedidos_ids.move_ids_without_package.product_id.volume',
         'pedidos_ids.move_ids_without_package.product_id.weight',
+        'pedidos_ids.sale_id.order_line.qty_invoiced',
+        'pedidos_ids.sale_id.order_line.product_uom_qty',
+        'pedidos_ids.sale_id.order_line.product_id',
         'manual_logistic_cost',
     )
     def _compute_totales(self):
@@ -594,7 +647,7 @@ class Embarques(models.Model):
         Zona = self.env['embarques.zona']
         for embarque in self:
             piezas = volumen = peso = llantas = 0.0
-            qty_ordered = qty_reserved = qty_done = 0.0
+            qty_ordered = qty_reserved = qty_done = qty_invoiced = 0.0
             zonas = Zona
             partners = self.env['res.partner']
             stop_customers = self.env['res.partner']
@@ -632,30 +685,32 @@ class Embarques(models.Model):
                          destinos_ruta[-1] != etiqueta_destino)):
                     destinos_ruta.append(etiqueta_destino)
                 for move in picking.move_ids_without_package:
-                    if move.state == 'cancel' or not move.product_id:
+                    if not move.product_id:
                         continue
                     qty = move.product_uom_qty
-                    piezas += qty
-                    volumen += qty * (move.product_id.volume or 0.0)
-                    peso += qty * (move.product_id.weight or 0.0)
+                    if move.state != 'cancel':
+                        piezas += qty
+                        volumen += qty * (move.product_id.volume or 0.0)
+                        peso += qty * (move.product_id.weight or 0.0)
                     if self._is_llanta(move.product_id):
-                        llantas += qty
-                        qty_ordered += qty
-                        qty_reserved += (
-                            0.0 if move.state in ('done', 'cancel')
-                            else move.reserved_availability)
-                        qty_done += move.quantity_done
-                        validation_key = (picking_index, move.product_id.id)
+                        line = move.sale_line_id
+                        admin_qty = (
+                            line.product_uom_qty
+                            if line else move.product_uom_qty)
+                        validation_key = (
+                            picking_index,
+                            line.id if line else 'product-%s' % move.product_id.id,
+                        )
                         bucket = preparation_buckets.setdefault(
                             validation_key, [0.0, 0.0, 0.0])
-                        bucket[0] += qty
-                        if move.state != 'done':
+                        bucket[0] = max(bucket[0], admin_qty)
+                        if move.state not in ('done', 'cancel'):
                             bucket[1] += move.reserved_availability
                         bucket[2] += move.quantity_done
-                        if not move.product_id.volume:
+                        if move.state != 'cancel' and not move.product_id.volume:
                             productos_sin_volumen |= move.product_id
                     line = move.sale_line_id
-                    if line and line.product_uom_qty:
+                    if move.state != 'cancel' and line and line.product_uom_qty:
                         move_untaxed = (
                             line.price_subtotal / line.product_uom_qty) * qty
                         amount_untaxed += move_untaxed
@@ -667,6 +722,21 @@ class Embarques(models.Model):
                 destino = embarque._picking_destino(picking)
                 if destino.zona_id:
                     zonas |= destino.zona_id
+
+            for line in embarque.pedidos_ids.mapped('sale_id.order_line'):
+                if line.product_id and self._is_llanta(line.product_id):
+                    qty_invoiced += line.qty_invoiced
+
+            qty_ordered = sum(
+                ordered for ordered, _reserved, _done
+                in preparation_buckets.values())
+            llantas = qty_ordered
+            qty_reserved = sum(
+                reserved for _ordered, reserved, _done
+                in preparation_buckets.values())
+            qty_done = sum(
+                done for _ordered, _reserved, done
+                in preparation_buckets.values())
 
             embarque.piezas = piezas
             embarque.volumen = volumen
@@ -701,6 +771,11 @@ class Embarques(models.Model):
             embarque.qty_ordered = qty_ordered
             embarque.qty_reserved = qty_reserved
             embarque.qty_done = qty_done
+            embarque.qty_invoiced = qty_invoiced
+            embarque.maneuver_qty = qty_ordered
+            embarque.maneuver_done_qty = qty_done
+            embarque.maneuver_charged_qty = qty_invoiced
+            embarque.maneuver_pending_qty = max(qty_ordered - qty_invoiced, 0.0)
             differences = [
                 ordered - reserved - done
                 for ordered, reserved, done in preparation_buckets.values()
@@ -970,16 +1045,46 @@ class Embarques(models.Model):
 
             super(Embarques, embarque).write(vals)
             for picking in embarque.pedidos_ids:
-                if picking.discount_manual or picking.requested_discount_percentage:
+                if picking.requested_discount_percentage:
                     continue
-                percentage, picking_note = embarque._evaluate_picking_discount(picking)
+                agreement = embarque._agreement_for_picking(picking)
+                if agreement:
+                    percentage = agreement.percentage
+                    picking_note = _(
+                        'Acuerdo vigente %s: %.2f%% para %s.') % (
+                            agreement.display_name, percentage,
+                            agreement.partner_id.display_name)
+                else:
+                    percentage, picking_note = embarque._evaluate_picking_discount(picking)
                 picking.with_context(embarque_internal_write=True).write({
                     'embarque_discount_percentage': percentage,
                     'discount_state': 'draft',
+                    'discount_manual': False,
                     'discount_note': picking_note,
                 })
             embarque._propagate_picking_discounts()
+            embarque.pedidos_ids.mapped('sale_id').with_context(
+                paqueteria_update=True,
+                embarque_paqueteria_id=embarque.id,
+            )._update_paqueteria_line()
         return True
+
+    def _agreement_for_picking(self, picking):
+        """Acuerdo vigente para el cliente del traslado en este embarque."""
+        self.ensure_one()
+        customer = self._customer_for_picking(picking)
+        if not customer:
+            return self.env['embarques.agreement']
+        agreement_date = self.date_start or fields.Date.context_today(self)
+        commercial = customer.commercial_partner_id
+        return self.env['embarques.agreement'].search([
+            ('state', '=', 'active'),
+            ('partner_id.commercial_partner_id', '=', commercial.id),
+            ('date_start', '<=', agreement_date),
+            '|',
+            ('date_end', '=', False),
+            ('date_end', '>=', agreement_date),
+        ], order='date_start desc, id desc', limit=1)
 
     def _evaluate_picking_discount(self, picking):
         """Porcentaje propio: llena solo o consolida dentro del embarque."""
@@ -1161,6 +1266,8 @@ class Embarques(models.Model):
         embarques._assign_initial_load_orders()
         embarques._validate_vehicle_configuration()
         embarques.action_calculate_discount()
+        embarques.action_refresh_incident_lines()
+        embarques.action_refresh_operation_lines()
         return embarques
 
     def write(self, vals):
@@ -1221,6 +1328,9 @@ class Embarques(models.Model):
              'consolidation_min_qty', 'consolidation_min_percentage'}
                 & set(vals)):
             self.action_calculate_discount()
+        if 'pedidos_ids' in vals:
+            self.action_refresh_incident_lines()
+            self.action_refresh_operation_lines()
         return res
 
     def unlink(self):
@@ -1346,6 +1456,8 @@ class Embarques(models.Model):
 
     def action_avanzar_embarque(self):
         all_warnings = []
+        delivered = self.env.ref(
+            'embarques_module.stage_entregado', raise_if_not_found=False)
         for rec in self:
             # Dar prioridad al bloqueo por cierre para no mostrar errores de
             # configuración históricos (por ejemplo, órdenes repetidos).
@@ -1358,6 +1470,8 @@ class Embarques(models.Model):
                 order='sequence', limit=1)
             if siguiente:
                 rec.stage_id = siguiente
+                if delivered and siguiente == delivered:
+                    rec._cleanup_correct_incident_lines()
             all_warnings.extend('%s: %s' % (rec.display_name, warning)
                                 for warning in warnings)
         if all_warnings:
@@ -1753,3 +1867,571 @@ class Embarques(models.Model):
             lambda m: m.move_type == 'out_invoice' and m.state != 'cancel')
         facturas.action_generate_embarque_logistic_nc()
         return True
+
+    def action_refresh_operation_lines(self):
+        """Sincroniza la lista operativa desde los traslados embarcados."""
+        OperationLine = self.env['embarques.operation.line']
+        for embarque in self:
+            embarque._merge_duplicate_incident_lines()
+            seen = set()
+            for picking in embarque.pedidos_ids:
+                customer = embarque._customer_for_picking(picking)
+                grouped = {}
+                for move in picking.move_ids_without_package.filtered(
+                        lambda m: m.product_id):
+                    key = (
+                        picking.id,
+                        move.product_id.id,
+                        move.location_id.id,
+                        move.sale_line_id.id,
+                    )
+                    vals = grouped.setdefault(key, {
+                        'qty_ordered': 0.0,
+                        'qty_reserved': 0.0,
+                        'qty_done': 0.0,
+                        'move': move,
+                    })
+                    vals['qty_ordered'] = max(
+                        vals['qty_ordered'],
+                        move.sale_line_id.product_uom_qty
+                        if move.sale_line_id else move.product_uom_qty)
+                    if move.state not in ('done', 'cancel'):
+                        vals['qty_reserved'] += move.reserved_availability
+                    vals['qty_done'] += move.quantity_done
+                for key, data in grouped.items():
+                    move = data['move']
+                    seen.add(key)
+                    line = embarque.operation_line_ids.filtered(
+                        lambda item: item.picking_id == picking
+                        and item.product_id == move.product_id
+                        and item.location_id == move.location_id
+                        and item.sale_line_id == move.sale_line_id)[:1]
+                    vals = {
+                        'embarque_id': embarque.id,
+                        'picking_id': picking.id,
+                        'sale_order_id': picking.sale_id.id or False,
+                        'sale_line_id': move.sale_line_id.id or False,
+                        'partner_id': customer.id if customer else picking.partner_id.id,
+                        'product_id': move.product_id.id,
+                        'location_id': move.location_id.id or False,
+                        'qty_ordered': data['qty_ordered'],
+                        'qty_reserved': data['qty_reserved'],
+                        'qty_done': data['qty_done'],
+                    }
+                    if line:
+                        line.write(vals)
+                    else:
+                        OperationLine.create(vals)
+            stale = embarque.operation_line_ids.filtered(
+                lambda item: (
+                    item.picking_id.id,
+                    item.product_id.id,
+                    item.location_id.id,
+                    item.sale_line_id.id,
+                ) not in seen)
+            stale.unlink()
+        return True
+
+    def action_refresh_incident_lines(self):
+        """Prepara renglones de control por producto para incidencias."""
+        Incident = self.env['embarques.incident']
+        for embarque in self:
+            seen = set()
+            for picking in embarque.pedidos_ids:
+                customer = embarque._customer_for_picking(picking)
+                grouped = {}
+                for move in picking.move_ids_without_package.filtered(
+                        lambda m: m.product_id):
+                    key = (
+                        picking.id,
+                        move.product_id.id,
+                        move.location_id.id,
+                        move.sale_line_id.id,
+                    )
+                    vals = grouped.setdefault(key, {
+                        'ordered_qty': 0.0,
+                        'quantity_done': 0.0,
+                        'move': move,
+                    })
+                    vals['ordered_qty'] = max(
+                        vals['ordered_qty'],
+                        move.sale_line_id.product_uom_qty
+                        if move.sale_line_id else move.product_uom_qty)
+                    vals['quantity_done'] += move.quantity_done
+                for key, data in grouped.items():
+                    move = data['move']
+                    seen.add(key)
+                    line = embarque.incident_ids.filtered(
+                        lambda item: item.picking_id == picking
+                        and item.product_id == move.product_id
+                        and item.location_id == move.location_id
+                        and item.sale_line_id == move.sale_line_id)[:1]
+                    if not line:
+                        line = embarque.incident_ids.filtered(
+                            lambda item: item.picking_id == picking
+                            and item.product_id == move.product_id
+                            and not item.location_id
+                            and not item.sale_line_id)[:1]
+                    ordered_qty = data['ordered_qty']
+                    quantity_done = data['quantity_done']
+                    vals = {
+                        'embarque_id': embarque.id,
+                        'picking_id': picking.id,
+                        'sale_order_id': picking.sale_id.id or False,
+                        'sale_line_id': move.sale_line_id.id or False,
+                        'partner_id': (
+                            customer.id if customer else picking.partner_id.id),
+                        'product_id': move.product_id.id,
+                        'location_id': move.location_id.id or False,
+                        'quantity_admin': ordered_qty,
+                        'quantity_done': quantity_done,
+                    }
+                    if line:
+                        if line.incident_type in ('correct', 'pending'):
+                            difference = max(
+                                ordered_qty - quantity_done, 0.0)
+                            vals.update({
+                                'incident_type': (
+                                    'pending' if difference else 'correct'),
+                                'quantity': difference,
+                                'status': (
+                                    'review' if difference else 'correct'),
+                            })
+                        line.write(vals)
+                    else:
+                        difference = max(
+                            ordered_qty - quantity_done, 0.0)
+                        vals.update({
+                            'incident_type': (
+                                'pending' if difference else 'correct'),
+                            'quantity': difference,
+                            'status': 'review' if difference else 'correct',
+                        })
+                        Incident.create(vals)
+            stale = embarque.incident_ids.filtered(
+                lambda item: (
+                    item.picking_id.id,
+                    item.product_id.id,
+                    item.location_id.id,
+                    item.sale_line_id.id,
+                ) not in seen and item.incident_type == 'correct')
+            stale.unlink()
+            embarque._merge_legacy_location_incident_lines()
+        return True
+
+    def _merge_duplicate_incident_lines(self):
+        """Consolida datos legados de la vista anterior de tres pestañas."""
+        priority = {
+            'changed': 0,
+            'shortage': 1,
+            'surplus': 2,
+            'pending': 3,
+            'correct': 4,
+        }
+        for embarque in self:
+            grouped = {}
+            for line in embarque.incident_ids:
+                key = (
+                    line.picking_id.id,
+                    line.product_id.id,
+                    line.location_id.id,
+                    line.sale_line_id.id,
+                )
+                grouped.setdefault(key, self.env['embarques.incident'])
+                grouped[key] |= line
+            for lines in grouped.values():
+                if len(lines) <= 1:
+                    continue
+                keep = lines.sorted(
+                    lambda item: (
+                        priority.get(item.incident_type, 99),
+                        priority.get(item.status, 99),
+                        item.id,
+                    ))[:1]
+                others = lines - keep
+                values = {}
+                significant = lines.filtered(
+                    lambda item: item.incident_type != 'correct'
+                    or item.status != 'correct'
+                    or item.quantity
+                    or item.replacement_product_id
+                    or item.note)[:1]
+                if significant and significant != keep:
+                    values.update({
+                        'incident_type': significant.incident_type,
+                        'status': significant.status,
+                        'quantity': significant.quantity,
+                        'replacement_product_id': (
+                            significant.replacement_product_id.id or False),
+                        'note': significant.note,
+                    })
+                if values:
+                    keep.write(values)
+                others.unlink()
+
+    def _merge_legacy_location_incident_lines(self):
+        """Absorbe renglones antiguos sin ubicación en los renglones nuevos."""
+        for embarque in self:
+            legacy_lines = embarque.incident_ids.filtered(
+                lambda line: line.picking_id and line.product_id
+                and not line.location_id and not line.sale_line_id)
+            for legacy in legacy_lines:
+                target = embarque.incident_ids.filtered(
+                    lambda line: line != legacy
+                    and line.picking_id == legacy.picking_id
+                    and line.product_id == legacy.product_id
+                    and line.location_id)[:1]
+                if not target:
+                    continue
+                if (legacy.incident_type != 'correct'
+                        or legacy.status != 'correct'
+                        or legacy.quantity
+                        or legacy.replacement_product_id
+                        or legacy.note):
+                    target.write({
+                        'incident_type': legacy.incident_type,
+                        'status': legacy.status,
+                        'quantity': legacy.quantity,
+                        'replacement_product_id': (
+                            legacy.replacement_product_id.id or False),
+                        'note': legacy.note,
+                    })
+                legacy.unlink()
+
+    def _cleanup_correct_incident_lines(self):
+        """Al cerrar conserva sólo incidencias con seguimiento pendiente."""
+        self.mapped('incident_ids').filtered(
+            lambda line: line.incident_type == 'correct').unlink()
+        return True
+
+    def _incident_defaults_from_picking_moves(self, incident):
+        if not incident.embarque_id or not incident.product_id:
+            return {}
+        moves = incident.embarque_id.pedidos_ids.mapped(
+            'move_ids_without_package').filtered(
+                lambda move: move.product_id == incident.product_id)
+        if incident.sale_order_id:
+            moves = moves.filtered(
+                lambda move: move.picking_id.sale_id == incident.sale_order_id)
+        if incident.picking_id:
+            moves = moves.filtered(
+                lambda move: move.picking_id == incident.picking_id)
+        if incident.location_id:
+            moves = moves.filtered(
+                lambda move: move.location_id == incident.location_id)
+        if not moves:
+            return {}
+        move = moves[:1]
+        picking = move.picking_id
+        customer = incident.embarque_id._customer_for_picking(picking)
+        ordered_qty = (
+            move.sale_line_id.product_uom_qty
+            if move.sale_line_id else move.product_uom_qty)
+        return {
+            'picking_id': picking.id,
+            'sale_order_id': picking.sale_id.id or False,
+            'sale_line_id': move.sale_line_id.id or False,
+            'partner_id': customer.id if customer else picking.partner_id.id,
+            'location_id': move.location_id.id or False,
+            'quantity_admin': ordered_qty,
+            'quantity_done': move.quantity_done,
+        }
+
+
+class EmbarquesAgreement(models.Model):
+    _name = 'embarques.agreement'
+    _description = 'Acuerdo de descuento por cliente'
+    _order = 'date_start desc, id desc'
+
+    embarque_id = fields.Many2one(
+        'embarques.embarques', string='Embarque',
+        ondelete='cascade')
+    partner_id = fields.Many2one(
+        'res.partner', string='Cliente', required=True,
+        domain=[('customer_rank', '>', 0)])
+    percentage = fields.Float(
+        string='Porcentaje (%)', required=True, digits=(16, 2))
+    date_start = fields.Date(
+        string='Fecha del acuerdo', required=True,
+        default=fields.Date.context_today)
+    date_end = fields.Date(string='Fecha fin de acuerdo')
+    state = fields.Selection([
+        ('draft', 'Borrador'),
+        ('active', 'Activo'),
+        ('expired', 'Vencido'),
+        ('cancelled', 'Cancelado'),
+    ], string='Estado', default='active', required=True)
+    file = fields.Binary(string='Archivo')
+    file_name = fields.Char(string='Nombre del archivo')
+    note = fields.Char(string='Notas')
+
+    @api.constrains('percentage', 'date_start', 'date_end')
+    def _check_values(self):
+        for agreement in self:
+            if agreement.percentage < 0 or agreement.percentage > 100:
+                raise ValidationError(_(
+                    'El porcentaje del acuerdo debe estar entre 0%% y 100%%.'))
+            if (agreement.date_end
+                    and agreement.date_end < agreement.date_start):
+                raise ValidationError(_(
+                    'La fecha fin del acuerdo no puede ser menor a la fecha '
+                    'del acuerdo.'))
+
+    def name_get(self):
+        result = []
+        for agreement in self:
+            result.append((agreement.id, '%s %.2f%%' % (
+                agreement.partner_id.display_name, agreement.percentage)))
+        return result
+
+    def write(self, vals):
+        res = super().write(vals)
+        self.mapped('embarque_id').action_calculate_discount()
+        return res
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        records = super().create(vals_list)
+        records.mapped('embarque_id').action_calculate_discount()
+        return records
+
+    def unlink(self):
+        embarques = self.mapped('embarque_id')
+        res = super().unlink()
+        embarques.action_calculate_discount()
+        return res
+
+
+class EmbarquesIncident(models.Model):
+    _name = 'embarques.incident'
+    _description = 'Incidencia operativa de embarque'
+    _order = 'embarque_id, product_id, partner_id, picking_id, id'
+
+    embarque_id = fields.Many2one(
+        'embarques.embarques', string='Embarque', required=True,
+        ondelete='cascade')
+    incident_type = fields.Selection([
+        ('correct', 'Correcto'),
+        ('pending', 'Por definir'),
+        ('surplus', 'Sobrante'),
+        ('shortage', 'Faltante'),
+        ('changed', 'Llantas cambiadas'),
+    ], string='Tipo', required=True, default='correct')
+    picking_id = fields.Many2one(
+        'stock.picking', string='Traslado',
+        domain="[('embarque_ids', 'in', embarque_id)]")
+    sale_order_id = fields.Many2one(
+        'sale.order', string='Pedido', readonly=False)
+    sale_line_id = fields.Many2one(
+        'sale.order.line', string='Línea de pedido', readonly=True)
+    order_ref = fields.Char(
+        string='Pedido', compute='_compute_order_ref', store=True,
+        readonly=False)
+    picking_number = fields.Char(
+        string='Traslado', compute='_compute_picking_number', store=True)
+    partner_id = fields.Many2one('res.partner', string='Cliente')
+    product_id = fields.Many2one('product.product', string='Producto')
+    location_id = fields.Many2one('stock.location', string='Ubicación')
+    allowed_product_ids = fields.Many2many(
+        'product.product', 'embarques_incident_allowed_product_rel',
+        'incident_id', 'product_id', compute='_compute_allowed_product_ids')
+    replacement_product_id = fields.Many2one(
+        'product.product', string='Producto enviado')
+    quantity = fields.Float(string='Cantidad')
+    status = fields.Selection([
+        ('pending', 'Pendiente'),
+        ('correct', 'Correcto'),
+        ('review', 'Revisar'),
+    ], string='Estatus', default='correct', required=True)
+    quantity_admin = fields.Float(string='Cantidad administrativa', readonly=True)
+    quantity_done = fields.Float(string='Salida WH', readonly=True)
+    note = fields.Char(string='Notas')
+
+    @api.depends(
+        'embarque_id.incident_product_domain_ids',
+        'sale_order_id.order_line.product_id',
+    )
+    def _compute_allowed_product_ids(self):
+        for incident in self:
+            if incident.sale_order_id:
+                products = incident.sale_order_id.order_line.mapped('product_id')
+                if incident.embarque_id:
+                    products &= incident.embarque_id.incident_product_domain_ids
+            else:
+                products = incident.embarque_id.incident_product_domain_ids
+            incident.allowed_product_ids = products
+
+    def _get_reference_completion_vals(self):
+        self.ensure_one()
+        if not self.embarque_id or not self.product_id:
+            return {}
+        return self.embarque_id._incident_defaults_from_picking_moves(self)
+
+    @api.onchange('picking_id')
+    def _onchange_picking_id(self):
+        for incident in self:
+            if incident.picking_id:
+                incident.partner_id = (
+                    incident.picking_id.sale_id.partner_id
+                    or incident.picking_id.partner_id)
+                incident.sale_order_id = incident.picking_id.sale_id
+
+    @api.onchange('sale_order_id')
+    def _onchange_sale_order_id(self):
+        for incident in self:
+            if not incident.sale_order_id:
+                continue
+            picking = incident.embarque_id.pedidos_ids.filtered(
+                lambda item: item.sale_id == incident.sale_order_id)[:1]
+            if picking:
+                incident.picking_id = picking
+                incident.partner_id = (
+                    incident.embarque_id._customer_for_picking(picking)
+                    or picking.partner_id)
+            if incident.product_id and incident.product_id not in incident.allowed_product_ids:
+                incident.product_id = False
+                incident.location_id = False
+                incident.quantity_admin = 0.0
+                incident.quantity_done = 0.0
+
+    @api.onchange('sale_order_id', 'product_id', 'location_id')
+    def _onchange_reference_fields(self):
+        for incident in self:
+            vals = incident.embarque_id._incident_defaults_from_picking_moves(
+                incident)
+            if vals:
+                incident.update(vals)
+
+    @api.onchange('incident_type')
+    def _onchange_incident_type(self):
+        for incident in self:
+            if incident.incident_type == 'changed':
+                incident.status = 'review'
+                if not incident.quantity:
+                    incident.quantity = (
+                        incident.quantity_done
+                        or incident.quantity_admin
+                        or 1.0)
+            elif incident.incident_type == 'correct':
+                incident.status = 'correct'
+                incident.quantity = 0.0
+                incident.replacement_product_id = False
+            elif incident.incident_type in ('shortage', 'surplus', 'pending'):
+                incident.status = 'review'
+                if not incident.quantity:
+                    incident.quantity = max(
+                        incident.quantity_admin - incident.quantity_done, 0.0)
+
+    def action_mark_changed(self):
+        for incident in self:
+            quantity = (
+                incident.quantity
+                or incident.quantity_done
+                or incident.quantity_admin
+                or 1.0)
+            incident.write({
+                'incident_type': 'changed',
+                'status': 'review',
+                'quantity': quantity,
+            })
+        return True
+
+    def action_mark_shortage(self):
+        for incident in self:
+            incident.write({
+                'incident_type': 'shortage',
+                'status': 'review',
+                'quantity': incident.quantity or max(
+                    incident.quantity_admin - incident.quantity_done, 0.0),
+            })
+        return True
+
+    def action_mark_surplus(self):
+        for incident in self:
+            incident.write({
+                'incident_type': 'surplus',
+                'status': 'review',
+                'quantity': incident.quantity or 1.0,
+            })
+        return True
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        records = super().create(vals_list)
+        for incident in records:
+            completion = incident._get_reference_completion_vals()
+            if completion:
+                incident.with_context(skip_incident_completion=True).write(
+                    completion)
+        return records
+
+    def write(self, vals):
+        res = super().write(vals)
+        if not self.env.context.get('skip_incident_completion') and (
+                {'sale_order_id', 'product_id', 'location_id'} & set(vals)):
+            for incident in self:
+                completion = incident._get_reference_completion_vals()
+                if completion:
+                    incident.with_context(skip_incident_completion=True).write(
+                        completion)
+        return res
+
+    @api.depends('picking_id.name')
+    def _compute_picking_number(self):
+        for incident in self:
+            name = incident.picking_id.name or ''
+            incident.picking_number = name.rsplit('/', 1)[-1] if name else ''
+
+    @api.depends('sale_order_id.name', 'picking_id.sale_id.name')
+    def _compute_order_ref(self):
+        for incident in self:
+            order = incident.sale_order_id or incident.picking_id.sale_id
+            incident.order_ref = order.name or ''
+
+
+class EmbarquesOperationLine(models.Model):
+    _name = 'embarques.operation.line'
+    _description = 'Avance operativo de picking por embarque'
+    _order = 'partner_id, picking_id, product_id'
+
+    embarque_id = fields.Many2one(
+        'embarques.embarques', string='Embarque', required=True,
+        ondelete='cascade')
+    picking_id = fields.Many2one('stock.picking', string='Traslado', readonly=True)
+    sale_order_id = fields.Many2one('sale.order', string='Pedido', readonly=True)
+    sale_line_id = fields.Many2one(
+        'sale.order.line', string='Línea de pedido', readonly=True)
+    order_ref = fields.Char(
+        string='Pedido', compute='_compute_order_ref', store=True)
+    picking_number = fields.Char(
+        string='Traslado', compute='_compute_picking_number', store=True)
+    partner_id = fields.Many2one('res.partner', string='Cliente', readonly=True)
+    product_id = fields.Many2one('product.product', string='Producto', readonly=True)
+    location_id = fields.Many2one(
+        'stock.location', string='Ubicación', readonly=True)
+    qty_ordered = fields.Float(string='Pedido', readonly=True)
+    qty_reserved = fields.Float(string='Reservado', readonly=True)
+    qty_done = fields.Float(string='Hecho', readonly=True)
+    picking_done = fields.Boolean(string='Picking hecho')
+    status = fields.Selection([
+        ('pending', 'Pendiente'),
+        ('done', 'Hecho'),
+    ], string='Estado operativo', compute='_compute_status', store=True)
+    note = fields.Char(string='Notas')
+
+    @api.depends('picking_done')
+    def _compute_status(self):
+        for line in self:
+            line.status = 'done' if line.picking_done else 'pending'
+
+    @api.depends('picking_id.name')
+    def _compute_picking_number(self):
+        for line in self:
+            name = line.picking_id.name or ''
+            line.picking_number = name.rsplit('/', 1)[-1] if name else ''
+
+    @api.depends('sale_order_id.name', 'picking_id.sale_id.name')
+    def _compute_order_ref(self):
+        for line in self:
+            order = line.sale_order_id or line.picking_id.sale_id
+            line.order_ref = order.name or ''

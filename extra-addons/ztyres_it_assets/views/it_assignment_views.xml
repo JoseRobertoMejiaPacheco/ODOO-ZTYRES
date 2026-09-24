@@ -19,6 +19,11 @@
         <field name="model">ztyres.it.assignment</field>
         <field name="arch" type="xml">
             <form string="Asignación">
+                <header>
+                    <button name="action_print_resguardo" type="object"
+                            string="Imprimir resguardo (Excel)" class="btn-primary"
+                            attrs="{'invisible': [('equipment_id', '=', False)]}"/>
+                </header>
                 <sheet>
                     <group>
                         <group>
@@ -36,6 +41,18 @@
                     <group>
                         <field name="reason"/>
                         <field name="notes"/>
+                    </group>
+                    <group string="Formato de resguardo - Entrega" attrs="{'invisible': [('equipment_id', '=', False)]}">
+                        <field name="physical_condition"/>
+                        <field name="physical_condition_other"
+                               attrs="{'invisible': [('physical_condition', '!=', 'other')]}"/>
+                    </group>
+                    <group string="Formato de resguardo - Devolución" attrs="{'invisible': [('equipment_id', '=', False)]}">
+                        <field name="return_reason"/>
+                        <field name="return_reason_other"
+                               attrs="{'invisible': [('return_reason', '!=', 'other')]}"/>
+                        <field name="return_condition"/>
+                        <field name="return_notes"/>
                     </group>
                 </sheet>
             </form>

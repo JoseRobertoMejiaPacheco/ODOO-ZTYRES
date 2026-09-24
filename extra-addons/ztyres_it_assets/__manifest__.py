@@ -1,6 +1,6 @@
 {
     'name': 'ZTYRES - Gestión de Equipo de TI',
-    'version': '16.0.1.0.0',
+    'version': '16.0.1.1.0',
     'summary': 'Inventario, asignaciones, servicios y mantenimiento de equipo de TI',
     'category': 'Tools',
     'author': 'ZTYRES',

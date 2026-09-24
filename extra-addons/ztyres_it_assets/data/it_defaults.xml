@@ -56,6 +56,14 @@
         <field name="name">Audífonos</field>
         <field name="sequence">70</field>
     </record>
+    <record id="accessory_bag" model="ztyres.it.accessory.type">
+        <field name="name">Mochila / funda</field>
+        <field name="sequence">80</field>
+    </record>
+    <record id="accessory_ups" model="ztyres.it.accessory.type">
+        <field name="name">No-break / regulador</field>
+        <field name="sequence">90</field>
+    </record>
     <record id="accessory_other" model="ztyres.it.accessory.type">
         <field name="name">Otro</field>
         <field name="sequence">100</field>

@@ -65,4 +65,16 @@
         </field>
     </record>
 
+    <record id="view_stock_picking_tree_show_embarques" model="ir.ui.view">
+        <field name="name">stock.picking.tree.show.embarques</field>
+        <field name="model">stock.picking</field>
+        <field name="inherit_id" ref="stock.vpicktree"/>
+        <field name="priority">16</field>
+        <field name="arch" type="xml">
+            <xpath expr="//tree/field[1]" position="before">
+                <field name="embarque_ids" optional="show" widget="many2many_tags"/>
+            </xpath>
+        </field>
+    </record>
+
 </odoo>

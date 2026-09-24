@@ -20,6 +20,9 @@
     <menuitem id="menu_policy" name="Rangos y Descuentos"
               parent="menu_config" action="action_policy" sequence="20"/>
 
+    <menuitem id="menu_agreements" name="Acuerdos"
+              parent="menu_config" action="action_agreement" sequence="25"/>
+
     <menuitem id="menu_zonas" name="Zonas"
               parent="menu_config" action="action_zona" sequence="30"/>
 

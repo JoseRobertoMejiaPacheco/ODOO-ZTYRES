@@ -175,4 +175,59 @@
         </field>
     </record>
 
+    <!-- ── Acuerdos por cliente ───────────────────────────────────────────── -->
+    <record id="view_agreement_tree" model="ir.ui.view">
+        <field name="name">embarques.agreement.tree</field>
+        <field name="model">embarques.agreement</field>
+        <field name="arch" type="xml">
+            <tree string="Acuerdos" editable="bottom" multi_edit="1">
+                <field name="partner_id"/>
+                <field name="percentage"/>
+                <field name="date_start"/>
+                <field name="date_end"/>
+                <field name="state" widget="badge"
+                       decoration-success="state == 'active'"
+                       decoration-warning="state == 'draft'"
+                       decoration-muted="state == 'expired'"
+                       decoration-danger="state == 'cancelled'"/>
+                <field name="file" filename="file_name"/>
+                <field name="file_name" invisible="1"/>
+                <field name="embarque_id" optional="hide"/>
+                <field name="note"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="view_agreement_form" model="ir.ui.view">
+        <field name="name">embarques.agreement.form</field>
+        <field name="model">embarques.agreement</field>
+        <field name="arch" type="xml">
+            <form string="Acuerdo">
+                <sheet>
+                    <group>
+                        <field name="partner_id"/>
+                        <field name="percentage"/>
+                        <field name="state"/>
+                    </group>
+                    <group>
+                        <field name="date_start"/>
+                        <field name="date_end"/>
+                        <field name="embarque_id"/>
+                    </group>
+                    <group>
+                        <field name="file" filename="file_name"/>
+                        <field name="file_name" invisible="1"/>
+                        <field name="note"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_agreement" model="ir.actions.act_window">
+        <field name="name">Acuerdos</field>
+        <field name="res_model">embarques.agreement</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
 </odoo>

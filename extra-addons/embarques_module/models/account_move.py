@@ -288,7 +288,7 @@ class AccountMove(models.Model):
             # efectivamente timbrado en la factura origen.
             vals['generic_edi'] = receiver == 'XAXX010101000' if receiver else False
         if 'l10n_mx_edi_usage' in self._fields:
-            vals['l10n_mx_edi_usage'] = 'S01' if receiver == 'XAXX010101000' else 'G02'
+            vals['l10n_mx_edi_usage'] = 'S01' if receiver == 'XAXX010101000' else 'G01'
         if 'x_studio_tipo' in self._fields:
             vals['x_studio_tipo'] = 'Bonificación'
         return vals
@@ -389,7 +389,7 @@ class AccountMove(models.Model):
                     vals['generic_edi'] = receiver == 'XAXX010101000'
                 if 'l10n_mx_edi_usage' in nc._fields:
                     vals['l10n_mx_edi_usage'] = (
-                        'S01' if receiver == 'XAXX010101000' else 'G02')
+                        'S01' if receiver == 'XAXX010101000' else 'G01')
                 if ('l10n_mx_edi_origin' in nc._fields
                         and 'l10n_mx_edi_cfdi_uuid' in invoice._fields
                         and invoice.l10n_mx_edi_cfdi_uuid):

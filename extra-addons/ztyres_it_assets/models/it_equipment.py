@@ -133,3 +133,18 @@ class ItEquipment(models.Model):
         action['domain'] = [('equipment_id', '=', self.id)]
         action['context'] = {'default_equipment_id': self.id}
         return action
+
+    def _get_current_assignment(self):
+        """Asignación vigente (sin fecha de fin) o, si no hay, la más reciente."""
+        self.ensure_one()
+        assignments = self.assignment_ids  # ordenadas por date_from desc, id desc
+        return (assignments.filtered(lambda a: not a.date_to) or assignments)[:1]
+
+    def action_print_resguardo(self):
+        """Descarga el formato Z-FO-TI-01 (Excel) lleno para este equipo."""
+        self.ensure_one()
+        return {
+            'type': 'ir.actions.act_url',
+            'url': '/ztyres_it_assets/resguardo/equipment/%d' % self.id,
+            'target': 'self',
+        }

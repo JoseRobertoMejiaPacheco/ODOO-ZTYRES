@@ -15,6 +15,11 @@
                 <field name="ruta_id"/>
                 <field name="vehicle_id" optional="show"/>
                 <field name="total_llantas" optional="show"/>
+                <field name="qty_done" string="Entregadas" optional="show"/>
+                <field name="qty_invoiced" string="Facturadas" optional="show"/>
+                <field name="maneuver_qty" optional="show"/>
+                <field name="maneuver_charged_qty" optional="show"/>
+                <field name="maneuver_pending_qty" optional="hide"/>
                 <field name="stop_count" optional="show"/>
                 <field name="volumen" optional="show"/>
                 <field name="ocupacion_m3" widget="progressbar" optional="show"/>
@@ -36,6 +41,7 @@
         <field name="arch" type="xml">
             <kanban default_group_by="stage_id" group_create="false">
                 <field name="company_id"/>
+                <field name="currency_id"/>
                 <field name="name"/>
                 <field name="stage_id"/>
                 <field name="kanban_state"/>
@@ -43,6 +49,12 @@
                 <field name="date_start"/>
                 <field name="tag_ids"/>
                 <field name="total_llantas"/>
+                <field name="qty_done"/>
+                <field name="qty_invoiced"/>
+                <field name="maneuver_qty"/>
+                <field name="maneuver_done_qty"/>
+                <field name="maneuver_charged_qty"/>
+                <field name="maneuver_pending_qty"/>
                 <field name="volumen"/>
                 <field name="ocupacion_m3"/>
                 <templates>
@@ -61,6 +73,14 @@
                                         <field name="vehicle_id"/> ·
                                         <field name="volumen"/> m³ ·
                                         <field name="ocupacion_m3"/>%
+                                    </div>
+                                    <div class="text-muted">
+                                        Entregado <field name="qty_done"/> ·
+                                        Facturado <field name="qty_invoiced"/>
+                                    </div>
+                                    <div t-if="record.maneuver_qty.raw_value" class="text-muted">
+                                        Maniobras <field name="maneuver_qty"/> ·
+                                        Cobradas <field name="maneuver_charged_qty"/>
                                     </div>
                                 </div>
                                 <div class="o_kanban_record_bottom">
@@ -159,12 +179,18 @@
                         <group>
                             <field name="qty_ordered" string="Pedido"
                                    class="o_embarque_number"/>
-                            <field name="qty_done" string="Hecho"
+                            <field name="qty_done" string="Entregado"
+                                   class="o_embarque_number"/>
+                            <field name="qty_invoiced" string="Facturado"
                                    class="o_embarque_number"/>
                         </group>
                         <group>
                             <field name="qty_reserved" string="Reservado"
                                    class="o_embarque_number"/>
+                            <field name="maneuver_qty"/>
+                            <field name="maneuver_done_qty"/>
+                            <field name="maneuver_charged_qty"/>
+                            <field name="maneuver_pending_qty"/>
                             <field name="preparation_state" widget="badge"
                                    decoration-success="preparation_state == 'ready'"
                                    decoration-warning="preparation_state == 'pending'"
@@ -250,6 +276,7 @@
                             <field name="destino_id" string="Destino" readonly="1"
                                    optional="hide" options="{'no_open': True}"/>
                             <field name="origin" string="Origen" readonly="1"/>
+                            <field name="charge_paqueteria" string="Cobrar paq."/>
                             <field name="invoice_names" string="Facturas" readonly="1"/>
                             <field name="pedimento_names" string="Pedimentos" readonly="1"
                                    optional="show"/>
@@ -282,6 +309,89 @@
                                    decoration-info="state not in ('done','cancel')"/>
                         </tree>
                     </field>
+
+                    <notebook>
+                        <page string="Sobrantes / Faltantes / Cambios">
+                            <button name="action_refresh_incident_lines"
+                                    type="object" string="Actualizar desde embarque"
+                                    icon="fa-refresh" class="btn-secondary"/>
+                            <field name="incident_picking_domain_ids" invisible="1"/>
+                            <field name="incident_sale_order_domain_ids" invisible="1"/>
+                            <field name="incident_partner_domain_ids" invisible="1"/>
+                            <field name="incident_location_domain_ids" invisible="1"/>
+                            <field name="incident_product_domain_ids" invisible="1"/>
+                            <field name="incident_ids">
+                                <tree editable="bottom" create="1" delete="1">
+                                    <field name="embarque_id" invisible="1"/>
+                                    <field name="sale_line_id" invisible="1"/>
+                                    <field name="allowed_product_ids" invisible="1"/>
+                                    <field name="picking_id" invisible="1"
+                                           domain="[('id', 'in', parent.incident_picking_domain_ids)]"/>
+                                    <field name="sale_order_id" string="Pedido"
+                                           domain="[('id', 'in', parent.incident_sale_order_domain_ids)]"/>
+                                    <field name="picking_number" string="Traslado" readonly="1"
+                                           optional="hide"/>
+                                    <field name="partner_id"
+                                           readonly="1"
+                                           domain="[('id', 'in', parent.incident_partner_domain_ids)]"/>
+                                    <field name="location_id"
+                                           readonly="1"
+                                           domain="[('id', 'in', parent.incident_location_domain_ids)]"/>
+                                    <field name="product_id"
+                                           domain="[('id', 'in', allowed_product_ids)]"/>
+                                    <field name="quantity_admin" string="Pedido" readonly="1"/>
+                                    <field name="quantity_done" readonly="1"/>
+                                    <field name="quantity" string="Diferencia"/>
+                                    <button name="action_mark_shortage" type="object"
+                                            string="Faltante" icon="fa-minus"
+                                            attrs="{'invisible': [('incident_type', '=', 'shortage')]}"/>
+                                    <button name="action_mark_surplus" type="object"
+                                            string="Sobrante" icon="fa-plus"
+                                            attrs="{'invisible': [('incident_type', '=', 'surplus')]}"/>
+                                    <button name="action_mark_changed" type="object"
+                                            string="Cambio" icon="fa-exchange"
+                                            attrs="{'invisible': [('incident_type', '=', 'changed')]}"/>
+                                    <field name="incident_type"
+                                           decoration-success="incident_type == 'correct'"
+                                           decoration-muted="incident_type == 'pending'"
+                                           decoration-info="incident_type == 'surplus'"
+                                           decoration-warning="incident_type == 'shortage'"
+                                           decoration-danger="incident_type == 'changed'"/>
+                                    <field name="replacement_product_id"
+                                           optional="show"/>
+                                    <field name="status" widget="badge"
+                                           decoration-success="status == 'correct'"
+                                           decoration-warning="status == 'pending'"
+                                           decoration-danger="status == 'review'"/>
+                                    <field name="note"/>
+                                </tree>
+                            </field>
+                        </page>
+                        <page string="Picking operativo">
+                            <button name="action_refresh_operation_lines"
+                                    type="object" string="Actualizar desde embarque"
+                                    icon="fa-refresh" class="btn-secondary"/>
+                            <field name="operation_line_ids">
+                                <tree editable="bottom" create="0" delete="0">
+                                    <field name="picking_id" optional="hide"/>
+                                    <field name="picking_number" readonly="1"/>
+                                    <field name="order_ref"/>
+                                    <field name="sale_order_id" optional="hide"/>
+                                    <field name="partner_id"/>
+                                    <field name="location_id"/>
+                                    <field name="product_id"/>
+                                    <field name="qty_ordered"/>
+                                    <field name="qty_reserved"/>
+                                    <field name="qty_done"/>
+                                    <field name="picking_done" widget="boolean_toggle"/>
+                                    <field name="status" widget="badge"
+                                           decoration-success="status == 'done'"
+                                           decoration-warning="status == 'pending'"/>
+                                    <field name="note"/>
+                                </tree>
+                            </field>
+                        </page>
+                    </notebook>
 
                     <group string="Resumen del embarque">
                         <group string="Carga">
