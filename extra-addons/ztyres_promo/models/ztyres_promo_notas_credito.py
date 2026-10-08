@@ -100,6 +100,21 @@ class ZtyresVolumen(models.Model):
             'el Nombre de la promoción.'
         ),
     )
+    cotizador_volume_selector = fields.Selection(
+        [
+            ('include', 'Sí'),
+            ('exclude', 'No'),
+        ],
+        string='Volumen estimado',
+        default='exclude',
+        required=True,
+        help=(
+            'Controla si los rangos de esta promoción se relacionan con '
+            'el desplegable "Volumen estimado" del cotizador.\n'
+            '- Sí: entra al desplegable si tiene rangos.\n'
+            '- No: nunca se autoselecciona desde ese desplegable.'
+        ),
+    )
     start_date = fields.Date(string='Fecha Inicio')
     end_date = fields.Date(string='Fecha Fin')
     status = fields.Selection(
@@ -753,7 +768,13 @@ class ZtyresVolumen(models.Model):
         ])
 
     def write(self, values):
-        return super().write(self._sync_forced_policy(dict(values)))
+        values = self._sync_forced_policy(dict(values))
+        if (
+            'cotizador_volume_selector' in values
+            and values.get('cotizador_volume_selector') not in ('include', 'exclude')
+        ):
+            values.pop('cotizador_volume_selector', None)
+        return super().write(values)
 
     # ==================================================================
     # Explicación legible de la configuración

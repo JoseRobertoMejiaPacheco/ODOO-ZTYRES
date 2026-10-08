@@ -38,6 +38,7 @@
             <field name="arch" type="xml">
                 <tree string="Apply Out Invoice Payments" decoration-success="state == 'done'">
                     <field name="name"/>
+                    <field name="active" invisible="1"/>
                     <field name="currency_id" invisible="1"/>
                     <field name="partner_id"/>
                     <field name="payment_id"/>
@@ -58,6 +59,10 @@
                 <form string="Aplicación de Pagos Múltiple">
 
                 <header>
+                    <button name="action_archive" type="object" string="Archivar"
+                            attrs="{'invisible': [('active', '=', False)]}"/>
+                    <button name="action_unarchive" type="object" string="Restaurar"
+                            attrs="{'invisible': [('active', '=', True)]}"/>
                     <field name="state" widget="statusbar"/>
                 </header>
 
@@ -67,6 +72,7 @@
                                 <field name="name" attrs="{'invisible':[('name', '=', '/')]}" readonly="1" placeholder="Draft"/>
                             </h1>
                         </div>
+                        <field name="active" invisible="1"/>
                         <field name="currency_id" invisible="1"/>
                         <field name="company_id" invisible="1"/>
                         <group>
@@ -120,6 +126,22 @@
             <field name="name">Aplicación de Pagos Múltiple</field>
             <field name="res_model">apply_out_invoice.payments</field>
             <field name="view_mode">tree,form</field>
+            <field name="context">{'active_test': True}</field>
+        </record>
+
+        <record id="view_apply_out_invoice_payments_search" model="ir.ui.view">
+            <field name="name">apply.out.invoice.payments.search</field>
+            <field name="model">apply_out_invoice.payments</field>
+            <field name="arch" type="xml">
+                <search string="Aplicación de Pagos Múltiple">
+                    <field name="name"/>
+                    <field name="partner_id"/>
+                    <field name="payment_id"/>
+                    <filter string="Archivados" name="inactive"
+                            domain="[('active', '=', False)]"
+                            context="{'active_test': False}"/>
+                </search>
+            </field>
         </record>
 
         <record id="seq_apply_out_invoice" model="ir.sequence">

@@ -387,12 +387,37 @@ class SaleOrder(models.Model):
                     tiers = list(grouped.values())
                 tiers.sort(key=lambda t: (t['min'], t['max'], t['discount']))
                 coupons = []
+                gift_card_source = getattr(promo, 'gift_card_source', False) or ''
+                promo_name = '%s %s' % (promo.nombre or '', promo.display_name or '')
+                gift_card_display = (
+                    reward_type == 'gift_card'
+                    or (
+                        gift_card_source == 'product'
+                        and (
+                            promo.gift_card_ids
+                            or 'TARJ' in promo_name.upper()
+                            or 'REGALO' in promo_name.upper()
+                        )
+                    )
+                )
+                pms_price_by_product = {
+                    record.product_id.product_variant_id.id: record.price or 0.0
+                    for record in promo.pms_price_ids
+                    if record.product_id.product_variant_id and record.price > 0
+                } if promo._uses_pms_base() else {}
+                gift_card_from_pms = bool(
+                    pms_price_by_product
+                    and policy == 'amount_rim'
+                    and not gift_card_display
+                    and ('B/F-' in promo_name.upper() or 'BRIDGESTONE' in promo_name.upper())
+                )
+
                 if policy == 'coupons':
                     coupons = [
                         {'tmpl_id': c.product_id.id, 'amount': c.amount}
                         for c in promo.coupon_ids if c.product_id
                     ]
-                elif reward_type == 'gift_card':
+                elif gift_card_display:
                     # Promo ZT: el tramo de monto solo habilita el beneficio;
                     # el descuento unitario del cotizador sale del Excel
                     # código→valor. ``amount`` se captura CON IVA, mientras
@@ -409,6 +434,42 @@ class SaleOrder(models.Model):
                         for card in promo.gift_card_ids
                         if card.product_id and card.amount > 0
                     ]
+                    loaded_tmpl_ids = {row['tmpl_id'] for row in coupons}
+                    if pms_price_by_product:
+                        for product_id, pms_price in pms_price_by_product.items():
+                            variant = matched_variants.get(product_id)
+                            if not variant:
+                                continue
+                            tmpl_id = variant.product_tmpl_id.id
+                            if tmpl_id in loaded_tmpl_ids:
+                                continue
+                            product_row = {
+                                'product_id': product_id,
+                                'tmpl_id': tmpl_id,
+                            }
+                            percent = max([
+                                self._cotizador_tier_percent_for_product(
+                                    product_row, {'product_ids': matched, **{
+                                        'reward_type': 'gift_card',
+                                        'key_size_product_ids': [
+                                            v.id for v in matched_variants.values()
+                                            if v.product_tmpl_id in promo.key_size_product_ids
+                                        ],
+                                    }}, tier
+                                )
+                                for tier in tiers
+                            ] or [0.0])
+                            if percent <= 0:
+                                continue
+                            amount_with_tax = pms_price * percent / 100.0
+                            amount = amount_with_tax / (promo._pms_tax_factor() or 1.0)
+                            loaded_tmpl_ids.add(tmpl_id)
+                            coupons.append({
+                                'tmpl_id': tmpl_id,
+                                'amount': amount,
+                                'amount_with_tax': amount_with_tax,
+                                'from_pms': True,
+                            })
                 policy_labels = {
                     'quantity': 'Cantidad',
                     'amount': 'Monto',
@@ -428,10 +489,17 @@ class SaleOrder(models.Model):
                         or promo.nombre
                         or promo.display_name
                     ),
+                    'cotizador_volume_selector': (
+                        getattr(promo, 'cotizador_volume_selector', 'exclude')
+                        or 'exclude'
+                    ),
                     'promo_type': policy,
                     'promo_conditions': scope,
                     'policy_label': policy_labels.get(policy, policy or 'Sin política'),
-                    'reward_type': reward_type,
+                    'reward_type': 'gift_card' if gift_card_display else reward_type,
+                    'reward_type_real': reward_type,
+                    'gift_card_source': gift_card_source,
+                    'gift_card_from_pms': gift_card_from_pms,
                     'start_date': str(promo.start_date or ''),
                     'end_date': str(promo.end_date or ''),
                     'tiers': tiers,
@@ -559,6 +627,64 @@ class SaleOrder(models.Model):
         return active
 
     @api.model
+    def _cotizador_is_volume_promo(self, promo):
+        return (
+            (promo or {}).get('cotizador_volume_selector') == 'include'
+            and (promo or {}).get('reward_type') != 'gift_card'
+        )
+
+    @api.model
+    def _cotizador_tier_percent_for_product(self, product_row, promo, tier):
+        """Porcentaje nominal de una promo para este producto.
+
+        Se usa solo para mostrar el % de Volumen Mensual en el Excel; el
+        cálculo monetario sigue saliendo de _cotizador_promo_discount.
+        """
+        if not tier:
+            return 0.0
+        pid = product_row.get('product_id')
+        if pid not in promo.get('product_ids', []):
+            return 0.0
+        if promo.get('reward_type') == 'fixed_amount':
+            return 0.0
+        if tier.get('product_discounts'):
+            return float(tier['product_discounts'].get(str(pid), 0.0) or 0.0)
+        if (
+            tier.get('key_size_discount', 0) > 0
+            and pid in promo.get('key_size_product_ids', [])
+        ):
+            return float(tier['key_size_discount'] or 0.0)
+        return float(tier.get('discount') or 0.0)
+
+    @api.model
+    def _cotizador_volume_percent_for_product(self, product_row, active_promos):
+        values = [
+            self._cotizador_tier_percent_for_product(product_row, pr, tier)
+            for pr, tier in active_promos
+            if self._cotizador_is_volume_promo(pr)
+        ]
+        values = [value for value in values if value > 0]
+        return max(values or [0.0])
+
+    @api.model
+    def _cotizador_volume_range_label(self, volume_promos):
+        ranges = []
+        for _pr, tier in volume_promos:
+            if not tier:
+                continue
+            minimum = int(round(float(tier.get('min') or 0)))
+            maximum = int(round(float(tier.get('max') or 999999999)))
+            if minimum <= 0:
+                continue
+            if maximum >= 999999999:
+                label = f'{minimum:,}+ pzas'
+            else:
+                label = f'{minimum:,} - {maximum:,} pzas'
+            if label not in ranges:
+                ranges.append(label)
+        return ', '.join(ranges)
+
+    @api.model
     def _cotizador_promo_discount(self, product_row, promo, tier):
         """Descuento en $ que aporta UNA promo a UN producto (sobre
         lista). Devuelve 0 si el producto no aplica. Es la misma
@@ -631,17 +757,31 @@ class SaleOrder(models.Model):
         return max(lista - mayoreo, 0.0)
 
     @api.model
-    def _cotizador_gift_card_amount(self, product_row, promo):
+    def _cotizador_gift_card_amount(self, product_row, promo, tier=None):
         """Monto de tarjeta de regalo por pieza para este producto.
 
         Beneficio aparte: el cliente recibe una tarjeta por ese valor y
         el precio de la llanta no cambia. Por eso NO entra a
         ``_cotizador_promo_discount`` y sí tiene columna propia.
         """
-        if promo.get('reward_type') != 'gift_card':
+        if promo.get('reward_type') != 'gift_card' and not promo.get('gift_card_from_pms'):
             return 0.0
-        if product_row.get('product_id') not in promo.get('product_ids', []):
-            return 0.0
+        pms = (promo.get('pms_price_by_product') or {}).get(
+            str(product_row.get('product_id'))
+        )
+        if pms is not None:
+            if tier:
+                percent = self._cotizador_tier_percent_for_product(
+                    product_row, promo, tier
+                )
+            else:
+                percent = max([
+                    self._cotizador_tier_percent_for_product(product_row, promo, row)
+                    for row in promo.get('tiers', [])
+                ] or [0.0])
+            if percent > 0:
+                amount_with_tax = float(pms or 0.0) * percent / 100.0
+                return amount_with_tax / (promo.get('pms_tax_factor') or 1.0)
         tmpl_id = product_row.get('tmpl_id')
         for card in promo.get('coupons', []):
             if card['tmpl_id'] == tmpl_id and card['amount'] > 0:
@@ -812,6 +952,15 @@ class SaleOrder(models.Model):
         if mode == 'list':
             catalog = self._cotizador_filter_catalog(catalog, state)
         active_promos = self._cotizador_active_promos(promo_sim, cart)
+        all_promos = self.get_cotizador_promos()
+        active_gift_promos = [
+            (pr, tier) for pr, tier in active_promos
+            if pr.get('reward_type') == 'gift_card' or pr.get('gift_card_from_pms')
+        ]
+        gift_card_promos = active_gift_promos or [
+            (pr, None) for pr in all_promos
+            if pr.get('reward_type') == 'gift_card' or pr.get('gift_card_from_pms')
+        ]
         policy_pct = self._cotizador_policy_total_pct(profile)
         iva_factor = 1 + self.IVA_RATE_MX if show_iva else 1.0
 
@@ -874,7 +1023,6 @@ class SaleOrder(models.Model):
             headers += [
                 'Inv.',
                 'Tránsito',
-                'Backorder',
                 'Precio',
                 'Pr Promo',
                 'Tarjeta de regalo',
@@ -884,10 +1032,10 @@ class SaleOrder(models.Model):
                 'Cant.',
                 'Inv.',
                 'Tránsito',
-                'Backorder',
                 'Precio',
                 'Pr Promo',
                 '% Desc.',
+                '% Promoción Volumen Mensual',
                 'Subtotal',
                 'Tarjeta de regalo',
                 'NC estimada',
@@ -991,12 +1139,35 @@ class SaleOrder(models.Model):
             ]
         else:
             display_promos = active_promos
+        volume_display_promos = [
+            (pr, tier) for pr, tier in display_promos
+            if self._cotizador_is_volume_promo(pr)
+        ]
+        regular_display_promos = [
+            (pr, tier) for pr, tier in display_promos
+            if not self._cotizador_is_volume_promo(pr)
+        ]
         promo_label = 'Promociones que aplican a este pedido' if mode == 'order' else 'Promociones seleccionadas'
         ws.cell(row=r, column=1, value=promo_label).font = label_font
         ws.merge_cells(start_row=r, start_column=1, end_row=r, end_column=n_cols)
         r += 1
-        if display_promos:
-            for pr, tier in display_promos:
+        if volume_display_promos or regular_display_promos:
+            if volume_display_promos:
+                range_label = self._cotizador_volume_range_label(volume_display_promos)
+                detail = (
+                    f'Rango seleccionado: {range_label}'
+                    if range_label else 'Rango seleccionado en el cotizador'
+                )
+                cell = ws.cell(
+                    row=r, column=1,
+                    value=f'• Promoción Volumen Mensual — {detail}')
+                cell.font = Font(name='Arial', size=10, bold=True, color=BRAND)
+                cell.fill = PatternFill('solid', fgColor=BAND)
+                cell.alignment = Alignment(indent=1, wrap_text=True, vertical='center')
+                ws.merge_cells(start_row=r, start_column=1, end_row=r, end_column=n_cols)
+                ws.row_dimensions[r].height = 24
+                r += 1
+            for pr, tier in regular_display_promos:
                 detail = self._cotizador_promo_detail(pr, tier)
                 color = self._cotizador_promo_color(pr['id'])
                 cell = ws.cell(
@@ -1071,10 +1242,16 @@ class SaleOrder(models.Model):
             promos_hit_colors = []
             for pr, tier in active_promos:
                 d = self._cotizador_promo_discount(p, pr, tier)
-                gift_card += self._cotizador_gift_card_amount(p, pr)
                 if d > 0:
                     promo_disc += d
-                    promos_hit_colors.append(self._cotizador_promo_color(pr['id']))
+                if p.get('product_id') in pr.get('product_ids', []):
+                    color = self._cotizador_promo_color(pr['id'])
+                    if color not in promos_hit_colors:
+                        promos_hit_colors.append(color)
+            for pr, tier in gift_card_promos:
+                if p.get('product_id') not in pr.get('product_ids', []):
+                    continue
+                gift_card += self._cotizador_gift_card_amount(p, pr, tier)
             # Mayoreo, política y promos se calculan cada uno SOBRE
             # LISTA (independientes entre sí) y se restan juntos una
             # sola vez. Antes la política se calculaba sobre `base`
@@ -1105,7 +1282,6 @@ class SaleOrder(models.Model):
                 row_values = cells + [
                     p.get('free_qty') if p.get('free_qty') is not None else '',
                     p.get('transit_qty') if p.get('transit_qty') is not None else '',
-                    p.get('backorder_qty') if p.get('backorder_qty') is not None else '',
                     base * iva_factor,
                     final * iva_factor if ahorro > 0 else '',
                     gift_card * iva_factor if gift_card > 0 else '',
@@ -1116,14 +1292,15 @@ class SaleOrder(models.Model):
                 nc = nc_per_product.get(p['product_id'], 0.0)
                 ahorro_unit = base - final
                 pct_desc = (ahorro_unit / base * 100) if base > 0 else 0
+                volume_pct = self._cotizador_volume_percent_for_product(p, active_promos)
                 row_values = cells + [
                     qty,
                     p.get('free_qty') if p.get('free_qty') is not None else '',
                     p.get('transit_qty') if p.get('transit_qty') is not None else '',
-                    p.get('backorder_qty') if p.get('backorder_qty') is not None else '',
                     base * iva_factor,
                     final * iva_factor if ahorro_unit > 0.005 else '',
                     round(pct_desc, 1) if ahorro_unit > 0.005 else '',
+                    round(volume_pct, 1) if volume_pct > 0 else '',
                     subtotal * iva_factor,
                     gift_card * qty * iva_factor if gift_card > 0 else '',
                     nc * iva_factor if nc > 0 else '',
@@ -1153,7 +1330,7 @@ class SaleOrder(models.Model):
                     if column_name in {'Precio', 'Pr Promo', 'Subtotal',
                                        'NC estimada', 'Tarjeta de regalo'}:
                         cell.number_format = currency_fmt
-                    elif column_name == '% Desc.':
+                    elif column_name in {'% Desc.', '% Promoción Volumen Mensual'}:
                         cell.number_format = '0.0"%"'
                     elif column_name == 'Cant.':
                         cell.number_format = '#,##0.##'
@@ -1225,27 +1402,47 @@ class SaleOrder(models.Model):
                     c.font = Font(name='Arial', size=9, color=SOFT)
                     c.number_format = currency_fmt
                     r += 1
+                volume_saving = sum(
+                    self._cotizador_promo_discount(p, pr, tier) * (cart.get(p['product_id']) or 0)
+                    for pr, tier in active_promos
+                    if self._cotizador_is_volume_promo(pr)
+                    for p in rows_data
+                )
+                promo_savings = []
+                if volume_saving > 0.005:
+                    promo_savings.append((
+                        'Promoción Volumen Mensual',
+                        volume_saving,
+                        {'text': BRAND},
+                    ))
                 for pr, tier in active_promos:
+                    if self._cotizador_is_volume_promo(pr):
+                        continue
                     promo_saving = sum(
                         self._cotizador_promo_discount(p, pr, tier) * (cart.get(p['product_id']) or 0)
                         for p in rows_data
                     )
                     if promo_saving > 0.005:
-                        color = self._cotizador_promo_color(pr['id'])
-                        detail_start = max(n_cols - 4, 1)
-                        detail_cell = ws.cell(
-                            row=r, column=detail_start,
-                            value=f'   {pr.get("display_label") or pr["name"]}')
-                        detail_cell.font = Font(name='Arial', size=9, bold=True,
-                                                color=color['text'])
-                        detail_cell.alignment = Alignment(horizontal='left', indent=1,
-                                                          readingOrder=1)
-                        ws.merge_cells(start_row=r, start_column=detail_start,
-                                       end_row=r, end_column=n_cols - 1)
-                        c = ws.cell(row=r, column=n_cols, value=-promo_saving * iva_factor)
-                        c.font = Font(name='Arial', size=9, color=color['text'])
-                        c.number_format = currency_fmt
-                        r += 1
+                        promo_savings.append((
+                            pr.get('display_label') or pr['name'],
+                            promo_saving,
+                            self._cotizador_promo_color(pr['id']),
+                        ))
+                for promo_name, promo_saving, color in promo_savings:
+                    detail_start = max(n_cols - 4, 1)
+                    detail_cell = ws.cell(
+                        row=r, column=detail_start,
+                        value=f'   {promo_name}')
+                    detail_cell.font = Font(name='Arial', size=9, bold=True,
+                                            color=color['text'])
+                    detail_cell.alignment = Alignment(horizontal='left', indent=1,
+                                                      readingOrder=1)
+                    ws.merge_cells(start_row=r, start_column=detail_start,
+                                   end_row=r, end_column=n_cols - 1)
+                    c = ws.cell(row=r, column=n_cols, value=-promo_saving * iva_factor)
+                    c.font = Font(name='Arial', size=9, color=color['text'])
+                    c.number_format = currency_fmt
+                    r += 1
                 total_row(r, f'Ahorro potencial ({pct_total:.1f}%)',
                           -desc_total * iva_factor, strong=True)
                 r += 1
@@ -1328,13 +1525,34 @@ class SaleOrder(models.Model):
                 (pr, tier) for pr, tier in active_promos
                 if any(pid in set(cart.keys()) for pid in pr.get('product_ids', []))
             ] if cart else active_promos
-            if applicable:
+            volume_applicable = [
+                (pr, tier) for pr, tier in applicable
+                if self._cotizador_is_volume_promo(pr)
+            ]
+            regular_applicable = [
+                (pr, tier) for pr, tier in applicable
+                if not self._cotizador_is_volume_promo(pr)
+            ]
+            if volume_applicable or regular_applicable:
                 cell = ws.cell(row=r, column=1, value='Promociones que se deben cumplir para que apliquen los precios de la columna "Pr Promo":')
                 cell.font = terms_bold
                 cell.fill = terms_fill
                 ws.merge_cells(start_row=r, start_column=1, end_row=r, end_column=n_cols)
                 r += 1
-                for pr, tier in applicable:
+                if volume_applicable:
+                    range_label = self._cotizador_volume_range_label(volume_applicable)
+                    detail = (
+                        f'Rango seleccionado: {range_label}'
+                        if range_label else 'Rango seleccionado en el cotizador'
+                    )
+                    cell = ws.cell(row=r, column=1, value=f'  • Promoción Volumen Mensual — {detail}')
+                    cell.font = Font(name='Arial', size=9, bold=True, color=BRAND)
+                    cell.fill = PatternFill('solid', fgColor=BAND)
+                    cell.alignment = Alignment(wrap_text=True, vertical='center', indent=1)
+                    ws.merge_cells(start_row=r, start_column=1, end_row=r, end_column=n_cols)
+                    ws.row_dimensions[r].height = 24
+                    r += 1
+                for pr, tier in regular_applicable:
                     detail = self._cotizador_promo_detail(pr, tier)
                     color = self._cotizador_promo_color(pr['id'])
                     cell = ws.cell(row=r, column=1, value=f"  • {pr['name']} — {detail}")
@@ -1367,7 +1585,7 @@ class SaleOrder(models.Model):
         widths = {
             'Código': 13, 'Tier': 7, 'Medida': 14, 'Marca': 16, 'Modelo': 22,
             'Cap/Cara': 11, 'Vel/Ind': 10, 'Seg': 8, 'Tipo': 10, 'DOT': 8,
-            'Eq. Original': 18, 'Inv.': 9, 'Tránsito': 10, 'Backorder': 11, 'Cant.': 9,
+            'Eq. Original': 18, 'Inv.': 9, 'Tránsito': 10, 'Cant.': 9,
             'Precio': 16, 'Pr Promo': 15,
             '% Desc.': 10, 'Subtotal': 16,
             'Tarjeta de regalo': 17, 'NC estimada': 15,

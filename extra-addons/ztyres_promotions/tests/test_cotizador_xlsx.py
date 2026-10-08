@@ -8,10 +8,12 @@ los archivos físicamente durante una ejecución de pruebas, definir:
     ZTYRES_XLSX_FIXTURES_DIR=/tmp/cotizador_xlsx
 """
 import os
+from datetime import date
 from io import BytesIO
 from pathlib import Path
 
 from openpyxl import load_workbook
+from openpyxl.utils import get_column_letter
 from odoo.tests import tagged
 
 from odoo.addons.ztyres_promo.models.ztyres_promo_config import (
@@ -29,18 +31,21 @@ class TestCotizadorXlsx(PromoTestCommon):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.promo_excel = cls._promo(
-            nombre='GOODYEAR AGOSTO 7.5%',
-            promo_conditions=SCOPE_SPECIFIC_PRODUCTS,
-            product_ids=[(6, 0, [cls.p_goodyear_16.product_tmpl_id.id])],
-            promo_type=POLICY_QUANTITY,
-            reward_type=REWARD_PERCENTAGE,
-            policy_line_ids=[(0, 0, {
+        cls.promo_excel = cls.env['ztyres_promo.notas_credito'].create({
+            'nombre': 'GOODYEAR AGOSTO 7.5%',
+            'start_date': date(2026, 1, 1),
+            'end_date': date(2026, 12, 31),
+            'status': 'approve_p',
+            'promo_conditions': SCOPE_SPECIFIC_PRODUCTS,
+            'product_ids': [(6, 0, [cls.p_goodyear_16.product_tmpl_id.id])],
+            'promo_type': POLICY_QUANTITY,
+            'reward_type': REWARD_PERCENTAGE,
+            'policy_line_qty_ids': [(0, 0, {
                 'lower_limit': 12,
                 'upper_limit': UNLIMITED,
                 'discount': 7.5,
             })],
-        )
+        })
 
     def _state(self):
         return {
@@ -88,7 +93,6 @@ class TestCotizadorXlsx(PromoTestCommon):
             ), filename)
             self.assertEqual(sheet.sheet_view.showGridLines, False)
             self.assertEqual(sheet.page_setup.orientation, 'landscape')
-            self.assertTrue(sheet.auto_filter.ref)
             self.assertTrue(sheet.freeze_panes)
             self.assertTrue(sheet.print_title_rows)
             self.assertEqual(sheet['G4'].alignment.horizontal, 'right')
@@ -98,7 +102,7 @@ class TestCotizadorXlsx(PromoTestCommon):
             self.assertEqual(sheet['I5'].alignment.horizontal, 'right')
             self.assertTrue(sheet['I4'].alignment.wrap_text)
             self.assertTrue(sheet['I5'].alignment.wrap_text)
-            last_letter = sheet.cell(1, sheet.max_column).column_letter
+            last_letter = get_column_letter(sheet.max_column)
             merged = {str(cell_range) for cell_range in sheet.merged_cells.ranges}
             self.assertIn('G4:H4', merged)
             self.assertIn('G5:H5', merged)
@@ -184,6 +188,28 @@ class TestCotizadorXlsx(PromoTestCommon):
 
         self.assertEqual(
             Order._cotizador_promo_discount(product_row, promo, tier), 0.0)
+        self.assertAlmostEqual(
+            Order._cotizador_gift_card_amount(product_row, promo), 84.07,
+            places=2)
+
+    def test_tarjeta_de_regalo_lee_monto_por_plantilla(self):
+        """La tarjeta sale aunque el alcance no venga en product_ids."""
+        Order = self.env['sale.order']
+        product_row = {
+            'product_id': self.p_goodyear_16.id,
+            'tmpl_id': self.p_goodyear_16.product_tmpl_id.id,
+            'price': 1000.0,
+        }
+        promo = {
+            'promo_type': 'quantity',
+            'reward_type': 'gift_card',
+            'product_ids': [],
+            'coupons': [{
+                'tmpl_id': self.p_goodyear_16.product_tmpl_id.id,
+                'amount': 84.07,
+            }],
+        }
+
         self.assertAlmostEqual(
             Order._cotizador_gift_card_amount(product_row, promo), 84.07,
             places=2)

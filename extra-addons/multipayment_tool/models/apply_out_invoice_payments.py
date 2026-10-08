@@ -86,7 +86,7 @@ class ApplyOutInvoicePayments(models.Model):
             record.amount_resudual_payments = sum(
                 record.lines.payment_form_id.mapped('amount_residual'))
 
-    @api.depends('lines.payment_amount', 'partner_id', 'payment_id.line_ids',
+    @api.depends('state', 'lines.payment_amount', 'partner_id', 'payment_id.line_ids',
                  'payment_id.move_id.line_ids.amount_residual',
                  'lines.invoice_id.amount_residual')
     def _compute_amount_pending(self):
@@ -96,9 +96,19 @@ class ApplyOutInvoicePayments(models.Model):
             currency = (record.currency_id or record.company_id.currency_id
                         or self.env.company.currency_id)
             applied = sum(record.lines.mapped('payment_amount'))
+            payment_open = currency.round(sum(
+                line.apm_residual()
+                for line in record.payment_id.get_open_receivable_lines()
+            )) if record.payment_id else 0.0
+            if record.payment_id and currency.is_zero(payment_open):
+                record.amount_applied = currency.round(record.payment_id.amount)
+                record.amount_pending = 0.0
+                continue
             record.amount_applied = currency.round(applied)
-            record.amount_pending = 0.0 if record._is_fully_applied() else \
-                currency.round(record.outstanding_amount - applied)
+            pending = currency.round(payment_open - applied)
+            if abs(pending) <= record._get_tolerance() + currency.rounding / 2:
+                pending = 0.0
+            record.amount_pending = pending
 
     def get_detailed_info(self):
         for record in self:

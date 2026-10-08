@@ -204,30 +204,66 @@ class paymentsform(models.Model):
             else:
                 record.elapsed_days = f"Pagado {abs(delta)} días antes"
 
+    def _get_live_totals(self):
+        """Totales del formulario usando las lineas en memoria.
+
+        En el one2many editable Odoo puede recalcular antes de guardar. Leer
+        campos related/store como `move_amount_residual` o totales computados
+        del padre puede dejar valores viejos cuando el usuario cambia primero
+        el pago y despues la NC.
+        """
+        self.ensure_one()
+        currency = self.currency_id or self.env.company.currency_id
+        invoice = self.payments_line_id.invoice_id
+        invoice_total = invoice.amount_total if invoice else 0.0
+        total_payments = sum(
+            self.payment_ids
+            .filtered(lambda l: l.payment_name == 'entry')
+            .mapped('amount_to_apply'))
+        total_nc = sum(
+            self.payment_ids
+            .filtered(lambda l: l.payment_name == 'out_refund')
+            .mapped('amount_to_apply'))
+        return {
+            'invoice_total': currency.round(invoice_total),
+            'total_payments': currency.round(total_payments),
+            'total_nc': currency.round(total_nc),
+        }
+
     @api.depends('payment_ids.amount_to_apply', 'payment_ids.payment_name',
-                 'payment_ids.payment_origin', 'currency_id')
+                 'payment_ids.payment_origin', 'currency_id',
+                 'payments_line_id.invoice_id.amount_total',
+                 'payments_line_id.payment_id_to_apply.lines.payment_form_id.payment_ids.amount_to_apply')
     def _compute_amounts(self):
         for record in self:
             currency = record.currency_id or self.env.company.currency_id
             apm = record.payments_line_id.payment_id_to_apply
-            record.invoice_amount_total = record.payments_line_id.invoice_id.amount_total
-            record.total_payments = currency.round(sum(
-                record.payment_ids
-                .filtered(lambda l: l.payment_name == 'entry')
-                .mapped('amount_to_apply')))
-            record.total_nc = currency.round(sum(
-                record.payment_ids
-                .filtered(lambda l: l.payment_name == 'out_refund')
-                .mapped('amount_to_apply')))
-            record.amount_residual = currency.round(
+            totals = record._get_live_totals()
+            record.invoice_amount_total = totals['invoice_total']
+            record.total_payments = totals['total_payments']
+            record.total_nc = totals['total_nc']
+            residual = currency.round(
                 record.invoice_amount_total - record.total_payments - record.total_nc)
+            if apm and abs(residual) <= apm._get_tolerance() + currency.rounding / 2:
+                residual = 0.0
+            record.amount_residual = residual
             applied_new = sum(
                 apm.lines.payment_form_id.payment_ids
                 .filtered(lambda l: l.payment_name == 'entry'
                           and l.payment_origin == 'new')
                 .mapped('amount_to_apply'))
-            record.payment_amount_pending = currency.round(
-                apm.payment_id.amount - applied_new)
+            if apm and apm.state == 'done':
+                record.payment_amount_pending = 0.0
+            else:
+                pending = currency.round(apm.payment_id.amount - applied_new)
+                if abs(pending) <= apm._get_tolerance() + currency.rounding / 2:
+                    pending = 0.0
+                record.payment_amount_pending = pending
+
+    @api.onchange('payment_ids', 'payment_ids.amount_to_apply',
+                  'payment_ids.payment_name', 'payment_ids.payment_origin')
+    def _onchange_payment_ids_amounts(self):
+        self._compute_amounts()
 
     def _check_amounts(self):
         """Antes era un `@api.constrains('payment_amount_pending')` sobre un
@@ -275,7 +311,7 @@ class payments(models.Model):
             ('amount', 'Monto manual'),
             ('percent', 'Porcentaje manual'),
         ],
-        default='discount',
+        default=False,
         help="«Descuento preconfigurado» usa el catálogo de descuentos. "
              "«Monto» y «Porcentaje» permiten capturar la NC libremente.")
     nc_value = fields.Float(
@@ -332,18 +368,46 @@ class payments(models.Model):
         if self.nc_mode == 'discount':
             if not self.discount_id:
                 return 0.0
-            base = invoice.move_amount_total
+            base = invoice.move_id.amount_total
             amount = base * (self.discount_id.discount or 0) / 100.0
         elif self.nc_mode == 'percent':
-            base = (invoice.move_amount_total if self.nc_base == 'total'
-                    else abs(invoice.move_amount_residual))
+            if self.nc_base == 'total':
+                base = invoice.move_id.amount_total
+            else:
+                base = self._get_available_invoice_balance(exclude_self=True)
             amount = base * (self.nc_value or 0.0) / 100.0
         else:  # 'amount'
             amount = self.nc_value or 0.0
 
-        return self._cap_new_nc_amount(amount)
+        return self._cap_new_nc_amount(
+            amount, include_new_payments=False, include_new_refunds=False)
 
-    def _cap_new_nc_amount(self, amount):
+    def _get_available_invoice_balance(
+            self, exclude_self=False, include_new_payments=True,
+            include_new_refunds=True):
+        self.ensure_one()
+        currency = self._get_currency()
+        form = self.payment_form_id
+        invoice_total = form.payments_line_id.invoice_id.amount_total
+        other_lines = form.payment_ids.filtered(lambda l: l != self or not exclude_self)
+        if not include_new_payments:
+            other_lines = other_lines.filtered(
+                lambda l: not (l.payment_name == 'entry'
+                              and l.payment_origin == 'new'))
+        if not include_new_refunds:
+            other_lines = other_lines.filtered(
+                lambda l: not (l.payment_name == 'out_refund'
+                              and l.payment_origin == 'new'))
+        total_payments = sum(
+            other_lines.filtered(lambda l: l.payment_name == 'entry')
+            .mapped('amount_to_apply'))
+        total_nc = sum(
+            other_lines.filtered(lambda l: l.payment_name == 'out_refund')
+            .mapped('amount_to_apply'))
+        return currency.round(max(invoice_total - total_payments - total_nc, 0.0))
+
+    def _cap_new_nc_amount(
+            self, amount, include_new_payments=True, include_new_refunds=True):
         """Tope fiscal para NC nuevas: no emitir más de lo aplicable.
 
         Si el cálculo da 745.78 pero la factura/pago sólo admiten 745.77, la
@@ -360,26 +424,56 @@ class payments(models.Model):
             invoice_line = invoice.move_id.get_open_receivable_lines()[:1]
             if invoice_line:
                 candidates.append(currency.round(invoice_line.apm_residual()))
-            other_nc = self.payment_form_id.payment_ids.filtered(
-                lambda l: l != self and l.payment_name == 'out_refund')
-            available_in_form = (
-                self.payment_form_id.invoice_amount_total
-                - self.payment_form_id.total_payments
-                - sum(other_nc.mapped('amount_to_apply')))
-            candidates.append(currency.round(max(available_in_form, 0.0)))
-        apm = self._get_apm()
-        if apm:
-            pending = self.payment_form_id.payment_amount_pending
-            if not pending and self.payment_form_id:
-                applied_new = sum(
-                    apm.lines.payment_form_id.payment_ids
-                    .filtered(lambda l: l.payment_name == 'entry'
-                              and l.payment_origin == 'new')
-                    .mapped('amount_to_apply'))
-                pending = apm.payment_id.amount - applied_new
-            if pending:
-                candidates.append(currency.round(abs(pending)))
+            candidates.append(self._get_available_invoice_balance(
+                exclude_self=True,
+                include_new_payments=include_new_payments,
+                include_new_refunds=include_new_refunds))
         return currency.round(min(candidates))
+
+    def _balance_new_nc_amount(self, amount):
+        """Ajusta la NC nueva si con eso se absorbe una diferencia de centavos.
+
+        Ejemplos:
+        * Factura 1000.00, pago 900.02, NC capturada 100.00 -> NC 99.98.
+        * Factura 1000.00, pago 899.98, NC capturada 100.00 -> NC 100.02.
+
+        Fuera de la tolerancia se respeta el importe capturado y las
+        validaciones normales bloquean el caso si queda sobrepagado.
+        """
+        self.ensure_one()
+        currency = self._get_currency()
+        requested = currency.round(max(amount or 0.0, 0.0))
+        available = self._get_available_invoice_balance(exclude_self=True)
+        delta = currency.round(available - requested)
+        tolerance = self._get_apm()._get_tolerance() if self._get_apm() else 0.0
+        if abs(delta) <= tolerance + currency.rounding / 2:
+            return currency.round(max(available, 0.0))
+        return requested
+
+    def _balance_global_payment_cents(self, amount):
+        """Absorbe en una sola NC la diferencia global de centavos del pago."""
+        self.ensure_one()
+        apm = self._get_apm()
+        if not apm:
+            return amount
+        new_ncs = apm.lines.payment_form_id.payment_ids.filtered(
+            lambda l: l._is_new_nc()).sorted('id')
+        if not new_ncs or self != new_ncs[-1]:
+            return amount
+
+        currency = self._get_currency()
+        applied_new = sum(
+            apm.lines.payment_form_id.payment_ids
+            .filtered(lambda l: l.payment_name == 'entry'
+                      and l.payment_origin == 'new')
+            .mapped('amount_to_apply'))
+        pending = currency.round(apm.payment_id.amount - applied_new)
+        tolerance = apm._get_tolerance()
+        if currency.is_zero(pending):
+            return amount
+        if abs(pending) <= tolerance + currency.rounding / 2:
+            return currency.round(max((amount or 0.0) - pending, 0.0))
+        return amount
 
     # ------------------------------------------------------------------
     # Conciliación
@@ -494,7 +588,9 @@ class payments(models.Model):
             invoice = record._get_invoice_record()
             invoice.ensure_one()
             currency = record._get_currency()
-            amount = record._cap_new_nc_amount(record.amount_to_apply)
+            amount = record._balance_global_payment_cents(
+                record._cap_new_nc_amount(
+                    record._balance_new_nc_amount(record.amount_to_apply)))
             record.amount_to_apply = amount
             if currency.is_zero(amount):
                 continue
@@ -602,6 +698,8 @@ class payments(models.Model):
         """El motivo es obligatorio y el importe debe ser positivo."""
         self.ensure_one()
         currency = self._get_currency()
+        if self.nc_mode == 'discount':
+            self._set_discount_reason()
         if not self.nc_reason or not self.nc_reason.strip():
             raise UserError(_(
                 "Indique el motivo de la nota de crédito antes de aplicar el "
@@ -642,16 +740,22 @@ class payments(models.Model):
     def _onchange_anything(self):
         if self.payment_form_id:
             # solo para que el formulario padre refresque
-            self.payment_form_id.payment_amount_pending = \
-                self.payment_form_id.payment_amount_pending
+            self.payment_form_id._compute_amounts()
 
     @api.onchange('nc_mode')
     def _onchange_nc_mode(self):
         for rec in self:
+            if not rec._is_new_nc():
+                rec.nc_mode = False
+                rec.discount_id = False
+                rec.nc_value = 0.0
+                rec.nc_reason = False
+                continue
             if rec.nc_mode != 'discount':
                 rec.discount_id = False
             else:
                 rec.nc_value = 0.0
+                rec._set_discount_reason()
             rec.amount_to_apply = rec._compute_nc_target_amount()
 
     @api.onchange('discount_id', 'nc_value', 'nc_base')
@@ -662,7 +766,22 @@ class payments(models.Model):
         for rec in self:
             if not rec._is_new_nc():
                 continue
+            if rec.nc_mode == 'discount':
+                rec._set_discount_reason()
             rec.amount_to_apply = rec._compute_nc_target_amount()
+
+    def _set_discount_reason(self):
+        for rec in self:
+            if rec.nc_mode != 'discount' or not rec.discount_id:
+                continue
+            discount = rec.discount_id
+            label = discount.display_name or discount.name or _('Descuento')
+            percent = discount.discount or 0.0
+            if float(percent).is_integer():
+                percent_text = '%s%%' % int(percent)
+            else:
+                percent_text = '%s%%' % percent
+            rec.nc_reason = '%s - %s' % (label, percent_text)
 
     @api.onchange('payment_name', 'move_id')
     def _onchange_discount_id(self):
@@ -681,8 +800,12 @@ class payments(models.Model):
                 raise UserError(_(
                     'Característica en desarrollo... no es posible agregar facturas'))
             if not rec.payment_name:
+                rec.nc_mode = False
+                rec.discount_id = False
                 return {'domain': {'move_id': [('id', 'in', -1)]}}
             if rec.payment_name == 'out_refund':
+                if rec.payment_origin == 'new' and not rec.nc_mode:
+                    rec.nc_mode = 'discount'
                 # Notas de crédito con saldo
                 return {
                     'domain': {
@@ -699,6 +822,9 @@ class payments(models.Model):
                 }
             elif rec.payment_name == 'entry' and rec.payment_origin == 'new':
                 # Pagos disponibles del contexto
+                rec.nc_mode = False
+                rec.nc_value = 0.0
+                rec.nc_reason = False
                 rec.move_id = rec.payment_form_id.payments_line_id \
                     .payment_id_to_apply.payment_id.move_id or False
                 return {'domain': {'move_id': [('id', 'in', rec.move_id.ids)]}}

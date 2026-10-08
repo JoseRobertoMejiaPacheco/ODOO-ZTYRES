@@ -60,6 +60,10 @@
                                 <field name="cotizador_name"
                                        placeholder="Nombre en el cotizador (opcional)"/>
                             </h3>
+                            <div class="d-flex align-items-center gap-2 mt-2">
+                                <span class="text-muted">Volumen estimado del cotizador</span>
+                                <field name="cotizador_volume_selector" nolabel="1"/>
+                            </div>
                         </div>
 
                         <!-- Las descargas no van en <header>: en portátiles,
@@ -531,7 +535,7 @@
                                  4B. TARJETA DE REGALO (PROMO ZT)
                                  ========================================== -->
                             <page string="Tarjeta de regalo" name="tarjeta_regalo"
-                                  attrs="{'invisible': ['|', ('reward_type','!=','gift_card'), ('promo_type','not in',['quantity','amount'])]}">
+                                  attrs="{'invisible': ['&amp;', ('reward_type','!=','gift_card'), ('promo_type','!=','amount_rim')]}">
 
                                 <div class="alert alert-info" role="alert">
                                     El <b>nivel de la política</b> decide únicamente

@@ -55,17 +55,22 @@
                                 <field name="move_detailed_line_ids" widget="many2many_tags" readonly="1"/>
 
                                 <field name="nc_mode" string="Tipo NC"
-                                       attrs="{'readonly': ['|', ('payment_name', '!=', 'out_refund'), ('payment_origin', '=', 'prev')]}"/>
+                                       attrs="{'invisible': [('payment_name', '!=', 'out_refund')],
+                                               'readonly': [('payment_origin', '=', 'prev')]}"/>
                                 <field name="discount_id" string="Desc.(%)"
-                                       attrs="{'readonly': ['|', '|', ('payment_name', '!=', 'out_refund'), ('payment_origin', '=', 'prev'), ('nc_mode', '!=', 'discount')]}"/>
+                                       attrs="{'invisible': ['|', ('payment_name', '!=', 'out_refund'), ('nc_mode', '!=', 'discount')],
+                                               'readonly': [('payment_origin', '=', 'prev')],
+                                               'required': [('payment_name', '=', 'out_refund'), ('payment_origin', '=', 'new'), ('nc_mode', '=', 'discount')]}"/>
                                 <field name="nc_value" string="Valor NC"
-                                       attrs="{'readonly': ['|', '|', ('payment_name', '!=', 'out_refund'), ('payment_origin', '=', 'prev'), ('nc_mode', 'not in', ['amount','percent'])],
+                                       attrs="{'invisible': ['|', ('payment_name', '!=', 'out_refund'), ('nc_mode', 'not in', ['amount','percent'])],
+                                               'readonly': [('payment_origin', '=', 'prev')],
                                                'required': [('payment_name', '=', 'out_refund'), ('payment_origin', '=', 'new'), ('nc_mode', 'in', ['amount','percent'])]}"/>
                                 <field name="nc_base" string="Base %" optional="hide"
-                                       attrs="{'readonly': [('nc_mode', '!=', 'percent')]}"/>
+                                       attrs="{'invisible': ['|', ('payment_name', '!=', 'out_refund'), ('nc_mode', '!=', 'percent')]}"/>
                                 <field name="nc_reason" string="Motivo NC"
-                                       attrs="{'readonly': ['|', ('payment_name', '!=', 'out_refund'), ('payment_origin', '=', 'prev')],
-                                               'required': [('payment_name', '=', 'out_refund'), ('payment_origin', '=', 'new')]}"/>
+                                       attrs="{'invisible': [('payment_name', '!=', 'out_refund')],
+                                               'readonly': [('payment_origin', '=', 'prev')],
+                                               'required': [('payment_name', '=', 'out_refund'), ('payment_origin', '=', 'new'), ('nc_mode', 'in', ['amount','percent'])]}"/>
 
                                 <field name="amount_to_apply" attrs="{'readonly': [('payment_origin', 'in', ['prev'])]}"/>
                             </tree>

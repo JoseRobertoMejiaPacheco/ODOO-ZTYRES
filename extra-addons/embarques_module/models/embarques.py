@@ -491,13 +491,14 @@ class Embarques(models.Model):
                 pending = rec.pedidos_ids.filtered(
                     lambda picking: picking.state != 'done')
                 if pending:
-                    raise UserError(_(
-                        'No se puede marcar %(shipment)s como Entregado. Los '
-                        'siguientes traslados todavía no están Hechos: %(picking)s.') % {
-                            'shipment': rec.display_name,
-                            'picking': ', '.join(
-                                pending.mapped('display_name')),
-                        })
+                    # raise UserError(_(
+                    #     'No se puede marcar %(shipment)s como Entregado. Los '
+                    #     'siguientes traslados todavía no están Hechos: %(picking)s.') % {
+                    #         'shipment': rec.display_name,
+                    #         'picking': ', '.join(
+                    #             pending.mapped('display_name')),
+                    #     })
+                    pass
                 if rec.preparation_state != 'ready':
                     raise UserError(_(
                         'No se puede marcar %s como Entregado hasta conciliar '

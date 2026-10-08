@@ -428,9 +428,9 @@ class PromotionsExternalAPI(http.Controller):
         partner_id = payload.get('partner_id') or 0
         if request.env.user.has_group('base.group_portal'):
             partner_id = request.env.user.partner_id.id
-        lines = payload.get('lines') or []
+        lines = self._sanitize_lines(payload.get('lines') or [])
         if not lines:
-            return self._json({'error': 'Faltan lines'}, 400)
+            return self._json({'error': 'Líneas inválidas o vacías'}, 400)
 
         try:
             result = self._get_quote(partner_id, lines)

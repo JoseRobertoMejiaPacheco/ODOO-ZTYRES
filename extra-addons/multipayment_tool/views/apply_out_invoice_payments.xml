@@ -23,6 +23,9 @@
         </field>   
         <field name="l10n_mx_edi_payment_method_id" position="attributes">
             <attribute name="force_save">1</attribute>
+            <attribute name="readonly">0</attribute>
+            <attribute name="attrs">{'readonly': [('state', '=', 'done')]}</attribute>
+            <attribute name="options">{'no_create': True, 'no_open': True, 'no_create_edit': True}</attribute>
         </field>   
 
                 <xpath expr="//button[@name='apply_payments' and contains(@class, 'btn-default')]" position="replace"/>

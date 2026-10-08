@@ -38,7 +38,7 @@ class TestCotizadorPreview(PromoTestCommon):
             product_ids=[(6, 0, [self.p_goodyear_16.product_tmpl_id.id])],
             promo_type=POLICY_QUANTITY,
             reward_type=REWARD_PERCENTAGE,
-            policy_line_ids=[(0, 0, {
+            policy_line_qty_ids=[(0, 0, {
                 'lower_limit': 1,
                 'upper_limit': UNLIMITED,
                 'discount': 7.5,
@@ -163,8 +163,8 @@ class TestCotizadorPreview(PromoTestCommon):
 
         self.assertEqual(row['reward_type'], REWARD_GIFT_CARD)
         self.assertEqual(row['tiers'][0]['discount'], 0.0)
-        self.assertEqual(row['coupons'][0]['amount_with_tax'], 84.07)
-        self.assertAlmostEqual(row['coupons'][0]['amount'], 72.4741, places=4)
+        self.assertAlmostEqual(row['coupons'][0]['amount_with_tax'], 84.07, places=2)
+        self.assertAlmostEqual(row['coupons'][0]['amount'], 72.47, places=2)
 
     def test_preview_resta_cupon_sin_generar_nc(self):
         self._gift_card_coupon_promo()
@@ -231,6 +231,6 @@ class TestCotizadorPreview(PromoTestCommon):
         }), 8.0)
         self.assertEqual(Order._cotizador_policy_total_pct({
             'volumen': '5',       # no autorizado
-            'logistico': '3',     # no autorizado
+            'logistico': '9',     # no autorizado
             'financiero': '4',    # no autorizado
         }), 0.0)

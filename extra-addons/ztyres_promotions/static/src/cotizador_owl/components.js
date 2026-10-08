@@ -14,7 +14,7 @@ import { productImageUrl } from './api.js';
    depende del product_id. Un monto fijo pertenece a la NC completa y no
    se convierte artificialmente en descuento unitario. */
 function promoPercentForProduct(promo, tier, productId) {
-  if (!tier || promo.reward_type === 'fixed_amount') return 0;
+  if (!tier || promo.reward_type === 'fixed_amount' || promo.reward_type === 'gift_card') return 0;
   if (tier.product_discounts) {
     return Number(tier.product_discounts[String(productId)] || 0);
   }
@@ -42,6 +42,7 @@ function promoAppliesToProduct(promo, product) {
 function promoProductPercent(promo, tier, product) {
   const pid = Number(product && product.product_id);
   const tmpl = Number(product && product.tmpl_id);
+  if (promo.reward_type === 'gift_card') return 0;
   if (!tier) return 0;
   if (tier.product_discounts) {
     const direct = Number(tier.product_discounts[String(pid)] ?? tier.product_discounts[String(tmpl)] ?? 0);
@@ -112,11 +113,34 @@ function basePriceOf(product, listPrice) {
 /* Monto de tarjeta de regalo por pieza para un producto. Es un
    beneficio aparte: el cliente recibe una tarjeta, la llanta no baja de
    precio. Por eso vive en su propia columna y NO entra al precio. */
-function giftCardAmountFor(promo, product) {
-  if (promo.reward_type !== 'gift_card') return 0;
-  if (!promoAppliesToProduct(promo, product)) return 0;
-  const card = (promo.coupons || []).find((item) => item.tmpl_id === product.tmpl_id);
-  return card ? Number(card.amount || 0) : 0;
+function giftCardAmountFor(promo, product, tier = null) {
+  if (promo.reward_type !== 'gift_card' && !promo.gift_card_from_pms) return 0;
+  const tmplId = Number(product && product.tmpl_id);
+  const card = (promo.coupons || []).find((item) => Number(item.tmpl_id) === tmplId);
+  if (card && Number(card.amount || 0) > 0) return Number(card.amount || 0);
+  const rawPms = (promo.pms_price_by_product || {})[String(product && product.product_id)];
+  if (rawPms == null) return 0;
+  const percentForTier = (row) => {
+    const pid = Number(product && product.product_id);
+    const tmpl = Number(product && product.tmpl_id);
+    if (!row) return 0;
+    if (row.product_discounts) {
+      const direct = Number(row.product_discounts[String(pid)] ?? row.product_discounts[String(tmpl)] ?? 0);
+      if (direct > 0) return direct;
+    }
+    if (Number(row.key_size_discount || 0) > 0
+        && (promo.key_size_product_ids || []).some((id) => Number(id) === pid || Number(id) === tmpl)) {
+      return Number(row.key_size_discount);
+    }
+    return Number(row.discount || 0);
+  };
+  const tiers = tier ? [tier] : (promo.tiers || []);
+  const percents = tiers
+    .map(percentForTier)
+    .filter((value) => value > 0);
+  const percent = Math.max(...percents, 0);
+  const amountWithTax = Number(rawPms || 0) * percent / 100;
+  return amountWithTax / Number(promo.pms_tax_factor || 1);
 }
 
 function selectedTierForPromo(state, promo, selected) {
@@ -166,7 +190,7 @@ export class IvaToggle extends Component {
    "pantallazo fantasma": nunca se montan miles de nodos de golpe. */
 export class CatalogRow extends Component {
   static template = xml`
-    <tr t-att-class="{ 'in-cart': props.qty > 0, 'in-promo': !!props.color }"
+    <tr t-att-class="{ 'in-cart': props.qty > 0, 'in-promo': hasPromoColor() }"
         t-att-style="rowStyle()">
       <td class="flat-td-clave" data-label="Código" t-att-title="props.product.code || ''">
         <span t-esc="props.product.code || '—'"/>
@@ -203,6 +227,10 @@ export class CatalogRow extends Component {
       <td class="flat-td-promo" data-label="Pr Promo" t-att-title="finalTitle()">
         <span t-if="finalPrice()" class="promo-price" t-esc="money(finalPrice() * props.iva)"/>
         <span t-else="" class="promo-empty" t-att-title="props.qty ? 'Sin promoción ni descuento aplicable' : 'Agrega al pedido o elige una promo/política para simular'">—</span>
+      </td>
+      <td class="flat-td-promo-pct" data-label="% Promo" t-att-title="promoPercentTitle()">
+        <span t-if="promoPercent()" class="promo-pct" t-esc="promoPercent()"/>
+        <span t-else="" class="promo-empty">—</span>
       </td>
       <!-- Tarjeta de regalo: monto por pieza que el cliente recibe en
            tarjeta. Va en su propia columna porque NO es un descuento
@@ -250,16 +278,23 @@ export class CatalogRow extends Component {
        y el CSS con nth-child dice qué tinte usa cada <td>. Como el
        tinte va a nivel de celda, table-layout:fixed sigue mandando
        los anchos y todo queda alineado con el thead. */
-    const c = this.props.color;
+    const c = this.rowColor();
     if (!c) return '';
     const winner = c.winner || c.palette[0];
-    let vars = `--promo-c: ${winner.text}; --promo-b: ${winner.border}; --promo-t: ${winner.tint};`;
+    let vars = [
+      `--promo-c: ${winner.text}`,
+      `--promo-b: ${winner.border}`,
+      `--promo-t: ${winner.tint}`,
+      `--promo-row-bg: ${winner.tint}`,
+      `--promo-row-accent: ${winner.border}`,
+      `--promo-row-text: ${winner.text}`,
+    ].join('; ') + ';';
     if (c.palette.length > 1) {
       /* Columnas que reciben tinte = todas menos la de acción. Se
-         quitó K/B y se agregó Tarjeta, así que el fijo queda igual en
-         15; si se añade o quita una columna hay que actualizar este
-         número o las bandas de color dejan de cubrir la fila. */
-      const cols = 15 + (this.props.extraColumns ? this.props.extraColumns.length : 0);
+         quitó K/B, se agregaron % Promo y Tarjeta; si se añade o
+         quita una columna hay que actualizar este número o las bandas
+         de color dejan de cubrir la fila. */
+      const cols = 16 + (this.props.extraColumns ? this.props.extraColumns.length : 0);
       const n = c.palette.length;
       // Reparte columnas en bloques del MISMO tamaño posible;
       // sobrantes van a las primeras promos (bloques de tamaño ceil).
@@ -275,6 +310,26 @@ export class CatalogRow extends Component {
       }
     }
     return vars;
+  }
+
+  rowColor() {
+    if (this.props.color) return this.props.color;
+    const parts = this.props.promo && Array.isArray(this.props.promo.parts)
+      ? this.props.promo.parts
+      : [];
+    const palette = parts.map((p) => p && p.color).filter(Boolean);
+    if (!palette.length) return null;
+    const winner = parts.reduce((best, part) => (
+      !best || Number(part.disc || 0) > Number(best.disc || 0) ? part : best
+    ), null);
+    return {
+      winner: (winner && winner.color) || palette[0],
+      palette,
+    };
+  }
+
+  hasPromoColor() {
+    return !!(this.rowColor() || this.finalPrice());
   }
 
   capCara() {
@@ -345,6 +400,29 @@ export class CatalogRow extends Component {
     if (this.props.factor < 0.9999) return 'Política comercial: ' + this.props.policyText;
     return '';
   }
+  promoPercentValues() {
+    const parts = this.props.promo && Array.isArray(this.props.promo.parts)
+      ? this.props.promo.parts
+      : [];
+    return parts
+      .map((part) => Number(part && part.pct || 0))
+      .filter((value) => value > 0);
+  }
+  promoPercent() {
+    const values = this.promoPercentValues();
+    if (!values.length) return '';
+    const fmt = (value) => `${Number(value || 0).toLocaleString(
+      'es-MX', { minimumFractionDigits: 0, maximumFractionDigits: 1 },
+    )}%`;
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+    return min === max ? fmt(max) : `${fmt(min)}-${fmt(max)}`;
+  }
+  promoPercentTitle() {
+    const pct = this.promoPercent();
+    if (!pct) return '';
+    return `${pct} de promoción aplicada por el rango seleccionado`;
+  }
   giftCardTitle() {
     const card = this.props.giftCard;
     if (!card) return '';
@@ -402,7 +480,7 @@ export function buildMobilePromoIndex(state, simOverride = null) {
         current.applicable.push({ promo, tier, discount: disc, color });
         current.discount += disc;
         if (!current.palette.some((c) => c.text === color.text)) current.palette.push(color);
-        const gift = giftCardAmountFor(promo, product);
+        const gift = giftCardAmountFor(promo, product, tier);
         if (gift > 0) {
           current.giftAmount += gift;
           current.giftNames.push(promo.display_label || promo.name);
@@ -589,7 +667,7 @@ export class CatalogTable extends Component {
           <th class="flat-th-eqorig" title="Equipo original">Eq. Orig.</th>
           <th t-foreach="extraColumns" t-as="col" t-key="col.key" t-att-title="col.label" t-esc="col.short || col.label"/>
           <th class="flat-th-disp">Inv</th><th class="flat-th-transit">Tránsito</th><th class="flat-th-price">Precio</th>
-          <th class="flat-th-promo">Pr Promo</th><th class="flat-th-giftcard">Tarjeta</th><th class="flat-th-action">Agregar</th>
+          <th class="flat-th-promo">Pr Promo</th><th class="flat-th-promo-pct">% Promo</th><th class="flat-th-giftcard">Tarjeta</th><th class="flat-th-action">Agregar</th>
         </tr>
       </thead>
       <tbody>
@@ -746,17 +824,17 @@ export class CatalogTable extends Component {
         if (!Number.isFinite(pid) || pid <= 0) continue;
         const lista = prod.price || 0;
         const disc = promoUnitDiscount(pr, tier, prod, lista);
+        const pct = promoPercentForProduct(pr, tier, pid);
         let partLabel = '';
         if ((pr.promo_type === 'coupons' || pr.reward_type === 'gift_card') && disc > 0) {
           partLabel = `${pr.display_label || pr.name} Cupón $${disc.toFixed(2)}`;
         } else {
-          const pct = promoPercentForProduct(pr, tier, pid);
           if (pct > 0) partLabel = `${pr.display_label || pr.name} ${pct}%`;
         }
         if (disc <= 0) continue;
         const bucket = accum.get(pid) || { discSum: 0, parts: [] };
         bucket.discSum += disc;
-        bucket.parts.push({ promoId: pr.id, color, disc, label: partLabel });
+        bucket.parts.push({ promoId: pr.id, color, disc, pct, label: partLabel });
         accum.set(pid, bucket);
       }
     }
@@ -935,9 +1013,10 @@ export class CatalogTable extends Component {
     let activeNames = [];
     let best = null;
     for (const promo of promos) {
-      const amount = giftCardAmountFor(promo, product);
-      if (!(amount > 0)) continue;
       const sel = this.props.state.promoSim[promo.id];
+      const tier = selectedTierForPromo(this.props.state, promo, sel);
+      const amount = giftCardAmountFor(promo, product, tier);
+      if (!(amount > 0)) continue;
       if (sel && sel.on) {
         activeSum += amount;
         activeNames.push(promo.display_label || promo.name);
@@ -1392,7 +1471,21 @@ export class PromoStrip extends Component {
     <div class="panel promos-panel">
       <h2 title="Elige un rango para simular el precio potencial de los productos que participan.">Promociones</h2>
       <p class="facet-empty" t-if="!props.state.promos.length">Sin promociones vigentes</p>
-      <div class="facet" t-foreach="props.state.promos" t-as="pr" t-key="pr.id"
+      <div class="promo-volume-picker" t-if="volumeOptions().length">
+        <label for="promo_volume_range">Volumen estimado</label>
+        <select id="promo_volume_range"
+                t-att-value="currentVolumeKey()"
+                t-on-change="(ev) => this.applyVolumeRange(ev.target.value)">
+          <option value="">Seleccionar rango...</option>
+          <option t-if="currentVolumeKey() === '__mixed__'" value="__mixed__" disabled="disabled">
+            Varios rangos
+          </option>
+          <option t-foreach="volumeOptions()" t-as="opt" t-key="opt.key"
+                  t-att-value="opt.key"
+                  t-esc="opt.label"/>
+        </select>
+      </div>
+      <div class="facet" t-foreach="visiblePromos()" t-as="pr" t-key="pr.id"
            t-attf-style="--promo-c: {{colorFor(pr).text}}; --promo-b: {{colorFor(pr).border}}; --promo-t: {{colorFor(pr).tint}}">
         <!-- Cabecera COLAPSABLE. El nombre se parte en tres piezas
              (periodo · tipo · nombre corto) porque el nombre completo
@@ -1401,7 +1494,6 @@ export class PromoStrip extends Component {
              nombre corto sale del campo cotizador_name de la promoción
              (display_label) y cae al nombre completo si está vacío. -->
         <div class="facet-head" t-att-class="{ active: isOn(pr), open: isOpen(pr) }"
-             t-att-title="pr.name + ' — ' + conditionCount(pr) + ' condiciones · clic para desplegar'"
              t-on-click="() => this.toggleOpen(pr)">
           <span class="promo-headline">
             <span class="promo-eyebrow">
@@ -1427,20 +1519,28 @@ export class PromoStrip extends Component {
             <label class="promo-step"
                    t-foreach="steps(pr)" t-as="step" t-key="step_index"
                    t-att-class="{ sel: isStepSelected(pr, step_index), reached: isStepReached(pr, step_index) }"
-                   t-att-title="step.title">
+                   t-att-data-selected="isStepSelected(pr, step_index) ? '1' : '0'"
+                   t-att-style="isStepSelected(pr, step_index) ? stepSelectedVars(pr) : ''">
               <input type="radio" t-att-name="'promo_tier_' + pr.id"
                      t-att-checked="isStepSelected(pr, step_index)"
                      t-on-click.stop="() => this.pickTier(pr, step_index)"/>
               <span class="step-body">
-                <span class="step-range" t-esc="step.range"/>
-                <span class="step-rule" t-if="step.rule" t-esc="step.rule"/>
+                <span class="step-range" t-att-class="{ selected: isStepSelected(pr, step_index) }"
+                      t-att-style="stepTextStyle(pr, step_index)"
+                      t-esc="step.range"/>
+                <span class="step-rule" t-if="step.rule" t-att-class="{ selected: isStepSelected(pr, step_index) }"
+                      t-att-style="stepTextStyle(pr, step_index)"
+                      t-esc="step.rule"/>
                 <span class="step-rims" t-if="step.rims.length">
-                  <span class="step-rim" t-foreach="step.rims" t-as="rim" t-key="rim_index">
-                    <t t-esc="rim.label"/> <b t-esc="rim.value"/>
+                  <span class="step-rim" t-foreach="step.rims" t-as="rim" t-key="rim_index"
+                        t-att-style="stepChipStyle(pr, step_index)">
+                    <t t-esc="rim.label"/> <b t-att-style="stepTextStyle(pr, step_index)" t-esc="rim.value"/>
                   </span>
                 </span>
               </span>
-              <span class="step-value" t-esc="step.value"/>
+              <span class="step-value" t-att-class="{ selected: isStepSelected(pr, step_index) }"
+                    t-att-style="stepTextStyle(pr, step_index)"
+                    t-esc="step.value"/>
             </label>
           </div>
           <p class="facet-note" t-if="!steps(pr).length">
@@ -1593,7 +1693,29 @@ export class PromoStrip extends Component {
     return out;
   }
   isStepSelected(pr, index) {
-    return this.isOn(pr) && this.tierIndex(pr) === index;
+    if (!this.isOn(pr)) return false;
+    const selectedIndex = this.tierIndex(pr);
+    if (selectedIndex === index) return true;
+    const tiers = pr.tiers || [];
+    const selectedTier = tiers[selectedIndex];
+    const tier = tiers[index];
+    const selectedKey = this.rangeKey(selectedTier);
+    const key = this.rangeKey(tier);
+    return !!(key && selectedKey && key === selectedKey);
+  }
+  stepTextStyle(pr, index) {
+    if (!this.isStepSelected(pr, index)) return '';
+    const color = this.colorFor(pr).text;
+    return `color:${color};font-weight:900;opacity:1;`;
+  }
+  stepSelectedVars(pr) {
+    const color = this.colorFor(pr);
+    return `--step-selected-c:${color.text};--step-selected-b:${color.border};`;
+  }
+  stepChipStyle(pr, index) {
+    if (!this.isStepSelected(pr, index)) return '';
+    const color = this.colorFor(pr);
+    return `color:${color.text};border-color:${color.border};background:transparent;opacity:1;`;
   }
   // Peldaños por debajo del elegido: se marcan para leer la escalera
   // como progresión ("ya vas en el segundo, te falta uno").
@@ -1737,6 +1859,176 @@ export class PromoStrip extends Component {
   // rango ya elegido la APAGA (los radios nativos no se pueden
   // desmarcar solos — por eso el handler va en click, no en change).
   colorFor(pr) { return promoColorFor(pr.id); }
+
+  isVolumeTablePromo(promo) {
+    if (!promo) return false;
+    return promo.cotizador_volume_selector === 'include'
+      && promo.reward_type !== 'gift_card';
+  }
+
+  visiblePromos() {
+    return (this.props.state.promos || [])
+      .filter((promo) => !this.isVolumeTablePromo(promo));
+  }
+
+  rangeKey(tier) {
+    const min = Math.round(Number(tier && tier.min || 0));
+    const max = Math.round(Number(tier && tier.max || 999999999));
+    if (!min) return '';
+    return `${min}:${max >= 999999999 ? 999999999 : max}`;
+  }
+
+  isOpenEndedRange(key) {
+    const parts = this.rangeParts(key);
+    return parts.max >= 999999999;
+  }
+
+  keyFallsInsideRange(key, containerKey) {
+    const inner = this.rangeParts(key);
+    const outer = this.rangeParts(containerKey);
+    return outer.max < 999999999
+      && inner.min >= outer.min
+      && inner.min <= outer.max;
+  }
+
+  isAuxVolumeTier(tier, visibleKeys = null) {
+    const min = Math.round(Number(tier && tier.min || 0));
+    const key = this.rangeKey(tier);
+    if (min <= 1) return true;
+    if (!visibleKeys || !this.isOpenEndedRange(key)) return false;
+    return [...visibleKeys].some((visibleKey) => this.keyFallsInsideRange(key, visibleKey));
+  }
+
+  rangeParts(key) {
+    const [rawMin, rawMax] = String(key || '').split(':');
+    return {
+      min: Number(rawMin || 0),
+      max: Number(rawMax || 999999999),
+    };
+  }
+
+  tierOverlapsRange(tier, key) {
+    const selected = this.rangeParts(key);
+    const min = Math.round(Number(tier && tier.min || 0));
+    const max = Math.round(Number(tier && tier.max || 999999999));
+    return min <= selected.max && max >= selected.min;
+  }
+
+  rangeLabel(key) {
+    const [rawMin, rawMax] = String(key || '').split(':');
+    const min = Number(rawMin || 0);
+    const max = Number(rawMax || 999999999);
+    const number = (value) => Math.round(Number(value || 0)).toLocaleString(
+      'es-MX', { maximumFractionDigits: 0 },
+    );
+    return max >= 999999999
+      ? `${number(min)}+ pzas`
+      : `${number(min)} - ${number(max)} pzas`;
+  }
+
+  volumeOptions() {
+    if (!this._volumeCache) this._volumeCache = { promos: null, out: [] };
+    const promos = this.props.state.promos || [];
+    if (this._volumeCache.promos === promos) return this._volumeCache.out;
+    const groups = new Map();
+    const visibleKeys = new Set();
+    for (const promo of promos) {
+      if (!this.isVolumeTablePromo(promo)) continue;
+      (promo.tiers || []).forEach((tier, index) => {
+        const key = this.rangeKey(tier);
+        if (!key) return;
+        if (!this.isOpenEndedRange(key) && !this.isAuxVolumeTier(tier)) {
+          visibleKeys.add(key);
+        }
+        const group = groups.get(key) || { key, count: 0, matches: [] };
+        group.count += 1;
+        group.matches.push({ promoId: promo.id, tier: index });
+        groups.set(key, group);
+      });
+    }
+    const out = [...groups.values()]
+      .filter((group) => {
+        if (!visibleKeys.size) return true;
+        if (visibleKeys.has(group.key)) return true;
+        if (!this.isOpenEndedRange(group.key)) return false;
+        return ![...visibleKeys].some((visibleKey) => (
+          this.keyFallsInsideRange(group.key, visibleKey)
+        ));
+      })
+      .sort((a, b) => {
+        const [aMin, aMax] = a.key.split(':').map(Number);
+        const [bMin, bMax] = b.key.split(':').map(Number);
+        return aMin - bMin || aMax - bMax;
+      })
+      .map((group) => ({
+        ...group,
+        label: this.rangeLabel(group.key),
+      }));
+    this._volumeCache = { promos, out };
+    return out;
+  }
+
+  currentVolumeKey() {
+    const selectedKeys = new Set();
+    const openKeys = new Set();
+    const visibleKeys = new Set(this.volumeOptions().map((item) => item.key));
+    let selectedCount = 0;
+    for (const promo of this.props.state.promos || []) {
+      if (!this.isVolumeTablePromo(promo)) continue;
+      const sel = this.sim(promo);
+      if (!sel || !sel.on || sel.tier == null) continue;
+      selectedCount += 1;
+      const tier = (promo.tiers || [])[sel.tier];
+      const key = this.rangeKey(tier);
+      if (!key) continue;
+      if (this.isAuxVolumeTier(tier, visibleKeys)) openKeys.add(key);
+      else selectedKeys.add(key);
+    }
+    if (!selectedCount) return '';
+    if (selectedKeys.size) {
+      return selectedKeys.size === 1 ? [...selectedKeys][0] : '__mixed__';
+    }
+    if (openKeys.size) {
+      return openKeys.size === 1 ? [...openKeys][0] : '__mixed__';
+    }
+    return selectedKeys.size === 1 ? [...selectedKeys][0] : '__mixed__';
+  }
+
+  applyVolumeRange(key) {
+    if (key === '__mixed__') return;
+    const previous = this.props.state.promoSim || {};
+    const simAll = { ...previous };
+    const volumePromoIds = new Set(
+      (this.props.state.promos || [])
+        .filter((promo) => this.isVolumeTablePromo(promo))
+        .map((promo) => String(promo.id)),
+    );
+    Object.keys(simAll).forEach((promoId) => {
+      if (volumePromoIds.has(String(promoId))) delete simAll[promoId];
+    });
+    if (key) {
+      const option = this.volumeOptions().find((item) => item.key === key);
+      for (const match of option ? option.matches : []) {
+        simAll[match.promoId] = { on: true, tier: match.tier };
+        this._openState.open[match.promoId] = true;
+      }
+      for (const promo of this.props.state.promos || []) {
+        if (!this.isVolumeTablePromo(promo)) continue;
+        (promo.tiers || []).forEach((tier, index) => {
+          if (!this.isAuxVolumeTier(tier, new Set(this.volumeOptions().map((item) => item.key)))) return;
+          if (!this.tierOverlapsRange(tier, key)) return;
+          simAll[promo.id] = { on: true, tier: index };
+          this._openState.open[promo.id] = true;
+        });
+      }
+    }
+    if (this.props.onChange) {
+      this.props.onChange(simAll);
+    } else {
+      this.props.state.promoSim = { ...simAll };
+      setPromoSim(this.props.state.promoSim);
+    }
+  }
 
   pickTier = (pr, index) => {
     /* IMPORTANTE: no mutar el objeto reactivo existente. En móvil, la
@@ -2052,7 +2344,9 @@ export class OrderPanel extends Component {
       let amount = 0;
       for (const [pidStr, qty] of Object.entries(cart || {})) {
         const product = this.productFor(pidStr);
-        amount += giftCardAmountFor(pr, product) * (qty || 0);
+        amount += giftCardAmountFor(
+          pr, product, selectedTierForPromo(this.props.state, pr, promoSim[pr.id]),
+        ) * (qty || 0);
       }
       if (amount > 0.005) {
         const sel = promoSim[pr.id];

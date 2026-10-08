@@ -233,15 +233,6 @@
   background: var(--rubber);
   color: var(--ink);
 }
-/* Sublínea explicativa bajo el título del panel — una frase corta,
-   discreta, que dice qué va en el panel (mismo rol que las notas
-   "pon aquí..." del layout en Excel, pero en tono de producto). */
-.o_ztyres_cotizador .panel .panel-sub {
-  margin: -6px 0 12px;
-  font-size: 12px;
-  color: var(--ink-soft);
-  opacity: .75;
-}
 .o_ztyres_cotizador .promos-panel.panel h2 {
   background: var(--teal);
   color: #fff;
@@ -409,13 +400,6 @@
   margin: 0;
   color: var(--ink);
 }
-.o_ztyres_cotizador .page-title-sub {
-  margin: 2px 0 0;
-  font-size: 11.5px;
-  font-weight: 600;
-  color: var(--ink-soft);
-  letter-spacing: .2px;
-}
 .o_ztyres_cotizador .catalog-panel { min-width: 0; }
 /* ---------- Barra de pedido flotante ----------
    Sin una columna lateral fija, el Pedido deja de estar siempre a la
@@ -458,10 +442,6 @@
 @media (max-width:1100px)  {
 .o_ztyres_cotizador .cart-bar-info { font-size: 12px; }
 }
-.o_ztyres_cotizador.modal-open .side-filters,
-.o_ztyres_cotizador.modal-open .order-panel {
-  position: static !important;
-}
 /* ---------- Modo compacto (laptops HD, poca altura de pantalla) ----------
    En monitores anchos pero de poca altura (1366x768, 1600x900, etc.)
    los espaciados pensados para pantallas grandes hacían que todo se
@@ -473,7 +453,6 @@
   .o_ztyres_cotizador .panel { padding: 10px; margin-bottom: 12px; }
   .o_ztyres_cotizador .panel h2 { padding: 5px 12px; font-size: 12px; margin-bottom: 8px; }
   .o_ztyres_cotizador .medida-summary { padding: 6px 12px 6px 8px; font-size: 12.5px; }
-  .o_ztyres_cotizador .dg-cell { padding: 3px 7px; }
   .o_ztyres_cotizador .price-tag { padding: 10px 12px 10px 20px; }
 }
 .o_ztyres_cotizador .sf-header {
@@ -490,33 +469,6 @@
   text-decoration: underline;
 }
 .o_ztyres_cotizador .sf-reset:hover { color: var(--rubber-dark); }
-/* Botón mostrar/ocultar el panel completo — solo existe visualmente
-   en mobile/tablet (≤1100px); en escritorio el panel siempre está
-   abierto, igual que antes. */
-.o_ztyres_cotizador .sf-mobile-toggle {
-  display: none;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  background: var(--ink);
-  border: none;
-  border-radius: var(--radius-sm);
-  padding: 9px 14px;
-  font-size: 12.5px;
-  font-weight: 700;
-  color: #FFFFFF;
-  cursor: pointer;
-}
-.o_ztyres_cotizador .sf-mobile-toggle:active {
-  opacity: .85;
-}
-.o_ztyres_cotizador .sf-mobile-toggle .chevron-icon {
-  font-size: 9px;
-  transition: transform var(--transition-fast);
-}
-.o_ztyres_cotizador .side-filters.open .sf-mobile-toggle .chevron-icon {
-  transform: rotate(90deg);
-}
 .o_ztyres_cotizador .sf-group { margin-bottom: 12px; }
 .o_ztyres_cotizador .sf-group-header {
   display: flex; justify-content: space-between; align-items: center;
@@ -542,11 +494,6 @@
   background: var(--line); border-radius: 999px; padding: 0 5px;
   flex-shrink: 0;
 }
-.o_ztyres_cotizador .sf-active-badge {
-  display: inline-block; background: var(--rubber); color: var(--ink);
-  font-size: 10px; font-weight: 700; border-radius: 999px;
-  padding: 0 6px; margin-left: 4px; vertical-align: middle;
-}
 /* Filtros activos — chips visibles fuera de #sfGroups a propósito,
    para que se vean aunque el panel esté colapsado en mobile o los
    grupos estén cerrados. Vacío (sin filtros) no ocupa espacio. */
@@ -561,52 +508,6 @@
   margin-bottom: 12px;
   padding-bottom: 10px;
   border-bottom: 1px solid var(--line);
-}
-.o_ztyres_cotizador .filter-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  background: var(--teal-soft);
-  color: var(--teal);
-  border-radius: 999px;
-  padding: 3px 6px 3px 10px;
-  font-size: 11px;
-  font-weight: 600;
-}
-.o_ztyres_cotizador .filter-chip-label {
-  font-weight: 700;
-  opacity: .75;
-}
-.o_ztyres_cotizador .filter-chip-x {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 15px;
-  height: 15px;
-  border-radius: 50%;
-  background: rgba(199, 154, 0, .16);
-  border: none;
-  color: var(--teal);
-  cursor: pointer;
-  padding: 0;
-}
-.o_ztyres_cotizador .filter-chip-x:hover {
-  background: var(--teal);
-  color: #fff;
-}
-.o_ztyres_cotizador .filter-chip-clear {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--ink-soft);
-  background: none;
-  border: none;
-  text-decoration: underline;
-  cursor: pointer;
-  padding: 0;
-  margin-left: 2px;
-}
-.o_ztyres_cotizador .filter-chip-clear:hover {
-  color: var(--rubber-dark);
 }
 /* ---------- Filtros del catálogo (búsqueda, tier, columnas) ---------- */
 .o_ztyres_cotizador .filters {
@@ -686,10 +587,6 @@
   font-size: 11.5px;
   padding: 6px 10px;
 }
-/* ---------- Grid de catálogo (filas de producto) ---------- */
-.o_ztyres_cotizador .dg-row.in-cart .dg-cell {
-  background: rgba(255, 179, 0, .12);
-}
 .o_ztyres_cotizador .marca-tag {
   font-weight: 700;
   font-size: 11px;
@@ -708,60 +605,6 @@
   font-weight: 700;
   line-height: 1.3;
   flex-shrink: 0;
-}
-.o_ztyres_cotizador .prod-name-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.o_ztyres_cotizador .prod-name-col {
-  min-width: 0;
-}
-/* Miniatura de producto — solo se usa si SHOW_PRODUCT_IMAGES está
-   activo en cotizador.js. El wrap siempre tiene fondo, así que el
-   espacio se ve igual de ordenado con imagen real o con el ícono de
-   marcador (nunca un hueco vacío ni un cuadro roto). Tamaño reducido
-   (antes 48px) para que el renglón completo del catálogo quede
-   bien compacto, cercano a 1cm de alto. */
-.o_ztyres_cotizador .prod-img-wrap {
-  width: 28px;
-  height: 28px;
-  border-radius: var(--radius-sm);
-  overflow: hidden;
-  flex-shrink: 0;
-  background: var(--line);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--ink-soft);
-  position: relative;
-  cursor: pointer;
-}
-.o_ztyres_cotizador .prod-img-wrap.no-image {
-  cursor: default;
-}
-.o_ztyres_cotizador .prod-img-zoom {
-  position: absolute;
-  right: -3px;
-  bottom: -3px;
-  width: 13px;
-  height: 13px;
-  border-radius: 50%;
-  background: rgba(27, 29, 34, .82);
-  color: #fff;
-  border: 1px solid #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.o_ztyres_cotizador .prod-img:hover {
-  filter: brightness(.93);
-}
-.o_ztyres_cotizador .prod-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
 }
 .o_ztyres_cotizador .in-cart-badge {
   display: inline-flex;
@@ -790,30 +633,10 @@
   font-weight: 700;
   color: var(--teal);
 }
-/* ---------- Celdas de atributo / precio: "item" autoetiquetado ----------
-   Cada atributo se etiqueta a sí mismo (texto chico gris arriba, valor
-   en negritas abajo), igual que las fichas de producto. Así no hace
-   falta una fila de encabezado aparte (la que dejaba todo muy
-   espaciado al activar muchas columnas). Además, cada celda .dg-attr
-   trae 2 atributos apilados (.attr-item) en vez de 1: con el mismo
-   ancho de columna entran el doble de datos antes de necesitar
-   scroll horizontal. */
-.o_ztyres_cotizador .dg-attr {
-  flex-direction: column;
-  align-items: stretch;
-  justify-content: flex-start;
-  gap: 5px;
-}
 .o_ztyres_cotizador .attr-item {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 3px;
-}
-.o_ztyres_cotizador .dg-price {
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: center;
   gap: 3px;
 }
 .o_ztyres_cotizador .cell-label {
@@ -827,50 +650,6 @@
   font-weight: 700;
   font-size: 13.5px;
   color: var(--text);
-}
-.o_ztyres_cotizador .dg-price .cell-value {
-  font-family: var(--font-mono);
-  font-size: 14px;
-}
-/* ---------- Grid real con scroll horizontal ----------
-   Si hay muchas columnas extra activas y de verdad no caben (ni
-   reduciéndolas a su mínimo de 108px), el grid se desborda dentro de
-   .table-scroll (overflow-x: auto, ver esa regla) en vez de romper el
-   layout. "Producto" y "Agregar" se quedan fijos (sticky) a los
-   lados mientras se hace ese scroll, así nunca se pierden de vista
-   aunque haya muchas columnas en medio. Como ahora son celdas de
-   grid (no <td> de tabla), el sticky funciona sin los problemas de
-   ancho que da position:sticky dentro de una tabla HTML. */
-.o_ztyres_cotizador .dg-prod,
-.o_ztyres_cotizador .dg-price,
-.o_ztyres_cotizador .dg-action {
-  position: sticky;
-  background: var(--card);
-  z-index: 1;
-}
-.o_ztyres_cotizador .dg-prod { left: 0; }
-/* Precio viaja pegado junto con Agregar (offset = ancho de la
-   columna de Acción, 150px) — así nunca queda una celda "suelta"
-   entre el contenido que se desplaza y el botón fijo, que es lo que
-   provocaba que "Agregar" se montara encima del texto de Precio y se
-   viera cortado ("PREC"). */
-.o_ztyres_cotizador .dg-price { right: 150px; }
-.o_ztyres_cotizador .dg-action { right: 0; }
-/* Mientras hay un modal abierto (.modal-open en la raíz, ver
-   lockScroll en constants.js), se apaga el sticky de estas celdas.
-   Es la forma confiable de evitar que la celda con la imagen
-   seleccionada (u otra celda sticky) se quede visible "flotando"
-   encima del modal en celular/tablet — un bug conocido de cómo
-   WebKit/Chrome móvil componen los elementos sticky. En desktop esto
-   no se nota: el modal se abre y cierra demasiado rápido para que
-   alguien note que la columna dejó de pegarse un instante. */
-.o_ztyres_cotizador.modal-open .dg-prod,
-.o_ztyres_cotizador.modal-open .dg-price,
-.o_ztyres_cotizador.modal-open .dg-action {
-  position: static !important;
-}
-.o_ztyres_cotizador .dg-row:hover .dg-cell {
-  background: var(--line);
 }
 /* ---------- Indicador de cálculo automático ---------- */
 .o_ztyres_cotizador .calc-loading {
@@ -1175,15 +954,6 @@
   font-size: 12px;
   color: var(--ink-soft);
 }
-/* ---------- Tree grid (catálogo por RIN / medida) ---------- */
-.o_ztyres_cotizador .tree-grid {
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  overflow: hidden;
-}
-.o_ztyres_cotizador .tree-grid details {
-  display: block;
-}
 /* Encabezado de grupo — ahora agrupa directo por medida completa
    (ej. "195/65 R15"), sin el nivel RIN intermedio de antes. Mismo
    trato visual que antes tenía RIN (franja oscura con acento a la
@@ -1215,30 +985,6 @@
 .o_ztyres_cotizador .medida-body {
   padding: 0;
   background: var(--card);
-}
-.o_ztyres_cotizador .data-grid {
-  display: grid;
-  width: 100%;
-  font-size: 12.5px;
-}
-/* .dg-row es display:contents (ver más abajo): no genera caja propia,
-   así que sus .dg-cell hijas quedan como celdas directas de
-   .data-grid, alineadas en columna con todas las demás filas. */
-.o_ztyres_cotizador .dg-row {
-  display: contents;
-}
-.o_ztyres_cotizador .dg-cell {
-  display: flex;
-  align-items: center;
-  padding: 4px 7px;
-  border-bottom: 1px solid var(--line);
-  min-width: 0;
-}
-.o_ztyres_cotizador .dg-prod {
-  align-items: center;
-}
-.o_ztyres_cotizador .dg-row.is-last .dg-cell {
-  border-bottom: none;
 }
 .o_ztyres_cotizador .chevron-icon {
   display: inline-block;
@@ -1278,211 +1024,14 @@
 .o_ztyres_cotizador .medida-summary.has-cart {
   box-shadow: inset 3px 0 0 0 var(--success);
 }
-/* ---------- Área de promociones (versión compacta) ----------
-   Antes era un panel grande de ancho completo; ahora es una tira
-   angosta de chips (solo el logo + un punto de estado) — la
-   información completa sigue disponible en :hover y al hacer click
-   (mismo modal de detalle de siempre), pero ya no ocupa media
-   pantalla solo para mostrarla. */
-.o_ztyres_cotizador .promos-compact {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-  margin-bottom: 14px;
-  padding: 6px 4px;
-}
-.o_ztyres_cotizador .promos-compact-label {
-  font-size: 11px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: .3px;
-  color: var(--ink-soft);
-  flex-shrink: 0;
-}
-.o_ztyres_cotizador .promos-compact-strip {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-}
-/* ---------- Tarjetas de promoción, completas (sin hover ni modal) ----------
-   Logo + marca + descripción + estado, todo visible de una vez — ya
-   no hace falta pasar el mouse ni tocar para ver el detalle, porque
-   ahora hay ancho de sobra para mostrarlo directo. */
-/* Grid de 2 en 2 por marca (layout del Excel): las promos se ven
-   TODAS de una vez, dos por renglón, sin scroll horizontal escondido
-   — en celular colapsa a 1 columna (ver @media 700px). */
-.o_ztyres_cotizador .promos-full-list {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-}
-.o_ztyres_cotizador .promo-card-full {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  background: var(--paper);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-sm);
-  padding: 12px;
-}
-.o_ztyres_cotizador .promo-card-full.active {
-  border-color: var(--success);
-}
-.o_ztyres_cotizador .promo-full-img {
-  width: 44px;
-  height: 44px;
-  object-fit: contain;
-  flex-shrink: 0;
-}
-.o_ztyres_cotizador .promo-full-body {
-  min-width: 0;
-}
-.o_ztyres_cotizador .promo-full-title {
-  font-family: var(--font-display);
-  font-size: 13px;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: .2px;
-}
-.o_ztyres_cotizador .promo-full-desc {
-  font-size: 12px;
-  color: var(--ink-soft);
-  line-height: 1.4;
-  margin: 4px 0 6px;
-}
-.o_ztyres_cotizador .promo-full-status {
-  display: inline-block;
-  font-size: 11px;
-  font-weight: 700;
-  padding: 3px 10px;
-  border-radius: 999px;
-  background: var(--warn-soft);
-  color: var(--rubber-dark);
-}
-.o_ztyres_cotizador .promo-full-status.active {
-  background: var(--success-soft);
-  color: #1b5e2e;
-}
 /* ============================================================
    Modal de zoom de imagen de producto
    ============================================================ */
 .o_ztyres_cotizador.modal-open {
   overflow: hidden;
 }
-.o_ztyres_cotizador .img-modal {
-  display: none;
-  position: fixed;
-  top: 0; right: 0; bottom: 0; left: 0;
-  z-index: 1000;
-  align-items: center;
-  justify-content: center;
-}
-.o_ztyres_cotizador .img-modal.open {
-  display: flex;
-}
-.o_ztyres_cotizador .img-modal-backdrop {
-  position: absolute;
-  top: 0; right: 0; bottom: 0; left: 0;
-  background: rgba(20, 18, 14, .82);
-  animation: img-modal-fade .15s ease;
-}
-.o_ztyres_cotizador .img-modal-content {
-  position: relative;
-  z-index: 1;
-  max-width: min(760px, 92vw);
-  max-height: 88vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  animation: img-modal-pop .18s ease;
-}
-.o_ztyres_cotizador .img-modal-content img {
-  max-width: 100%;
-  max-height: 76vh;
-  border-radius: 12px;
-  background: #fff;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, .4);
-  object-fit: contain;
-}
-.o_ztyres_cotizador .img-modal-caption {
-  color: #FFFFFF;
-  font-size: 13px;
-  font-weight: 600;
-  margin-top: 12px;
-  text-align: center;
-  padding: 0 10px;
-  width: 100%;
-}
-.o_ztyres_cotizador .img-modal-title {
-  font-family: var(--font-display);
-  font-size: 17px;
-  font-weight: 800;
-  text-transform: uppercase;
-}
-.o_ztyres_cotizador .img-modal-meta {
-  font-size: 12px;
-  font-weight: 500;
-  color: #c9c8c2;
-  margin-top: 3px;
-}
-.o_ztyres_cotizador .img-modal-details {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 5px 20px;
-  margin-top: 12px;
-  text-align: left;
-  width: 100%;
-}
-.o_ztyres_cotizador .img-modal-detail {
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-  font-size: 12px;
-  border-bottom: 1px solid rgba(255, 255, 255, .12);
-  padding-bottom: 4px;
-}
-.o_ztyres_cotizador .img-modal-detail-label {
-  color: #9b9890;
-  font-weight: 700;
-  text-transform: uppercase;
-  font-size: 10px;
-  letter-spacing: .3px;
-  flex-shrink: 0;
-}
-.o_ztyres_cotizador .img-modal-detail-value {
-  font-weight: 600;
-  text-align: right;
-}
-.o_ztyres_cotizador .img-modal-close {
-  position: absolute;
-  top: -16px;
-  right: -16px;
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  background: var(--ink);
-  color: #fff;
-  border: 2px solid var(--paper);
-  font-size: 15px;
-  font-weight: 700;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.o_ztyres_cotizador .img-modal-close:hover {
-  background: var(--rubber-dark);
-}
-@keyframes img-modal-fade  {
-from  { opacity: 0; }
-to  { opacity: 1; }
-}
-@keyframes img-modal-pop  {
-from  { opacity: 0; transform: scale(.94); }
-to  { opacity: 1; transform: scale(1); }
-}
+
+
 /* ---------- Toast "producto agregado" ----------
    Esquina inferior derecha, no bloquea nada, se autodestruye solo.
    Confirma que agregar SÍ funcionó sin obligar a bajar la vista
@@ -1530,14 +1079,6 @@ to  { opacity: 1; transform: scale(1); }
 @media (prefers-reduced-motion: reduce) {
   .o_ztyres_cotizador .add-toast { animation: none; }
 }
-@media (max-width:480px)  {
-.o_ztyres_cotizador .img-modal-close {
-    top: -14px;
-    right: 2px;
-    width: 30px;
-    height: 30px;
-  }
-}
 /* ============================================================
    Responsive — tablet y celular
    ============================================================ */
@@ -1561,11 +1102,6 @@ to  { opacity: 1; transform: scale(1); }
     flex-wrap: wrap;
     width: 100%;
   }
-.o_ztyres_cotizador .sf-mobile-toggle {
-    display: flex;
-    width: 100%;
-    order: 3;
-  }
 /* #sfGroups colapsado por default en móvil/tablet (lo que evita que
    los filtros invadan tanto espacio hacia abajo): se anima con
    max-height en vez de display:none/block de golpe, para que abrir y
@@ -1574,9 +1110,6 @@ to  { opacity: 1; transform: scale(1); }
     max-height: 0;
     overflow: hidden;
     transition: max-height .28s ease;
-  }
-.o_ztyres_cotizador .side-filters.open #sfGroups {
-    max-height: 2000px;
   }
 }
 /* ≤760px: celular */
@@ -1599,29 +1132,6 @@ to  { opacity: 1; transform: scale(1); }
 .o_ztyres_cotizador .table-scroll {
     max-height: none;
   }
-.o_ztyres_cotizador .data-grid {
-    display: block !important;
-    grid-template-columns: none !important;
-  }
-.o_ztyres_cotizador .dg-row {
-    display: block;
-    padding: 10px 12px;
-    border-bottom: 1px solid var(--line);
-  }
-.o_ztyres_cotizador .dg-row.is-last {
-    border-bottom: none;
-  }
-.o_ztyres_cotizador .dg-cell {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 4px 0;
-    border-bottom: none;
-    gap: 12px;
-  }
-.o_ztyres_cotizador .dg-attr {
-    display: block;
-  }
 .o_ztyres_cotizador .attr-item {
     display: flex;
     flex-direction: row;
@@ -1630,18 +1140,6 @@ to  { opacity: 1; transform: scale(1); }
     width: 100%;
     padding: 3px 0;
     gap: 12px;
-  }
-.o_ztyres_cotizador .dg-price {
-    flex-direction: row;
-    margin-top: 6px;
-    padding-top: 10px;
-    padding-bottom: 4px;
-    border-top: 1px dashed var(--line);
-  }
-.o_ztyres_cotizador .dg-prod,
-.o_ztyres_cotizador .dg-price,
-.o_ztyres_cotizador .dg-action {
-    position: static;
   }
 .o_ztyres_cotizador .cell-label {
     display: inline-block;
@@ -1654,27 +1152,6 @@ to  { opacity: 1; transform: scale(1); }
   }
 .o_ztyres_cotizador .cell-value {
     text-align: right;
-  }
-.o_ztyres_cotizador .dg-prod {
-    display: block;
-    padding-bottom: 8px;
-  }
-.o_ztyres_cotizador .dg-action {
-    padding-top: 8px;
-  }
-.o_ztyres_cotizador .dg-action .add-btn, .o_ztyres_cotizador .dg-action .qty-stepper {
-    width: 100%;
-  }
-.o_ztyres_cotizador .dg-action .add-btn {
-    text-align: center;
-  }
-.o_ztyres_cotizador .dg-action .qty-stepper {
-    justify-content: center;
-    gap: 12px;
-  }
-.o_ztyres_cotizador .dg-action .step-btn {
-    width: 28px;
-    height: 28px;
   }
 }
 /* ≤480px: celular chico */
@@ -1910,34 +1387,6 @@ to  { opacity: 1; transform: scale(1); }
   white-space: nowrap;
   font-size: .95em;
 }
-/* ============================================================
-   Tabla de Pedido — mismo lenguaje visual que la tabla de productos
-   (comparte la clase .flat-table), con sus propias columnas: no
-   necesita Tier/Rin/etc., pero sí Cantidad (editable) y Subtotal. */
-.o_ztyres_cotizador .cart-table .cart-th-qty { width: 150px; text-align: center; }
-.o_ztyres_cotizador .cart-td-prod { font-weight: 700; }
-/* Línea de pedido en formato del Excel ("Ver pedido"): marca+modelo
-   como principal, código · medida como sublínea mono debajo. */
-.o_ztyres_cotizador .cart-prod-main { display: block; }
-.o_ztyres_cotizador .cart-prod-sub {
-  display: block;
-  font-family: var(--font-mono);
-  font-weight: 500;
-  font-size: .84em;
-  color: var(--ink-soft);
-  margin-top: 1px;
-}
-.o_ztyres_cotizador .cart-price-old {
-  display: block;
-  text-decoration: line-through;
-  opacity: .55;
-  font-size: .85em;
-}
-.o_ztyres_cotizador .cart-price-promo {
-  color: #2e7d32;
-  font-weight: 800;
-}
-.o_ztyres_cotizador .cart-td-qty { text-align: center; }
 .o_ztyres_cotizador .qty-cell {
   display: flex;
   flex-direction: column;
@@ -1950,24 +1399,6 @@ to  { opacity: 1; transform: scale(1); }
   font-weight: 600;
   color: var(--ink-soft);
   letter-spacing: .2px;
-}
-.o_ztyres_cotizador .cart-td-price,
-.o_ztyres_cotizador .cart-td-subtotal {
-  text-align: right;
-  font-family: var(--font-mono);
-  white-space: nowrap;
-  font-size: .95em;
-}
-.o_ztyres_cotizador .cart-td-subtotal {
-  font-weight: 800;
-}
-.o_ztyres_cotizador .cart-td-action { text-align: center; width: 40px; }
-.o_ztyres_cotizador .cart-table-scroll {
-  max-height: none;
-  overflow-y: visible;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--line);
-  margin-bottom: 14px;
 }
 .o_ztyres_cotizador .flat-td-action { text-align: center; }
 
@@ -2020,11 +1451,6 @@ to  { opacity: 1; transform: scale(1); }
 
 /* Columna de imagen (miniatura pequeña, clic para zoom) */
 .o_ztyres_cotizador .flat-td-img { width: 44px; padding: 6px !important; text-align: center; }
-.o_ztyres_cotizador .flat-td-img .prod-img-wrap {
-  width: 30px;
-  height: 30px;
-  margin: 0 auto;
-}
 
 .o_ztyres_cotizador .flat-table .flat-th-tier,
 .o_ztyres_cotizador .flat-td-tier { width: 44px; text-align: center; }
@@ -2062,18 +1488,6 @@ to  { opacity: 1; transform: scale(1); }
   font-weight: 800;
   line-height: 1;
   vertical-align: 1px;
-}
-/* La columna K/B se retiró del catálogo: el % de Key Size ya viaja
-   dentro del beneficio de la promoción y el −10% de Mayoreo ya viene
-   aplicado en la columna Precio. Se conservan .mark-key/.mark-mayoreo
-   por si se quieren reutilizar como distintivo en otra vista. */
-.o_ztyres_cotizador .mark-key {
-  color: #1f2937;
-  background: #fde68a;
-}
-.o_ztyres_cotizador .mark-mayoreo {
-  color: #fff;
-  background: #dc2626;
 }
 .o_ztyres_cotizador .flat-table .flat-th-dot,
 .o_ztyres_cotizador .flat-td-dot {
@@ -2378,7 +1792,6 @@ to  { opacity: 1; transform: scale(1); }
 
   /* Fila 1: imagen + Marca (lo primero que hay que identificar). */
   .o_ztyres_cotizador .flat-td-img { order: 1; flex: 0 0 46px; }
-  .o_ztyres_cotizador .flat-td-img .prod-img-wrap { width: 46px; height: 46px; }
   .o_ztyres_cotizador .flat-td-marca {
     order: 2;
     flex: 1 1 auto;
@@ -2535,53 +1948,6 @@ to  { opacity: 1; transform: scale(1); }
     font-size: 14px;
   }
 
-  /* Tabla de Pedido en móvil: patrón simple etiqueta:valor — puede
-     tener muchas líneas (150+), pero cada campo es corto, así que no
-     necesita el tratamiento de tarjeta más elaborado de la tabla de
-     productos. */
-  .o_ztyres_cotizador .cart-table thead { display: none; }
-  .o_ztyres_cotizador .cart-table, .o_ztyres_cotizador .cart-table tbody, .o_ztyres_cotizador .cart-table tr {
-    display: block;
-    width: 100%;
-  }
-  .o_ztyres_cotizador .cart-table tr {
-    background: var(--paper);
-    border: 1px solid var(--line);
-    border-radius: var(--radius-sm);
-    padding: 10px;
-    margin-bottom: 10px;
-  }
-  .o_ztyres_cotizador .cart-table td {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border: none !important;
-    padding: 4px 0 !important;
-  }
-  .o_ztyres_cotizador .cart-table td::before {
-    content: attr(data-label);
-    font-size: 10px;
-    text-transform: uppercase;
-    font-weight: 700;
-    color: var(--ink-soft);
-  }
-  .o_ztyres_cotizador .cart-td-prod {
-    font-size: 1.05em;
-    font-weight: 800;
-  }
-  .o_ztyres_cotizador .cart-td-prod::before { content: none; }
-  .o_ztyres_cotizador .cart-td-subtotal {
-    border-top: 1px solid var(--line) !important;
-    margin-top: 6px;
-    padding-top: 8px !important;
-    font-size: 1.15em;
-  }
-  .o_ztyres_cotizador .cart-td-action { justify-content: flex-end; }
-  .o_ztyres_cotizador .cart-table-scroll {
-    max-height: none;
-    border: none;
-  }
-
   /* Barra de filtros: los botones pasan a ocupar toda la fila
      disponible en vez de amontonarse en una sola línea apretada, y
      quedan más altos para tocarse cómodo con el dedo. */
@@ -2630,16 +1996,6 @@ to  { opacity: 1; transform: scale(1); }
     grid-template-columns: repeat(2, 1fr);
   }
 
-  /* Promos: sigue siendo una sola fila desplazable en celular
-     (mismo criterio que en escritorio), solo que con tarjetas algo
-     más angostas para que quepa mejor un dedo de "vista previa" del
-     siguiente elemento e invite a deslizar. */
-  /* Promos en celular: de "2 en 2" pasa a 1 por renglón — dos
-     tarjetas lado a lado en 360px quedan ilegibles. */
-  .o_ztyres_cotizador .promos-full-list {
-    grid-template-columns: 1fr;
-  }
-
   .o_ztyres_cotizador .global-search input { font-size: 16px; } /* evita el zoom automático de iOS al enfocar */
   .o_ztyres_cotizador .global-search { padding: 10px 14px; } /* área táctil cómoda para el buscador */
 }
@@ -2674,7 +2030,6 @@ to  { opacity: 1; transform: scale(1); }
    no necesitan el aire pensado para el layout apilado anterior. --- */
 .o_ztyres_cotizador .page-title { margin-bottom: 6px; }
 .o_ztyres_cotizador .page-title h1 { font-size: 20px; }
-.o_ztyres_cotizador .page-title-sub { font-size: 11px; }
 
 /* --- Política comercial compacta: barra delgada de una sola fila
    (envuelve en pantallas angostas), título y campos más chicos. --- */
@@ -2713,26 +2068,6 @@ to  { opacity: 1; transform: scale(1); }
    informaría menos que el tooltip. --- */
 .o_ztyres_cotizador .side-left .promos-panel { padding: 10px; }
 .o_ztyres_cotizador .side-left .promos-panel h2 { font-size: 11px; padding: 5px 10px; margin-bottom: 8px; }
-.o_ztyres_cotizador .side-left .promos-full-list { gap: 8px; }
-.o_ztyres_cotizador .side-left .promo-card-full {
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  gap: 6px;
-  padding: 8px 6px;
-  cursor: help;
-}
-.o_ztyres_cotizador .side-left .promo-full-img { width: 34px; height: 34px; }
-.o_ztyres_cotizador .side-left .promo-full-title {
-  font-size: 9.5px;
-  line-height: 1.2;
-}
-.o_ztyres_cotizador .side-left .promo-full-desc { display: none; }
-.o_ztyres_cotizador .side-left .promo-full-status {
-  font-size: 9.5px;
-  padding: 2px 6px;
-  line-height: 1.3;
-}
 
 /* --- Pedido en la barra derecha: panel compacto. --- */
 .o_ztyres_cotizador .side-right .order-panel { padding: 10px; }
@@ -2746,59 +2081,6 @@ to  { opacity: 1; transform: scale(1); }
   padding: 8px 10px;
   margin-bottom: 8px;
   background: var(--paper);
-}
-.o_ztyres_cotizador .cart-line-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 8px;
-}
-.o_ztyres_cotizador .cart-line-top .cart-prod-main {
-  font-weight: 800;
-  font-size: 12.5px;
-  line-height: 1.25;
-}
-.o_ztyres_cotizador .cart-line-top .remove-x { flex-shrink: 0; }
-.o_ztyres_cotizador .cart-line-meta {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: 8px;
-  margin-top: 2px;
-}
-.o_ztyres_cotizador .cart-line-meta .cart-prod-sub { margin-top: 0; font-size: 11px; }
-.o_ztyres_cotizador .cart-line-stock {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  color: var(--ink-soft);
-  opacity: .7;
-  white-space: nowrap;
-  cursor: help;
-}
-.o_ztyres_cotizador .cart-line-bottom {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 10px;
-  margin-top: 8px;
-  padding-top: 8px;
-  border-top: 1px dashed var(--line);
-}
-.o_ztyres_cotizador .cart-line-bottom .qty-stepper { gap: 5px; }
-.o_ztyres_cotizador .cart-line-bottom .step-btn { width: 24px; height: 24px; }
-.o_ztyres_cotizador .cart-line-bottom .step-input { width: 40px; font-size: 12.5px; }
-.o_ztyres_cotizador .cart-line-prices {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  line-height: 1.25;
-  font-family: var(--font-mono);
-}
-.o_ztyres_cotizador .cart-line-prices .cart-price-old { display: inline; font-size: 10.5px; }
-.o_ztyres_cotizador .cart-line-prices .cart-price-unit { font-size: 11.5px; }
-.o_ztyres_cotizador .cart-line-prices .cart-line-subtotal {
-  font-weight: 800;
-  font-size: 13.5px;
 }
 
 /* La barra flotante "Ver pedido ↓" solo tiene sentido cuando el
@@ -2825,125 +2107,6 @@ to  { opacity: 1; transform: scale(1); }
   .o_ztyres_cotizador .center-col { order: 1; }
   .o_ztyres_cotizador .side-right { order: 3; }
   .o_ztyres_cotizador .side-col .panel { margin-bottom: 12px; }
-  /* A ancho completo las promos recuperan su tarjeta horizontal con
-     descripción visible, de 2 en 2 (1 en 1 abajo de 700px, regla ya
-     existente más arriba). */
-  .o_ztyres_cotizador .side-left .promo-card-full {
-    flex-direction: row;
-    align-items: flex-start;
-    text-align: left;
-    padding: 12px;
-    cursor: default;
-  }
-  .o_ztyres_cotizador .side-left .promo-full-img { width: 44px; height: 44px; }
-  .o_ztyres_cotizador .side-left .promo-full-title { font-size: 13px; }
-  .o_ztyres_cotizador .side-left .promo-full-desc { display: block; }
-  .o_ztyres_cotizador .side-left .promo-full-status { font-size: 11px; }
-}
-
-/* Pantallas muy anchas: el pedido gana un poco más de aire. */
-
-/* v3.5 — Selector visual de políticas complejas. */
-.o_ztyres_cotizador .promo-tier-dropdown {
-  position: relative;
-  margin-top: 5px;
-}
-.o_ztyres_cotizador .promo-tier-dropdown-label {
-  display: block;
-  margin: 0 0 4px;
-  color: var(--ink-soft);
-  font-size: 9.5px;
-}
-.o_ztyres_cotizador .promo-tier-card {
-  position: relative;
-  display: block;
-  width: 100%;
-  margin: 0;
-  padding: 6px 7px;
-  border: 1px solid #cbd5e1;
-  border-radius: 7px;
-  background: #fff;
-  color: var(--ink);
-  text-align: left;
-  font-size: 9px;
-  line-height: 1.15;
-}
-.o_ztyres_cotizador .promo-tier-card-selected {
-  padding-right: 19px;
-  padding-left: 24px;
-  border-color: #94a9c2;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, .08);
-}
-.o_ztyres_cotizador .promo-tier-option { padding-left: 24px; }
-.o_ztyres_cotizador .promo-tier-radio {
-  position: absolute;
-  top: 8px;
-  left: 7px;
-  width: 11px;
-  height: 11px;
-  border: 1.5px solid #8a98a8;
-  border-radius: 50%;
-  background: #fff;
-}
-.o_ztyres_cotizador .promo-tier-radio.checked {
-  border-color: var(--promo-c, #27834a);
-  box-shadow: inset 0 0 0 2.5px #fff;
-  background: var(--promo-c, #27834a);
-}
-.o_ztyres_cotizador .promo-tier-card strong {
-  display: block;
-  margin-bottom: 4px;
-  font-size: 10px;
-  font-weight: 800;
-}
-.o_ztyres_cotizador .promo-tier-arrow {
-  position: absolute;
-  top: 8px;
-  right: 7px;
-  color: #68809c;
-  font-size: 9.5px;
-}
-.o_ztyres_cotizador .promo-tier-placeholder {
-  color: var(--ink-soft);
-  font-weight: 700;
-}
-.o_ztyres_cotizador .promo-tier-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 3px;
-}
-.o_ztyres_cotizador .promo-tier-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  min-width: 0;
-  padding: 3px 4px;
-  border: 1px solid #dce5ef;
-  border-radius: 4px;
-  background: #f8fafc;
-  white-space: nowrap;
-}
-.o_ztyres_cotizador .promo-tier-chip b {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  font-size: 9.5px;
-}
-.o_ztyres_cotizador .promo-tier-chip em {
-  color: #27834a;
-  font-size: 9px;
-  font-style: normal;
-  font-weight: 900;
-}
-.o_ztyres_cotizador .promo-tier-menu {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  margin-top: 4px;
-}
-.o_ztyres_cotizador .promo-tier-option:hover,
-.o_ztyres_cotizador .promo-tier-option.active {
-  border-color: #9edeb4;
-  background: #effcf3;
 }
 
 /* Modelo cede espacio; Promociones y Pedido ganan ancho en laptop. */
@@ -2954,12 +2117,6 @@ to  { opacity: 1; transform: scale(1); }
   .o_ztyres_cotizador .catalog-panel .flat-table thead th { padding: 6px 4px; }
   .o_ztyres_cotizador .catalog-panel .flat-table tbody td { padding: 5px 4px; }
   .o_ztyres_cotizador .side-left .facet-name { font-size: 13px; }
-  .o_ztyres_cotizador .promo-compact-meta,
-  .o_ztyres_cotizador .promo-tier-dropdown-label { font-size: 10.5px; }
-  .o_ztyres_cotizador .promo-tier-card { font-size: 11px; }
-  .o_ztyres_cotizador .promo-tier-card strong { font-size: 12px; }
-  .o_ztyres_cotizador .promo-tier-chip b { font-size: 10px; }
-  .o_ztyres_cotizador .promo-tier-chip em { font-size: 11px; }
   .o_ztyres_cotizador .side-right .order-panel h2 { font-size: 12.5px; }
   .o_ztyres_cotizador .side-right .clc-brand { font-size: 13px; }
   .o_ztyres_cotizador .side-right .clc-model,
@@ -2976,52 +2133,9 @@ to  { opacity: 1; transform: scale(1); }
   .o_ztyres_cotizador .catalog-panel .flat-table thead th { padding: 6px 3px; }
   .o_ztyres_cotizador .catalog-panel .flat-table tbody td { padding: 5px 3px; }
   .o_ztyres_cotizador .side-left .facet-name { font-size: 12px; }
-  .o_ztyres_cotizador .promo-tier-card { font-size: 10.5px; }
-  .o_ztyres_cotizador .promo-tier-card strong { font-size: 11.5px; }
   .o_ztyres_cotizador .side-right .clc-brand { font-size: 12px; }
   .o_ztyres_cotizador .side-right .clc-model,
   .o_ztyres_cotizador .side-right .clc-price { font-size: 11.5px; }
-}
-
-/* v3.6.1 final — mismo renglón y radio que las promociones normales. */
-.o_ztyres_cotizador .side-left .facet-tier-complex {
-  font-size: 9.5px;
-  letter-spacing: -.12px;
-}
-.o_ztyres_cotizador .side-left .facet-tier-complex span {
-  display: block;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-@media (min-width: 1551px) {
-  .o_ztyres_cotizador .side-left .facet-tier-complex { font-size: 10px; }
-}
-@media (min-width: 1900px) {
-  .o_ztyres_cotizador .side-left .facet-tier-complex { font-size: 10.5px; }
-}
-@media (min-width: 1101px) and (max-width: 1550px) and (min-height: 801px) {
-  .o_ztyres_cotizador .side-left .facet-tier-complex { font-size: 9.5px; }
-}
-
-/* v3.7 definitivo — debe permanecer al final para ganar sobre el
-   historial de reglas responsivas del cotizador. */
-.o_ztyres_cotizador .side-left .facet-tier,
-.o_ztyres_cotizador .side-left .facet-tier-complex { align-items: start; }
-.o_ztyres_cotizador .side-left .facet-tier input,
-.o_ztyres_cotizador .side-left .facet-tier-complex input {
-  margin-top: 2px;
-  flex: 0 0 auto;
-}
-.o_ztyres_cotizador .side-left .facet-tier span,
-.o_ztyres_cotizador .side-left .facet-tier-complex span {
-  display: block;
-  min-width: 0;
-  white-space: normal;
-  overflow: visible;
-  text-overflow: clip;
-  overflow-wrap: anywhere;
-  line-height: 1.25;
 }
 @media (min-width: 1101px) {
   .o_ztyres_cotizador .catalog-panel .flat-table {
@@ -3067,34 +2181,9 @@ to  { opacity: 1; transform: scale(1); }
   .o_ztyres_cotizador .client-panel-compact .client-field label { font-size: 9.5px; }
   .o_ztyres_cotizador .client-panel-compact .client-field select { width: 50px; }
   .o_ztyres_cotizador .catalog-panel .flat-table { font-size: 11.5px; }
-  .o_ztyres_cotizador .side-left .facet-tier-complex { font-size: 10px; }
 }
 @media (min-width: 1900px) {
   .o_ztyres_cotizador .catalog-panel .flat-table { font-size: 12px; }
-  .o_ztyres_cotizador .side-left .facet-tier-complex { font-size: 10.5px; }
-}
-
-/* v3.7 final — todo el cotizador visible en laptop y monitor.
-   Los rangos ya no se recortan: conservan el radio y envuelven el
-   texto completo dentro de la tarjeta cuando falta ancho. */
-.o_ztyres_cotizador .side-left .facet-tier,
-.o_ztyres_cotizador .side-left .facet-tier-complex {
-  align-items: start;
-}
-.o_ztyres_cotizador .side-left .facet-tier input,
-.o_ztyres_cotizador .side-left .facet-tier-complex input {
-  margin-top: 2px;
-  flex: 0 0 auto;
-}
-.o_ztyres_cotizador .side-left .facet-tier span,
-.o_ztyres_cotizador .side-left .facet-tier-complex span {
-  display: block;
-  min-width: 0;
-  white-space: normal;
-  overflow: visible;
-  text-overflow: clip;
-  overflow-wrap: anywhere;
-  line-height: 1.25;
 }
 
 @media (min-width: 1101px) {
@@ -3151,54 +2240,6 @@ to  { opacity: 1; transform: scale(1); }
   padding: 6px 7px 9px;
 }
 
-.o_ztyres_cotizador .side-left .promos-panel .facet-tier,
-.o_ztyres_cotizador .side-left .promos-panel .facet-tier-complex {
-  align-items: flex-start;
-  gap: 7px;
-  padding: 7px 8px;
-  border: 1px solid color-mix(in srgb, var(--promo-b, #94A3B8) 35%, #FFFFFF);
-  border-radius: 8px;
-  background: color-mix(in srgb, var(--promo-t, #F8FAFC) 55%, #FFFFFF);
-  transition: border-color 120ms ease, background 120ms ease, box-shadow 120ms ease;
-}
-
-.o_ztyres_cotizador .side-left .promos-panel .facet-tier:hover,
-.o_ztyres_cotizador .side-left .promos-panel .facet-tier-complex:hover {
-  border-color: var(--promo-b, #94A3B8);
-  background: var(--promo-t, #F8FAFC);
-}
-
-.o_ztyres_cotizador .side-left .promos-panel .facet-tier:has(input:checked),
-.o_ztyres_cotizador .side-left .promos-panel .facet-tier-complex:has(input:checked) {
-  border-color: var(--promo-c, #475569);
-  background: var(--promo-t, #F8FAFC);
-  box-shadow: 0 0 0 1px var(--promo-c, #475569);
-}
-
-.o_ztyres_cotizador .side-left .promos-panel .facet-tier input,
-.o_ztyres_cotizador .side-left .promos-panel .facet-tier-complex input {
-  flex: 0 0 auto;
-  margin-top: 2px;
-}
-
-.o_ztyres_cotizador .side-left .promos-panel .promo-benefit-copy {
-  display: block;
-  min-width: 0;
-  white-space: normal;
-  overflow-wrap: anywhere;
-  color: var(--ink, #1F2937);
-  font-size: clamp(10.5px, 0.69vw, 12.5px);
-  font-weight: 600;
-  line-height: 1.35;
-}
-
-@media (max-width: 1450px) {
-  .o_ztyres_cotizador .side-left .promos-panel .facet-tier,
-  .o_ztyres_cotizador .side-left .promos-panel .facet-tier-complex {
-    padding: 6px;
-    gap: 5px;
-  }
-}
 
 @media (min-width: 1101px) and (max-width: 1550px) {
   .o_ztyres_cotizador .app-topbar .global-search { min-width: 170px; }
@@ -3214,33 +2255,10 @@ to  { opacity: 1; transform: scale(1); }
   .o_ztyres_cotizador .client-panel-compact .client-field label { font-size: 9.5px; }
   .o_ztyres_cotizador .client-panel-compact .client-field select { width: 50px; }
   .o_ztyres_cotizador .catalog-panel .flat-table { font-size: 11.5px; }
-  .o_ztyres_cotizador .side-left .facet-tier-complex { font-size: 10px; }
 }
 
 @media (min-width: 1900px) {
   .o_ztyres_cotizador .catalog-panel .flat-table { font-size: 12px; }
-  .o_ztyres_cotizador .side-left .facet-tier-complex { font-size: 10.5px; }
-}
-
-/* v3.6.1 — Rin y volumen mensual homologados con los radios normales. */
-.o_ztyres_cotizador .side-left .facet-tier-complex {
-  font-size: 9.5px;
-  letter-spacing: -.12px;
-}
-.o_ztyres_cotizador .side-left .facet-tier-complex span {
-  display: block;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-@media (min-width: 1551px) {
-  .o_ztyres_cotizador .side-left .facet-tier-complex { font-size: 10px; }
-}
-@media (min-width: 1900px) {
-  .o_ztyres_cotizador .side-left .facet-tier-complex { font-size: 10.5px; }
-}
-@media (min-width: 1101px) and (max-width: 1550px) and (min-height: 801px) {
-  .o_ztyres_cotizador .side-left .facet-tier-complex { font-size: 9.5px; }
 }
 
 /* Los paneles dentro del grid ya no son "pantallas" apiladas — el
@@ -3402,9 +2420,6 @@ to  { opacity: 1; transform: scale(1); }
    de lectura, 13px se ve chico. */
 @media (min-width: 1900px) {
   .o_ztyres_cotizador .flat-table { font-size: 14px; }
-  .o_ztyres_cotizador .side-left .promo-full-img { width: 40px; height: 40px; }
-  .o_ztyres_cotizador .side-left .promo-full-title { font-size: 10.5px; }
-  .o_ztyres_cotizador .side-left .promo-full-status { font-size: 9.5px; }
 }
 
 /* Página pública (#app-root solo existe ahí, no en el backend): la
@@ -3454,7 +2469,6 @@ body:has(> #app-root) { margin: 0; }
   .o_ztyres_cotizador .flat-table .flat-th-img,
   .o_ztyres_cotizador .flat-table .flat-td-img { display: none; }
   .o_ztyres_cotizador .flat-table .flat-td-eqorig { max-width: 110px; }
-  .o_ztyres_cotizador .side-left .promo-full-title { font-size: 9px; }
 }
 
 /* ============================================================
@@ -3542,42 +2556,6 @@ body:has(> #app-root) { margin: 0; }
   .o_ztyres_cotizador .catalog-panel .flat-table { font-size: 10.5px; }
 }
 
-/* Pantallas grandes (≥1900px): letra 14px pide columnas numéricas
-   un poco más anchas para que "$1,186.08" nunca se recorte. */
-
-/* ============================================================
-   v1.4.1 — Promos en UNA columna + buscador alineado con Política
-   ============================================================ */
-/* Promociones apiladas de 1 en 1: la barra izquierda cede ~60px
-   más al catálogo (que es donde se trabaja) sin perder ninguna
-   tarjeta — solo cambia de cuadrícula 2x a lista vertical. */
-.o_ztyres_cotizador .side-left .promos-full-list {
-  grid-template-columns: 1fr;
-}
-@media (min-width: 1101px) {
-  /* Con una sola columna la tarjeta puede volver a su forma
-     horizontal compacta: logo a la izquierda, marca y estado a la
-     derecha — se lee mejor que apilada y es más baja. */
-  .o_ztyres_cotizador .side-left .promo-card-full {
-    flex-direction: row;
-    align-items: center;
-    text-align: left;
-    gap: 8px;
-    padding: 7px 8px;
-  }
-  .o_ztyres_cotizador .side-left .promo-full-img { width: 26px; height: 26px; }
-  .o_ztyres_cotizador .side-left .promo-full-title { font-size: 9px; }
-  .o_ztyres_cotizador .side-left .promo-full-status { font-size: 9.5px; padding: 2px 5px; }
-}
-@media (min-width: 1551px) {
-  .o_ztyres_cotizador .side-left .promo-full-img { width: 30px; height: 30px; }
-  .o_ztyres_cotizador .side-left .promo-full-title { font-size: 10px; }
-}
-@media (min-width: 1900px) {
-  .o_ztyres_cotizador .side-left .promo-full-title { font-size: 10.5px; }
-  .o_ztyres_cotizador .side-left .promo-full-status { font-size: 9px; }
-}
-
 /* Buscador alineado con la Política comercial: el pill quedaba
    centrado a media altura del panel (que es más alto por sus
    etiquetas arriba de los campos) y parecía flotar. Ahora el
@@ -3612,127 +2590,8 @@ body:has(> #app-root) { margin: 0; }
   .o_ztyres_cotizador .catalog-panel .flat-table thead th { padding: 7px 3px; }
 }
 
-/* Promociones: columna delgada de solo-nombres. */
-
-.o_ztyres_cotizador .promos-mini-list {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-.o_ztyres_cotizador .promo-mini {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  width: 100%;
-  border: 1px solid var(--line);
-  background: var(--paper);
-  border-radius: var(--radius-sm);
-  padding: 6px 7px;
-  cursor: pointer;
-  text-align: left;
-  font-family: var(--font-body);
-  transition: border-color var(--transition-fast), background var(--transition-fast);
-}
-.o_ztyres_cotizador .promo-mini:hover { background: var(--teal-soft); }
-.o_ztyres_cotizador .promo-mini.active { border-color: var(--success); }
-.o_ztyres_cotizador .promo-mini-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--line);
-  flex-shrink: 0;
-}
-.o_ztyres_cotizador .promo-mini-dot.active { background: var(--success); }
-.o_ztyres_cotizador .promo-mini-name {
-  font-size: 10px;
-  font-weight: 700;
-  line-height: 1.25;
-  text-transform: uppercase;
-  letter-spacing: .2px;
-  /* El nombre puede envolver a 2 líneas dentro del chip — aquí sí
-     está bien: es un botón, no una celda de datos. */
-  white-space: normal;
-  word-break: normal;
-}
-
-/* Modal de detalle de promoción */
-.o_ztyres_cotizador .promo-modal {
-  position: fixed;
-  inset: 0;
-  z-index: 1000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 16px;
-}
-.o_ztyres_cotizador .promo-modal-backdrop {
-  position: absolute;
-  inset: 0;
-  background: rgba(0, 0, 0, .45);
-}
-.o_ztyres_cotizador .promo-modal-content {
-  position: relative;
-  background: var(--paper);
-  border-radius: var(--radius);
-  padding: 18px;
-  max-width: 380px;
-  width: 100%;
-  box-shadow: 0 18px 50px rgba(0, 0, 0, .3);
-}
-.o_ztyres_cotizador .promo-modal-close {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  border: none;
-  background: var(--card);
-  border-radius: 50%;
-  width: 26px;
-  height: 26px;
-  cursor: pointer;
-  font-size: 12px;
-  line-height: 1;
-}
-.o_ztyres_cotizador .promo-modal-head {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 10px;
-}
-.o_ztyres_cotizador .promo-modal-head img {
-  width: 48px;
-  height: 48px;
-  object-fit: contain;
-  flex-shrink: 0;
-}
-.o_ztyres_cotizador .promo-modal-title {
-  font-family: var(--font-display);
-  font-size: 15px;
-  text-transform: uppercase;
-}
-.o_ztyres_cotizador .promo-modal-code {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  color: var(--ink-soft);
-  margin-top: 2px;
-}
-.o_ztyres_cotizador .promo-modal-desc {
-  font-size: 13px;
-  line-height: 1.5;
-  color: var(--ink);
-  margin: 0 0 10px;
-}
-
 /* En el layout apilado (<1101px) la lista de nombres se vuelve una
    fila de chips que envuelve — misma info, mismo modal. */
-@media (max-width: 1100px) {
-  .o_ztyres_cotizador .promos-mini-list {
-    flex-direction: row;
-    flex-wrap: wrap;
-    gap: 6px;
-  }
-  .o_ztyres_cotizador .promo-mini { width: auto; }
-  .o_ztyres_cotizador .promo-mini-name { font-size: 11px; }
-}
 
 /* ============================================================
    v1.6 — Promoción ganada (NC), integración con ztyres_promo
@@ -3746,12 +2605,6 @@ body:has(> #app-root) { margin: 0; }
   color: var(--ink-soft);
 }
 .o_ztyres_cotizador .nc-detail li { margin-bottom: 3px; }
-.o_ztyres_cotizador .cart-line-nc {
-  font-size: 10px;
-  font-weight: 700;
-  color: #2e7d32;
-  cursor: help;
-}
 
 /* ============================================================
    v2.1 — Facetas de promociones (estilo filtro minimalista)
@@ -3797,13 +2650,6 @@ body:has(> #app-root) { margin: 0; }
   display: flex;
   flex-direction: column;
   gap: 3px;
-}
-.o_ztyres_cotizador .facet-tier {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 10.5px;
-  cursor: pointer;
 }
 .o_ztyres_cotizador .facet-note,
 .o_ztyres_cotizador .facet-empty {
@@ -3887,21 +2733,6 @@ body:has(> #app-root) { margin: 0; }
   flex-direction: column;
   gap: 2px;
 }
-.o_ztyres_cotizador .facet-tier {
-  display: grid;
-  grid-template-columns: 12px minmax(0, 1fr);
-  align-items: center;
-  gap: 5px;
-  font-size: 10px;
-  font-weight: 600;
-  cursor: pointer;
-}
-.o_ztyres_cotizador .facet-tier input { margin: 0; width: 11px; height: 11px; }
-.o_ztyres_cotizador .facet-tier span {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
 .o_ztyres_cotizador .facet-note,
 .o_ztyres_cotizador .facet-empty {
   font-size: 10px;
@@ -3935,14 +2766,6 @@ body:has(> #app-root) { margin: 0; }
 }
 .o_ztyres_cotizador .facet-count { font-size: 10.5px; margin-left: 5px; opacity: .75; }
 .o_ztyres_cotizador .facet-body { padding: 0 0 2px 4px; gap: 4px; }
-.o_ztyres_cotizador .facet-tier {
-  grid-template-columns: 14px minmax(0, 1fr);
-  gap: 6px;
-  font-size: 11.5px;
-  font-weight: 600;
-  padding: 1px 0;
-}
-.o_ztyres_cotizador .facet-tier input { width: 13px; height: 13px; }
 .o_ztyres_cotizador .facet-note,
 .o_ztyres_cotizador .facet-empty { font-size: 11px; }
 
@@ -4102,21 +2925,6 @@ body:has(> #app-root) { margin: 0; }
 .o_ztyres_cotizador .flat-table tr.in-promo > td:nth-child(19) { --td-tint: var(--td-tint-19, var(--promo-t)); }
 .o_ztyres_cotizador .flat-table tr.in-promo > td:nth-child(20) { --td-tint: var(--td-tint-20, var(--promo-t)); }
 
-/* v2.9 — Chip "NC +$X" con desglose por promo cuando hay varias */
-.o_ztyres_cotizador .cart-line-nc {
-  display: inline-flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 3px 5px;
-}
-.o_ztyres_cotizador .cart-line-nc-detail {
-  font-weight: 600;
-  font-size: 9.5px;
-  opacity: .85;
-  line-height: 1.3;
-}
-.o_ztyres_cotizador .cart-line-nc-detail span { white-space: nowrap; }
-
 /* v2.10 — Botones de descarga (topbar y pedido) */
 .o_ztyres_cotizador .app-topbar .btn-download {
   align-self: flex-end;
@@ -4135,23 +2943,6 @@ body:has(> #app-root) { margin: 0; }
 .o_ztyres_cotizador .app-topbar .btn-download:hover {
   background: #1b6a2b;
   transform: translateY(-1px);
-}
-.o_ztyres_cotizador .order-download-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  margin-top: 10px;
-}
-.o_ztyres_cotizador .order-download-row .btn-main {
-  padding: 8px 10px;
-  font-size: 12px;
-  text-align: center;
-}
-.o_ztyres_cotizador .order-download-row .btn-xlsx {
-  background: var(--success);
-}
-.o_ztyres_cotizador .order-download-row .btn-xlsx:hover {
-  background: #1b6a2b;
 }
 
 /* v2.11.7 — Botón de descarga inline dentro del título de página.
@@ -4262,9 +3053,6 @@ body:has(> #app-root) { margin: 0; }
   .o_ztyres_cotizador .side-left .promos-panel .facet-count {
     font-size: 9px;
   }
-  .o_ztyres_cotizador .side-left .promos-panel .facet-tier {
-    font-size: 10px;
-  }
   .o_ztyres_cotizador .side-left .promos-panel .facet-caret {
     font-size: 9.5px;
   }
@@ -4374,23 +3162,6 @@ body:has(> #app-root) { margin: 0; }
     overflow-y: auto;
     /* Barra delgada para no comerse ancho */
     scrollbar-width: thin;
-  }
-  /* Totales, NC, botones: fijos abajo */
-  .o_ztyres_cotizador .side-right .order-totals,
-  .o_ztyres_cotizador .side-right .nc-detail,
-  .o_ztyres_cotizador .side-right .nc-line,
-  .o_ztyres_cotizador .side-right .order-download-row,
-  .o_ztyres_cotizador .side-right .bonus-line,
-  .o_ztyres_cotizador .side-right .policy-line {
-    flex-shrink: 0;
-  }
-  /* El empty-state tampoco scrollea */
-  .o_ztyres_cotizador .side-right .cart-empty {
-    flex: 1 1 auto;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
   }
 }
 
@@ -4959,28 +3730,6 @@ body:has(> #app-root) { margin: 0; }
     padding-right: 4px;
   }
 }
-
-/* v3.5 final — estos anchos deben ganar sobre las versiones históricas. */
-
-/* v3.7 final — vista completa en laptop de 14" y monitor de 24". */
-.o_ztyres_cotizador .side-left .facet-tier-complex {
-  font-size: 9.5px;
-  letter-spacing: -.12px;
-}
-.o_ztyres_cotizador .side-left .facet-tier,
-.o_ztyres_cotizador .side-left .facet-tier-complex { align-items: start; }
-.o_ztyres_cotizador .side-left .facet-tier input,
-.o_ztyres_cotizador .side-left .facet-tier-complex input { margin-top: 2px; flex: 0 0 auto; }
-.o_ztyres_cotizador .side-left .facet-tier span,
-.o_ztyres_cotizador .side-left .facet-tier-complex span {
-  display: block;
-  min-width: 0;
-  overflow: visible;
-  text-overflow: clip;
-  white-space: normal;
-  overflow-wrap: anywhere;
-  line-height: 1.25;
-}
 @media (min-width: 1101px) {
   .o_ztyres_cotizador .catalog-panel .flat-table { width: 100%; max-width: 100%; table-layout: fixed; font-size: 11px; }
   .o_ztyres_cotizador .catalog-panel .flat-table thead th,
@@ -5002,34 +3751,23 @@ body:has(> #app-root) { margin: 0; }
   .o_ztyres_cotizador .catalog-panel .flat-table thead th { padding: 6px 4px; }
   .o_ztyres_cotizador .catalog-panel .flat-table tbody td { padding: 5px 4px; }
   .o_ztyres_cotizador .side-left .facet-name { font-size: 13px; }
-  .o_ztyres_cotizador .promo-compact-meta,
-  .o_ztyres_cotizador .promo-tier-dropdown-label { font-size: 10.5px; }
-  .o_ztyres_cotizador .promo-tier-card { font-size: 11px; }
-  .o_ztyres_cotizador .promo-tier-card strong { font-size: 12px; }
-  .o_ztyres_cotizador .promo-tier-chip b { font-size: 10px; }
-  .o_ztyres_cotizador .promo-tier-chip em { font-size: 11px; }
   .o_ztyres_cotizador .side-right .order-panel h2 { font-size: 12.5px; }
   .o_ztyres_cotizador .side-right .clc-brand { font-size: 13px; }
   .o_ztyres_cotizador .side-right .clc-model,
   .o_ztyres_cotizador .side-right .clc-price { font-size: 12px; }
   .o_ztyres_cotizador .side-right .clc-meta { font-size: 10.5px; }
-  .o_ztyres_cotizador .side-left .facet-tier-complex { font-size: 10px; }
 }
 @media (min-width: 1900px) {
   .o_ztyres_cotizador .catalog-panel .flat-table { font-size: 12px; }
-  .o_ztyres_cotizador .side-left .facet-tier-complex { font-size: 10.5px; }
 }
 @media (min-width: 1101px) and (max-width: 1550px) and (min-height: 801px) {
   .o_ztyres_cotizador .catalog-panel .flat-table { font-size: 11px; }
   .o_ztyres_cotizador .catalog-panel .flat-table thead th { padding: 6px 3px; }
   .o_ztyres_cotizador .catalog-panel .flat-table tbody td { padding: 5px 3px; }
   .o_ztyres_cotizador .side-left .facet-name { font-size: 12px; }
-  .o_ztyres_cotizador .promo-tier-card { font-size: 10.5px; }
-  .o_ztyres_cotizador .promo-tier-card strong { font-size: 11.5px; }
   .o_ztyres_cotizador .side-right .clc-brand { font-size: 12px; }
   .o_ztyres_cotizador .side-right .clc-model,
   .o_ztyres_cotizador .side-right .clc-price { font-size: 11.5px; }
-  .o_ztyres_cotizador .side-left .facet-tier-complex { font-size: 9.5px; }
 }
 
 /* ============================================================
@@ -5093,19 +3831,6 @@ body:has(> #app-root) { margin: 0; }
 .o_ztyres_cotizador .cart-bar-btn:hover {
   background: var(--rubber-hover);
   color: var(--ink);
-}
-
-/* Colores sueltos fuera de paleta que quedaron de versiones viejas
-   (#27834a, #effcf3, #9edeb4, #dce5ef, #f8fafc, #b9b7b0). */
-.o_ztyres_cotizador .promo-tier-chip {
-  border-color: var(--line);
-  background: var(--card);
-}
-.o_ztyres_cotizador .promo-tier-chip em { color: var(--success); }
-.o_ztyres_cotizador .promo-tier-option:hover,
-.o_ztyres_cotizador .promo-tier-option.active {
-  border-color: var(--success);
-  background: var(--success-soft);
 }
 .o_ztyres_cotizador .side-right .total-row.total-row-secondary .value,
 .o_ztyres_cotizador .side-right .total-row.total-row-secondary .label {
@@ -5371,21 +4096,24 @@ body:has(> #app-root) { margin: 0; }
     word-break: normal;
   }
 
-  .o_ztyres_cotizador .catalog-panel .flat-th-clave   { width: 6%; }
-  .o_ztyres_cotizador .catalog-panel .flat-th-tier    { width: 3.5%; }
+  .o_ztyres_cotizador .catalog-panel .flat-th-clave   { width: 5.4%; }
+  .o_ztyres_cotizador .catalog-panel .flat-th-tier    { width: 3%; }
   .o_ztyres_cotizador .catalog-panel .flat-th-medida  { width: 8%; }
-  .o_ztyres_cotizador .catalog-panel .flat-th-marca   { width: 9%; }
-  .o_ztyres_cotizador .catalog-panel .flat-th-modelo  { width: 12%; }
-  .o_ztyres_cotizador .catalog-panel .flat-th-capcara { width: 5.5%; }
-  .o_ztyres_cotizador .catalog-panel .flat-th-velind  { width: 5.5%; }
-  .o_ztyres_cotizador .catalog-panel .flat-th-seg     { width: 4%; }
-  .o_ztyres_cotizador .catalog-panel .flat-th-tipo    { width: 4%; }
-  .o_ztyres_cotizador .catalog-panel .flat-th-dot     { width: 4.5%; }
-  .o_ztyres_cotizador .catalog-panel .flat-th-eqorig  { width: 7%; }
-  .o_ztyres_cotizador .catalog-panel .flat-th-disp    { width: 4.5%; }
-  .o_ztyres_cotizador .catalog-panel .flat-th-price   { width: 8.5%; }
-  .o_ztyres_cotizador .catalog-panel .flat-th-promo   { width: 8.5%; }
-  .o_ztyres_cotizador .catalog-panel .flat-th-action  { width: 9.5%; }
+  .o_ztyres_cotizador .catalog-panel .flat-th-marca   { width: 7%; }
+  .o_ztyres_cotizador .catalog-panel .flat-th-modelo  { width: 9%; }
+  .o_ztyres_cotizador .catalog-panel .flat-th-capcara { width: 4.5%; }
+  .o_ztyres_cotizador .catalog-panel .flat-th-velind  { width: 4.5%; }
+  .o_ztyres_cotizador .catalog-panel .flat-th-seg     { width: 3%; }
+  .o_ztyres_cotizador .catalog-panel .flat-th-tipo    { width: 3.2%; }
+  .o_ztyres_cotizador .catalog-panel .flat-th-dot     { width: 3.8%; }
+  .o_ztyres_cotizador .catalog-panel .flat-th-eqorig  { width: 4.8%; }
+  .o_ztyres_cotizador .catalog-panel .flat-th-disp    { width: 3.3%; }
+  .o_ztyres_cotizador .catalog-panel .flat-th-transit { width: 4.8%; }
+  .o_ztyres_cotizador .catalog-panel .flat-th-price   { width: 7.2%; }
+  .o_ztyres_cotizador .catalog-panel .flat-th-promo   { width: 6.8%; }
+  .o_ztyres_cotizador .catalog-panel .flat-th-promo-pct { width: 4.4%; }
+  .o_ztyres_cotizador .catalog-panel .flat-th-giftcard { width: 4.6%; }
+  .o_ztyres_cotizador .catalog-panel .flat-th-action  { width: 7.2%; }
   /*                                            suma  = 100%        */
 
   /* Jerarquía dentro de la fila: Medida/Marca/Modelo son identidad
@@ -5569,12 +4297,6 @@ body:has(> #app-root) { margin: 0; }
     overflow-x: auto;
   }
   .o_ztyres_cotizador .catalog-panel .flat-table { font-size: 12.5px; }
-  /* Promos vuelven a su tarjeta horizontal legible, de 2 en 2. */
-  .o_ztyres_cotizador .side-left .promos-full-list {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
-  }
   .o_ztyres_cotizador .cart-bar { display: flex; }
 }
 
@@ -5696,32 +4418,6 @@ body:has(> #app-root) { margin: 0; }
   }
   /* Espacio para que la barra fija no tape la última tarjeta. */
   .o_ztyres_cotizador .stack { padding-bottom: 64px; }
-
-  /* Promos: una por renglón, legibles. */
-  .o_ztyres_cotizador .side-left .promos-full-list { grid-template-columns: 1fr; }
-  .o_ztyres_cotizador .side-left .promo-card-full {
-    flex-direction: row;
-    align-items: center;
-    text-align: left;
-    padding: 12px;
-    cursor: default;
-  }
-  .o_ztyres_cotizador .side-left .promo-full-img { width: 40px; height: 40px; }
-  .o_ztyres_cotizador .side-left .promo-full-title { font-size: 14px; }
-  .o_ztyres_cotizador .side-left .promo-full-desc { display: block; font-size: 12.5px; }
-  .o_ztyres_cotizador .side-left .promo-full-status { font-size: 11.5px; }
-
-  /* Modales a pantalla casi completa (en móvil un modal de 380px
-     centrado con aire alrededor desperdicia la pantalla). */
-  .o_ztyres_cotizador .promo-modal { padding: 0; align-items: flex-end; }
-  .o_ztyres_cotizador .promo-modal-content {
-    max-width: 100%;
-    width: 100%;
-    max-height: 88dvh;
-    overflow-y: auto;
-    border-radius: var(--radius) var(--radius) 0 0;
-    padding: 20px 16px calc(20px + env(safe-area-inset-bottom));
-  }
 }
 
 /* Móvil chico (≤380px): los tres selects de política no caben en
@@ -5982,32 +4678,6 @@ body:has(> #app-root) { margin: 0; }
     gap: 0;
     padding: 2px 1px 5px;
   }
-  .o_ztyres_cotizador .side-left .promos-panel .facet-tier,
-  .o_ztyres_cotizador .side-left .promos-panel .facet-tier-complex,
-  .o_ztyres_cotizador .side-left .promos-panel .facet-tier:hover,
-  .o_ztyres_cotizador .side-left .promos-panel .facet-tier-complex:hover,
-  .o_ztyres_cotizador .side-left .promos-panel .facet-tier:has(input:checked),
-  .o_ztyres_cotizador .side-left .promos-panel .facet-tier-complex:has(input:checked) {
-    align-items: flex-start;
-    gap: 5px;
-    padding: 4px 2px;
-    border: 0;
-    border-radius: 0;
-    background: transparent;
-    box-shadow: none;
-  }
-  .o_ztyres_cotizador .side-left .promos-panel .facet-tier:has(input:checked),
-  .o_ztyres_cotizador .side-left .promos-panel .facet-tier-complex:has(input:checked) {
-    color: var(--promo-c, var(--ink));
-    box-shadow: inset 2px 0 0 var(--promo-c, #475569);
-    padding-left: 5px;
-  }
-  .o_ztyres_cotizador .side-left .promos-panel .promo-benefit-copy {
-    font-size: 10px;
-    font-weight: 500;
-    line-height: 1.24;
-    overflow-wrap: break-word;
-  }
   .o_ztyres_cotizador .side-left .promos-panel .facet-head {
     gap: 4px;
     padding-block: 5px;
@@ -6035,8 +4705,6 @@ body:has(> #app-root) { margin: 0; }
   .o_ztyres_cotizador .side-left .promos-panel,
   .o_ztyres_cotizador .side-right .order-panel { padding: 5px; }
   .o_ztyres_cotizador .side-left .promos-panel .facet-head { padding-block: 4px; }
-  .o_ztyres_cotizador .side-left .promos-panel .facet-tier,
-  .o_ztyres_cotizador .side-left .promos-panel .facet-tier-complex { padding-block: 3px; }
   .o_ztyres_cotizador .catalog-panel .flat-table thead th { padding-block: 4px; }
 }
 
@@ -6050,112 +4718,6 @@ body:has(> #app-root) { margin: 0; }
    rin, dentro medida, y hasta abajo las llantas. El <tbody>
    agrupado sólo se monta cuando isMobile es true.              */
 @media (max-width: 700px) {
-  /* --- Cabeceras de grupo: NO son tarjetas de producto --- */
-  .o_ztyres_cotizador .flat-table tbody tr.grp-row {
-    display: block;
-    width: 100%;
-    padding: 0;
-    margin: 0 0 6px;
-    border: none;
-    border-radius: var(--radius-sm);
-    box-shadow: none;
-    background: none;
-    cursor: pointer;
-    -webkit-tap-highlight-color: transparent;
-  }
-  .o_ztyres_cotizador .flat-table tbody tr.grp-row > td {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    width: 100%;
-    padding: 11px 12px !important;
-    border-radius: var(--radius-sm);
-  }
-  .o_ztyres_cotizador .flat-table tbody tr.grp-row .grp-title {
-    font-weight: 800;
-    letter-spacing: .2px;
-  }
-  /* El conteo se pega a la derecha SIEMPRE, en la misma línea
-     vertical, no importa qué tan largo sea el nombre del grupo. */
-  .o_ztyres_cotizador .flat-table tbody tr.grp-row .grp-count {
-    margin-left: auto;
-    flex: none;
-    min-width: 26px;
-    text-align: center;
-    font-size: 11.5px;
-    font-weight: 800;
-    padding: 2px 7px;
-    border-radius: 999px;
-  }
-  .o_ztyres_cotizador .flat-table tbody tr.grp-row .grp-sub {
-    font-size: 11px;
-    font-weight: 600;
-    opacity: .7;
-    white-space: nowrap;
-  }
-  .o_ztyres_cotizador .flat-table tbody tr.grp-row .grp-caret {
-    flex: none;
-    width: 12px;
-    font-size: 10px;
-    line-height: 1;
-    transition: transform .15s ease;
-  }
-  .o_ztyres_cotizador .flat-table tbody tr.grp-row.open .grp-caret {
-    transform: rotate(90deg);
-  }
-
-  /* Nivel 1 · RIN — barra oscura, es el índice del catálogo.
-     Pegajosa arriba: al bajar dentro de un rin largo siempre se ve
-     en qué rin vas. */
-  .o_ztyres_cotizador .flat-table tbody tr.grp-rim {
-    position: sticky;
-    top: 0;
-    z-index: 3;
-    margin-top: 10px;
-  }
-  .o_ztyres_cotizador .flat-table tbody tr.grp-rim:first-child { margin-top: 0; }
-  .o_ztyres_cotizador .flat-table tbody tr.grp-rim > td {
-    background: var(--rubber-dark);
-    color: #fff;
-    font-size: 14px;
-  }
-  .o_ztyres_cotizador .flat-table tbody tr.grp-rim .grp-count {
-    background: rgba(255, 255, 255, .18);
-    color: #fff;
-  }
-
-  /* Nivel 2 · MEDIDA — sangrada, tono suave, debajo del rin. */
-  .o_ztyres_cotizador .flat-table tbody tr.grp-medida {
-    margin-left: 10px;
-    width: calc(100% - 10px);
-  }
-  .o_ztyres_cotizador .flat-table tbody tr.grp-medida > td {
-    background: var(--card);
-    border: 1px solid var(--line);
-    color: var(--ink);
-    font-size: 13px;
-    padding: 9px 11px !important;
-  }
-  .o_ztyres_cotizador .flat-table tbody tr.grp-medida.open > td {
-    background: var(--teal-soft);
-    border-color: var(--teal-soft);
-  }
-  .o_ztyres_cotizador .flat-table tbody tr.grp-medida .grp-count {
-    background: var(--paper);
-    border: 1px solid var(--line);
-    color: var(--ink-soft);
-  }
-
-  /* Nivel 3 · las tarjetas cuelgan de la medida: sangría mayor y
-     una guía vertical, para que se lea la jerarquía sin pensarla. */
-  /* La guía va como sombra INTERIOR, no como border-left: el borde
-     del <tr> ya lo usan los estados in-cart (verde) e in-promo, y
-     pisarlo apagaba esas señales. */
-  .o_ztyres_cotizador .flat-table tbody.grouped-body tr:not(.grp-row) {
-    margin-left: 20px;
-    width: calc(100% - 20px);
-    box-shadow: inset 3px 0 0 var(--teal-soft), 0 1px 2px rgba(20, 22, 28, .05);
-  }
 
   /* Los chips perdían su recuadro en las tarjetas teñidas: las reglas
      de .in-cart / .in-promo pintan el fondo del <td> y son más
@@ -6176,53 +4738,44 @@ body:has(> #app-root) { margin: 0; }
     background: rgba(20, 22, 28, .05);
     flex-grow: 0;
   }
-
-  /* Dentro de un grupo, la cabecera ya dice el rin y la medida —
-     repetirlos en cada tarjeta es ruido. La clave se queda con el
-     renglón completo. */
-  .o_ztyres_cotizador .flat-table tbody.grouped-body .flat-td-medida { display: none; }
-  .o_ztyres_cotizador .flat-table tbody.grouped-body .flat-td-clave { flex: 1 1 100%; }
-
-  .o_ztyres_cotizador .grp-foot {
-    display: flex;
-    justify-content: center;
-    padding: 4px 0 8px;
-  }
-  .o_ztyres_cotizador .grp-foot .btn-sec {
-    min-height: 40px;
-    font-size: 13px;
-  }
-}
-
-/* ==========================================================================
-   PANEL DE PROMOCIONES · ESCALERA DE INCENTIVO
-   --------------------------------------------------------------------------
-   Sustituye la lista de frases largas por peldaños: rango a la izquierda,
-   beneficio a la derecha. Va al FINAL de la hoja a propósito — arriba hay
-   varias capas de parches que redefinen .facet-head y .facet-tier, y una
-   consulta o regla colocada antes de ellas queda pisada por cascada.
-
-   Tres decisiones que resuelven el recorte que traía el panel:
-   (a) el panel scrollea en vez de ocultar (nada de overflow:hidden),
-   (b) el nombre se muestra completo en dos líneas, sin corte a media
-       palabra, apoyado en el nombre corto de la promoción, y
-   (c) el tramo deja de ser una oración y pasa a ser dato estructurado;
-       la oración completa vive en el title.
-   ========================================================================== */
-/* IMPORTANTE — el panel SÍ debe scrollear. Una versión anterior de esta
-   hoja ya había resuelto esto (bloque "PROMOS: header fijo, lista
-   scrolleable"): el panel es flex, se topa en max-height:100% y scrollea
-   con el h2 sticky adentro. Poner aquí overflow:visible lo desarmaba —
-   el max-height seguía aplicando desde aquel bloque, así que el
-   contenido se salía sin barra y las últimas promociones quedaban
-   inalcanzables. Se respeta el mecanismo original. */
-.o_ztyres_cotizador .side-left .promos-panel {
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  overflow-y: auto;
 }
 .o_ztyres_cotizador .side-left .promos-panel h2 { flex: 0 0 auto; }
+
+.o_ztyres_cotizador .promo-volume-picker {
+  display: grid;
+  gap: 4px;
+  margin: 0 0 8px;
+  padding: 8px;
+  border: 1px solid color-mix(in srgb, var(--rubber-dark) 18%, #fff);
+  border-radius: 8px;
+  background: #f8fafc;
+}
+.o_ztyres_cotizador .promo-volume-picker label {
+  margin: 0;
+  font-size: 9px;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: .35px;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+.o_ztyres_cotizador .promo-volume-picker select {
+  width: 100%;
+  min-width: 0;
+  min-height: 31px;
+  padding: 5px 7px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+.o_ztyres_cotizador .promo-volume-picker select:focus {
+  outline: 2px solid color-mix(in srgb, var(--rubber-dark) 35%, #fff);
+  outline-offset: 1px;
+}
 
 /* --- Cabecera de la promoción --- */
 .o_ztyres_cotizador .promos-panel .facet {
@@ -6372,11 +4925,6 @@ body:has(> #app-root) { margin: 0; }
   background: color-mix(in srgb, var(--promo-t) 50%, #fff);
 }
 .o_ztyres_cotizador .promo-step.reached::before { border-color: var(--promo-c); }
-.o_ztyres_cotizador .promo-step.sel { background: var(--promo-t); }
-.o_ztyres_cotizador .promo-step.sel::before {
-  background: var(--promo-c);
-  border-color: var(--promo-c);
-}
 /* El radio sigue existiendo para teclado y lectores de pantalla; el
    estado se comunica con el peldaño encendido, que en 118 px es lo
    único que cabe. */
@@ -6440,14 +4988,12 @@ body:has(> #app-root) { margin: 0; }
   color: var(--promo-c);
   white-space: nowrap;
 }
-.o_ztyres_cotizador .promo-step.sel .step-value { font-size: 14px; }
 
 /* En la columna mínima (118 px) el porcentaje baja bajo el rango en vez
    de robarle la mitad del renglón — que era lo que partía las palabras. */
 @media (min-width: 1101px) and (max-width: 1500px) {
   .o_ztyres_cotizador .promo-step { grid-template-columns: minmax(0, 1fr) auto; }
   .o_ztyres_cotizador .promo-step .step-value { font-size: 11.5px; }
-  .o_ztyres_cotizador .promo-step.sel .step-value { font-size: 13px; }
   .o_ztyres_cotizador .promos-panel .facet-name { font-size: 11px; }
 }
 
@@ -6535,7 +5081,6 @@ body:has(> #app-root) { margin: 0; }
     font-size: 11.5px;
     text-align: left;
   }
-  .o_ztyres_cotizador .promo-step.sel .step-value { font-size: 12.5px; }
   .o_ztyres_cotizador .promo-step .step-range { font-size: 9.5px; }
   .o_ztyres_cotizador .promo-step .step-rule { font-size: 8px; }
   .o_ztyres_cotizador .promos-panel .facet-name { font-size: 10.5px; }
@@ -8477,19 +7022,6 @@ body:has(> #app-root) { margin: 0; }
     border-radius: 8px !important;
   }
 
-  /* El tramo elegido se pinta con el color de ESA promoción, no con el
-     verde global. Es la misma señal cromática que tendrá el producto. */
-  .o_ztyres_cotizador .side-left .promos-panel .promo-step.sel {
-    background: var(--promo-t) !important;
-    box-shadow: inset 3px 0 0 var(--promo-c) !important;
-  }
-
-  .o_ztyres_cotizador .side-left .promos-panel .promo-step.sel .step-range,
-  .o_ztyres_cotizador .side-left .promos-panel .promo-step.sel .step-rule,
-  .o_ztyres_cotizador .side-left .promos-panel .promo-step.sel .step-value {
-    color: var(--promo-c) !important;
-  }
-
   /* ---------- PRODUCTO: fila completa teñida por la promo ---------- */
   .o_ztyres_cotizador .ztyres-mobile-card.in-promo {
     position: relative !important;
@@ -8776,4 +7308,1010 @@ body:has(> #app-root) { margin: 0; }
 /* V26 — inventario ampliado: stock libre + tránsito. */
 @media (max-width: 1100px) {
   .ztyres-mobile-card .zmc-inventory > span:nth-child(4) { min-width: 0; }
+}
+
+/* V27 — escritorio: promociones legibles, pero compactas.
+   Evita tarjetas enormes: columna un poco mas ancha que antes, rangos
+   verticales chicos y muchas promociones visibles al mismo tiempo. */
+@media (min-width: 1101px) {
+  .o_ztyres_cotizador {
+    --col-left: clamp(220px, 14vw, 270px);
+    --col-right: clamp(240px, 18vw, 340px);
+    --gap: 8px;
+  }
+
+  .o_ztyres_cotizador .side-left .promos-panel {
+    padding: 8px;
+  }
+
+  .o_ztyres_cotizador .promo-volume-picker {
+    grid-template-columns: 1fr;
+    gap: 5px;
+    padding: 7px 8px;
+  }
+
+  .o_ztyres_cotizador .promo-volume-picker label {
+    font-size: 8.5px;
+  }
+
+  .o_ztyres_cotizador .promo-volume-picker select {
+    min-height: 29px;
+    font-size: 10.5px;
+  }
+
+  .o_ztyres_cotizador .promos-panel .facet {
+    margin-bottom: 6px;
+    border-radius: 8px;
+  }
+
+  .o_ztyres_cotizador .side-left .promos-panel .facet-head {
+    min-height: 36px;
+  }
+
+  .o_ztyres_cotizador .side-left .promos-panel .promo-headline {
+    padding: 5px 0;
+  }
+
+  .o_ztyres_cotizador .side-left .promos-panel .facet-name {
+    font-size: 10.5px;
+    line-height: 1.18;
+  }
+
+  .o_ztyres_cotizador .side-left .promos-panel .facet-body {
+    padding: 1px 7px 7px;
+  }
+
+  .o_ztyres_cotizador .side-left .promos-panel .promo-ladder {
+    padding-left: 11px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .o_ztyres_cotizador .side-left .promos-panel .promo-ladder::before {
+    display: block;
+    left: 4px;
+    top: 10px;
+    bottom: 10px;
+  }
+
+  .o_ztyres_cotizador .side-left .promos-panel .promo-step::before {
+    display: block;
+    left: -10px;
+    width: 7px;
+    height: 7px;
+    border-width: 1px;
+  }
+
+  .o_ztyres_cotizador .side-left .promos-panel .promo-step {
+    min-height: 26px;
+    padding: 3px 5px;
+    border: 0;
+    border-radius: 5px;
+    background: transparent;
+  }
+
+  .o_ztyres_cotizador .side-left .promos-panel .promo-step .step-range {
+    font-size: 9.5px;
+    line-height: 1.15;
+  }
+
+  .o_ztyres_cotizador .side-left .promos-panel .promo-step .step-value {
+    font-size: 10.5px;
+  }
+}
+
+@media (min-width: 1101px) and (max-width: 1360px) {
+  .o_ztyres_cotizador {
+    --col-left: clamp(205px, 18vw, 235px);
+    --col-right: clamp(220px, 17vw, 255px);
+    --gap: 7px;
+  }
+
+  .o_ztyres_cotizador .side-left .promos-panel {
+    padding: 8px;
+  }
+
+  .o_ztyres_cotizador .promo-volume-picker {
+    grid-template-columns: 1fr;
+    gap: 5px;
+    padding: 8px;
+  }
+
+  .o_ztyres_cotizador .side-left .promos-panel .facet-name {
+    font-size: 10px;
+  }
+}
+
+/* V28 — breakpoints finales soportados
+   Movil comun: 360-767px.
+   Tablet comun: 768-1100px.
+   Escritorio comun: 1101-2559px.
+   4K/5K: 2560px en adelante. */
+@media (max-width: 767px) {
+  .o_ztyres_cotizador .wrap {
+    padding-inline: 8px;
+  }
+
+  .o_ztyres_cotizador .side-left .promos-panel {
+    padding: 6px !important;
+  }
+
+  .o_ztyres_cotizador .promo-volume-picker {
+    grid-template-columns: 1fr;
+    gap: 5px;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1100px) {
+  .o_ztyres_cotizador .wrap {
+    padding-inline: 12px;
+  }
+
+  .o_ztyres_cotizador .main-grid {
+    gap: 10px;
+  }
+
+  .o_ztyres_cotizador .side-left .promos-panel .promo-ladder {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .o_ztyres_cotizador .side-left .promos-panel .promo-ladder::before,
+  .o_ztyres_cotizador .side-left .promos-panel .promo-step::before {
+    display: none;
+  }
+}
+
+@media (min-width: 1101px) and (max-width: 2559px) {
+  .o_ztyres_cotizador {
+    --col-left: clamp(210px, 14vw, 270px);
+    --col-right: clamp(220px, 18vw, 340px);
+    --gap: clamp(7px, .55vw, 12px);
+  }
+}
+
+@media (min-width: 2560px) {
+  .o_ztyres_cotizador {
+    --col-left: clamp(280px, 12vw, 420px);
+    --col-right: clamp(360px, 15vw, 560px);
+    --gap: 18px;
+    --fs-table: 14px;
+    --fs-thead: 12px;
+    --fs-ui: 13.5px;
+    --fs-label: 11px;
+    --fs-title: 24px;
+    --fs-panel-h: 13px;
+    --row-py: 7px;
+    --row-px: 6px;
+  }
+
+  .o_ztyres_cotizador .wrap {
+    max-width: 2560px;
+    margin-inline: auto;
+  }
+}
+
+@media (min-width: 3840px) {
+  .o_ztyres_cotizador .wrap {
+    max-width: 3200px;
+  }
+}
+
+/* Promociones: estado visual consolidado.
+   El panel usa el color de la promo; el peldaño elegido solo se pinta
+   mediante data-selected, para evitar reglas duplicadas con .sel o :has(). */
+.o_ztyres_cotizador .promos-panel .facet:has(.facet-head.active) {
+  background: var(--promo-t) !important;
+  border-left-color: var(--promo-c) !important;
+}
+
+.o_ztyres_cotizador .promos-panel .facet-head.active .facet-name {
+  color: var(--promo-c) !important;
+}
+
+.o_ztyres_cotizador .promos-panel .promo-step {
+  background: transparent !important;
+  border-left: 0 !important;
+  box-shadow: none !important;
+}
+
+.o_ztyres_cotizador .promos-panel .promo-step .step-range,
+.o_ztyres_cotizador .promos-panel .promo-step .step-rule,
+.o_ztyres_cotizador .promos-panel .promo-step .step-value,
+.o_ztyres_cotizador .promos-panel .promo-step .step-rim,
+.o_ztyres_cotizador .promos-panel .promo-step .step-rim b {
+  color: var(--ink) !important;
+}
+
+.o_ztyres_cotizador .promos-panel .promo-step .step-rule,
+.o_ztyres_cotizador .promos-panel .promo-step .step-rim {
+  opacity: .72 !important;
+}
+
+.o_ztyres_cotizador .promos-panel .promo-step .step-value {
+  opacity: .82 !important;
+}
+
+/* Peldaño seleccionado en texto plano.
+   Se ata al atributo que genera Owl, no a hover/tooltips ni a estilos
+   heredados, para que "Volumen estimado" siempre pinte el rango elegido. */
+.o_ztyres_cotizador .promos-panel .promo-step[data-selected="1"] {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+.o_ztyres_cotizador .promos-panel .promo-step[data-selected="1"]::before {
+  background: var(--step-selected-c, var(--promo-c)) !important;
+  border-color: var(--step-selected-c, var(--promo-c)) !important;
+  transform: translateY(-50%) scale(1.18);
+}
+
+.o_ztyres_cotizador .promos-panel .promo-step[data-selected="1"] .step-range,
+.o_ztyres_cotizador .promos-panel .promo-step[data-selected="1"] .step-rule,
+.o_ztyres_cotizador .promos-panel .promo-step[data-selected="1"] .step-value,
+.o_ztyres_cotizador .promos-panel .promo-step[data-selected="1"] .step-rim,
+.o_ztyres_cotizador .promos-panel .promo-step[data-selected="1"] .step-rim b {
+  color: var(--step-selected-c, var(--promo-c)) !important;
+  font-weight: 950 !important;
+  opacity: 1 !important;
+}
+
+.o_ztyres_cotizador .promos-panel .promo-step[data-selected="1"] .step-range {
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
+
+.o_ztyres_cotizador .promos-panel .promo-step[data-selected="1"] .step-rim {
+  background: transparent !important;
+  border-color: var(--step-selected-b, var(--promo-b)) !important;
+}
+
+.o_ztyres_cotizador .flat-table tr.in-promo > td {
+  background: var(--promo-row-bg, var(--promo-t)) !important;
+}
+
+.o_ztyres_cotizador .flat-table tr.in-promo > td:first-child {
+  box-shadow: inset 4px 0 0 var(--promo-row-accent, var(--promo-b)) !important;
+}
+
+.o_ztyres_cotizador .flat-table tr.in-promo .flat-td-marca,
+.o_ztyres_cotizador .flat-table tr.in-promo .flat-td-modelo,
+.o_ztyres_cotizador .flat-table tr.in-promo .flat-td-promo .promo-price {
+  color: var(--promo-row-text, var(--promo-c)) !important;
+}
+
+.o_ztyres_cotizador .flat-table tr.in-promo:hover > td {
+  background: color-mix(in srgb, var(--promo-row-bg, var(--promo-t)) 82%, #fff) !important;
+  filter: none !important;
+}
+
+/* ==========================================================================
+   V32 — rediseño visual ejecutivo
+   --------------------------------------------------------------------------
+   Capa final de diseño para el cotizador: interfaz B2B densa, clara y
+   escaneable. Evita fondos chillones, reduce radios, separa estados por
+   color y da jerarquía a tabla/promos/pedido sin cambiar la lógica OWL.
+   ========================================================================== */
+.o_ztyres_cotizador {
+  --ink: #1F1F1F;
+  --ink-soft: #60636A;
+  --text: #242424;
+  --paper: #FFFDF7;
+  --card: #F2F0EA;
+  --line: #D8D1C2;
+  --rubber: #FFD000;
+  --rubber-2: #FFE680;
+  --rubber-dark: #8A6700;
+  --teal: #4B5560;
+  --teal-soft: #ECEFF1;
+  --success: #2F6F4E;
+  --success-soft: #E4F2EA;
+  --warn-soft: #FFF2BF;
+  --footer: #0E0E0E;
+  --radius: 8px;
+  --radius-sm: 6px;
+  --shadow-soft: 0 1px 2px rgba(31, 31, 31, .06), 0 8px 22px rgba(31, 31, 31, .08);
+  --shadow-panel: 0 1px 2px rgba(31, 31, 31, .05);
+  background:
+    radial-gradient(circle at 18% -10%, rgba(255, 208, 0, .20), transparent 34%),
+    linear-gradient(180deg, #F8F6EF 0%, #ECE9DF 100%);
+}
+
+.o_ztyres_cotizador .wrap {
+  max-width: min(1880px, calc(100vw - 18px));
+  padding: 8px 0 0;
+}
+
+.o_ztyres_cotizador .stack {
+  gap: 8px;
+}
+
+.o_ztyres_cotizador .app-topbar {
+  display: grid;
+  grid-template-columns: minmax(190px, auto) minmax(320px, 1fr) minmax(430px, .62fr);
+  gap: 10px;
+  align-items: center;
+}
+
+.o_ztyres_cotizador .page-title {
+  justify-content: flex-start;
+  gap: 9px;
+  min-height: 44px;
+  padding: 0 6px;
+  border-bottom: 0;
+  margin: 0;
+}
+
+.o_ztyres_cotizador .page-title-icon {
+  display: inline-flex;
+  width: 34px;
+  height: 34px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: #111111;
+  border: 2px solid var(--rubber);
+  font-size: 18px;
+}
+
+.o_ztyres_cotizador .page-title h1 {
+  font-family: var(--font-body);
+  font-size: 18px !important;
+  font-weight: 850;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.o_ztyres_cotizador .global-search {
+  min-height: 44px;
+  background: var(--paper);
+  border-color: #CFC7B6;
+  border-radius: 999px;
+  padding: 0 16px;
+  box-shadow: var(--shadow-panel);
+}
+
+.o_ztyres_cotizador .global-search:focus-within {
+  border-color: var(--rubber);
+  box-shadow: 0 0 0 3px rgba(255, 208, 0, .22);
+}
+
+.o_ztyres_cotizador .global-search-icon {
+  opacity: .5;
+}
+
+.o_ztyres_cotizador .global-search input {
+  color: var(--text);
+  font-size: 13px;
+}
+
+.o_ztyres_cotizador .panel {
+  background: rgba(255, 255, 255, .92);
+  border: 1px solid #D8D1C2;
+  border-top-width: 4px;
+  border-radius: var(--radius);
+  padding: 12px;
+  margin-bottom: 10px;
+  box-shadow: var(--shadow-soft);
+}
+
+.o_ztyres_cotizador .panel h2 {
+  min-height: 28px;
+  padding: 6px 12px;
+  margin: 0 0 10px;
+  border-radius: 999px;
+  font-family: var(--font-body);
+  font-size: 11.5px;
+  font-weight: 850;
+  letter-spacing: .5px;
+}
+
+.o_ztyres_cotizador .promos-panel.panel { border-top-color: var(--rubber); }
+.o_ztyres_cotizador .catalog-panel.panel { border-top-color: var(--rubber); }
+.o_ztyres_cotizador .order-panel.panel { border-top-color: var(--ink); }
+.o_ztyres_cotizador .client-panel.panel { border-top-color: var(--ink); }
+
+.o_ztyres_cotizador .promos-panel.panel h2 {
+  background: #111111;
+  color: var(--rubber-2);
+}
+
+.o_ztyres_cotizador .order-panel.panel h2 {
+  background: #111111;
+  color: var(--rubber-2);
+}
+
+.o_ztyres_cotizador .filters-row .btn-download-filters {
+  background: var(--success);
+  color: #fff;
+}
+
+.o_ztyres_cotizador .client-panel-compact {
+  min-height: 44px;
+  padding: 6px 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--paper);
+  border-color: #CFC7B6;
+  border-top-color: var(--ink);
+}
+
+.o_ztyres_cotizador .client-panel-compact h2 {
+  margin: 0;
+  background: #111111;
+  color: var(--rubber-2);
+  white-space: nowrap;
+}
+
+.o_ztyres_cotizador .client-panel-compact .client-row {
+  gap: 8px;
+}
+
+.o_ztyres_cotizador .client-panel-compact .client-field label {
+  color: #4B4B4B;
+  font-size: 9.5px;
+  font-weight: 850;
+  letter-spacing: .35px;
+}
+
+.o_ztyres_cotizador input,
+.o_ztyres_cotizador select,
+.o_ztyres_cotizador textarea {
+  border-color: #CFC7B6;
+  border-radius: 7px;
+  color: var(--text);
+}
+
+.o_ztyres_cotizador input:focus,
+.o_ztyres_cotizador select:focus,
+.o_ztyres_cotizador textarea:focus {
+  border-color: var(--rubber);
+  box-shadow: 0 0 0 3px rgba(255, 208, 0, .22);
+}
+
+.o_ztyres_cotizador .main-grid {
+  grid-template-columns: clamp(230px, 14vw, 295px) minmax(0, 1fr) clamp(280px, 18vw, 380px);
+  gap: 10px;
+}
+
+.o_ztyres_cotizador .side-col {
+  top: 8px;
+  max-height: calc(100vh - 16px);
+}
+
+.o_ztyres_cotizador .catalog-panel {
+  padding: 0;
+  overflow: hidden;
+}
+
+.o_ztyres_cotizador .filters-row {
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px;
+  background: #EFEEE7;
+  border-bottom: 1px solid #D8D1C2;
+}
+
+.o_ztyres_cotizador .xls-filter-label {
+  color: #5F5C55;
+  opacity: 1;
+  font-size: 11px;
+  font-weight: 850;
+}
+
+.o_ztyres_cotizador .xls-filter-btn,
+.o_ztyres_cotizador .filters-row .btn-cols,
+.o_ztyres_cotizador .iva-toggle button {
+  min-height: 36px;
+  border-radius: 999px;
+  background: var(--paper);
+  border: 1px solid #CEC6B5;
+  color: #242424;
+  font-weight: 800;
+  box-shadow: 0 1px 1px rgba(16, 24, 40, .03);
+}
+
+.o_ztyres_cotizador .xls-filter-btn:hover,
+.o_ztyres_cotizador .filters-row .btn-cols:hover {
+  border-color: var(--rubber-dark);
+  color: #111111;
+}
+
+.o_ztyres_cotizador .xls-filter-btn.active,
+.o_ztyres_cotizador .filters-row .btn-cols.active,
+.o_ztyres_cotizador .iva-toggle button.active {
+  background: var(--rubber);
+  border-color: #111111;
+  color: #171100;
+}
+
+.o_ztyres_cotizador .iva-toggle {
+  padding: 2px;
+  background: #E4E0D5;
+  border: 1px solid #CEC6B5;
+  border-radius: 999px;
+}
+
+.o_ztyres_cotizador .iva-toggle button {
+  min-height: 32px;
+  border: 0;
+  box-shadow: none;
+}
+
+.o_ztyres_cotizador .filters-row .btn-download-filters {
+  min-height: 36px;
+  border: 0;
+  box-shadow: 0 7px 18px rgba(35, 122, 75, .18);
+}
+
+.o_ztyres_cotizador .filters-row .btn-download-filters:hover {
+  background: #1D663E;
+}
+
+.o_ztyres_cotizador .table-scroll {
+  max-height: calc(100vh - 164px);
+  border-radius: 0;
+  background: var(--paper);
+}
+
+.o_ztyres_cotizador .flat-table {
+  font-size: 11.5px;
+  color: #242424;
+}
+
+.o_ztyres_cotizador .flat-table thead th {
+  top: 0;
+  background: #EEECE4;
+  border-bottom: 1px solid #C8BEAA;
+  color: #57534A;
+  font-family: var(--font-body);
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: .25px;
+  padding: 8px 5px;
+}
+
+.o_ztyres_cotizador .flat-table tbody td {
+  border-bottom: 1px solid #E5DED0;
+  padding: 7px 5px;
+}
+
+.o_ztyres_cotizador .flat-table tbody tr:hover td {
+  background: #FFF8DC;
+}
+
+.o_ztyres_cotizador .flat-td-clave,
+.o_ztyres_cotizador .flat-td-dot,
+.o_ztyres_cotizador .flat-td-price,
+.o_ztyres_cotizador .flat-td-promo,
+.o_ztyres_cotizador .flat-td-promo-pct,
+.o_ztyres_cotizador .flat-td-giftcard {
+  font-family: var(--font-mono);
+}
+
+.o_ztyres_cotizador .flat-td-medida {
+  font-weight: 850;
+  color: #1F1F1F;
+}
+
+.o_ztyres_cotizador .flat-td-marca,
+.o_ztyres_cotizador .flat-td-modelo {
+  color: #242424;
+  font-weight: 780;
+}
+
+.o_ztyres_cotizador .flat-td-promo .promo-price {
+  color: var(--success);
+  font-weight: 900;
+}
+
+.o_ztyres_cotizador .flat-td-promo-pct .promo-pct {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 42px;
+  padding: 2px 6px;
+  margin-inline: auto;
+  color: var(--promo-row-text, var(--success));
+  font-weight: 900;
+}
+
+.o_ztyres_cotizador .flat-td-promo-pct {
+  padding-left: 8px;
+  padding-right: 8px;
+  text-align: center;
+}
+
+.o_ztyres_cotizador .tier-badge,
+.o_ztyres_cotizador .flat-td-tier .tier-badge {
+  box-shadow: inset 0 -1px 0 rgba(0, 0, 0, .12);
+}
+
+.o_ztyres_cotizador .add-btn {
+  min-height: 28px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--rubber);
+  color: #271A00;
+  box-shadow: 0 6px 14px rgba(253, 186, 45, .24);
+}
+
+.o_ztyres_cotizador .add-btn:hover {
+  background: #E5A319;
+  color: #1D1600;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 16px rgba(229, 163, 25, .26);
+}
+
+.o_ztyres_cotizador .step-btn {
+  border-color: #CEC6B5;
+  background: #F7F5EE;
+}
+
+.o_ztyres_cotizador .step-btn:hover {
+  border-color: var(--rubber-dark);
+  color: #111111;
+}
+
+.o_ztyres_cotizador .promos-panel {
+  background: rgba(255, 255, 255, .94);
+}
+
+.o_ztyres_cotizador .promo-volume-picker {
+  background: #F8F6EF;
+  border: 1px solid #D8D1C2;
+  border-radius: 8px;
+  padding: 9px;
+}
+
+.o_ztyres_cotizador .promo-volume-picker label,
+.o_ztyres_cotizador .promo-eyebrow,
+.o_ztyres_cotizador .promo-compact-meta {
+  color: #6B665C;
+  opacity: 1;
+}
+
+.o_ztyres_cotizador .promos-panel .facet {
+  background: #FAF8F1;
+  border: 1px solid #D8D1C2;
+  border-left: 3px solid #B8AD96;
+  border-radius: 8px;
+  box-shadow: none;
+}
+
+.o_ztyres_cotizador .promos-panel .facet:has(.facet-head.active) {
+  background: color-mix(in srgb, var(--promo-t) 45%, #FFFFFF) !important;
+  border-color: color-mix(in srgb, var(--promo-b) 55%, #D8D1C2) !important;
+  border-left-color: var(--promo-c) !important;
+}
+
+.o_ztyres_cotizador .facet-head {
+  min-height: 40px;
+}
+
+.o_ztyres_cotizador .facet-name {
+  color: #242424;
+  font-weight: 850;
+  letter-spacing: .1px;
+}
+
+.o_ztyres_cotizador .facet-caret {
+  color: #8B8374;
+}
+
+.o_ztyres_cotizador .promo-ladder {
+  gap: 1px;
+}
+
+.o_ztyres_cotizador .promo-step {
+  min-height: 28px;
+  border-radius: 6px;
+}
+
+.o_ztyres_cotizador .promos-panel .promo-step .step-range,
+.o_ztyres_cotizador .promos-panel .promo-step .step-value {
+  color: #242424 !important;
+}
+
+.o_ztyres_cotizador .promos-panel .promo-step[data-selected="1"] .step-range,
+.o_ztyres_cotizador .promos-panel .promo-step[data-selected="1"] .step-value,
+.o_ztyres_cotizador .promos-panel .promo-step[data-selected="1"] .step-rule,
+.o_ztyres_cotizador .promos-panel .promo-step[data-selected="1"] .step-rim,
+.o_ztyres_cotizador .promos-panel .promo-step[data-selected="1"] .step-rim b {
+  color: var(--step-selected-c, var(--promo-c)) !important;
+}
+
+.o_ztyres_cotizador .promos-panel .promo-step[data-selected="1"] .step-range {
+  text-decoration-thickness: 2px;
+}
+
+.o_ztyres_cotizador .order-panel {
+  background: rgba(255, 255, 255, .96);
+}
+
+.o_ztyres_cotizador .cart-line {
+  border-color: #D8D1C2;
+  background: #FAF8F1;
+  border-radius: 8px;
+}
+
+.o_ztyres_cotizador .cart-search {
+  background: #F8F6EF;
+  border-color: #CEC6B5;
+}
+
+.o_ztyres_cotizador .price-tag {
+  background: linear-gradient(180deg, #242424 0%, #0E0E0E 100%);
+  border-radius: 8px;
+  box-shadow: 0 10px 24px rgba(16, 24, 32, .24);
+}
+
+.o_ztyres_cotizador .price-tag .total-row .value {
+  color: #FFD86A;
+  text-shadow: none;
+}
+
+.o_ztyres_cotizador .empty-state-icon {
+  background: #F2F6FA;
+  color: var(--teal);
+}
+
+.o_ztyres_cotizador .op6 {
+  max-width: min(1880px, calc(100vw - 18px));
+  border-radius: 8px 8px 0 0;
+}
+
+@media (min-width: 1101px) and (max-width: 1450px) {
+  .o_ztyres_cotizador .app-topbar {
+    grid-template-columns: 240px minmax(240px, 1fr) 420px;
+  }
+
+  .o_ztyres_cotizador .main-grid {
+    grid-template-columns: 230px minmax(0, 1fr) 300px;
+  }
+
+  .o_ztyres_cotizador .flat-table {
+    font-size: 10.7px;
+  }
+
+  .o_ztyres_cotizador .flat-table thead th,
+  .o_ztyres_cotizador .flat-table tbody td {
+    padding-left: 3px;
+    padding-right: 3px;
+  }
+}
+
+@media (min-width: 1900px) {
+  .o_ztyres_cotizador .app-topbar {
+    grid-template-columns: 250px minmax(520px, 1fr) 540px;
+  }
+
+  .o_ztyres_cotizador .main-grid {
+    grid-template-columns: 310px minmax(0, 1fr) 420px;
+  }
+
+  .o_ztyres_cotizador .flat-table {
+    font-size: 12.5px;
+  }
+}
+
+@media (min-width: 2560px) {
+  .o_ztyres_cotizador .wrap,
+  .o_ztyres_cotizador .op6 {
+    max-width: min(2360px, calc(100vw - 36px));
+  }
+
+  .o_ztyres_cotizador .main-grid {
+    grid-template-columns: 380px minmax(0, 1fr) 520px;
+    gap: 16px;
+  }
+
+  .o_ztyres_cotizador .flat-table {
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 1100px) {
+  .o_ztyres_cotizador .wrap {
+    max-width: calc(100vw - 16px);
+    padding-top: 8px;
+  }
+
+  .o_ztyres_cotizador .app-topbar {
+    grid-template-columns: 1fr;
+  }
+
+  .o_ztyres_cotizador .client-panel-compact {
+    display: block;
+  }
+
+  .o_ztyres_cotizador .main-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .o_ztyres_cotizador .table-scroll {
+    max-height: none;
+  }
+}
+
+@media (max-width: 700px) {
+  .o_ztyres_cotizador .wrap {
+    max-width: calc(100vw - 12px);
+  }
+
+  .o_ztyres_cotizador .page-title {
+    min-height: 38px;
+  }
+
+  .o_ztyres_cotizador .page-title h1 {
+    font-size: 16px !important;
+  }
+
+  .o_ztyres_cotizador .panel {
+    padding: 10px;
+  }
+
+  .o_ztyres_cotizador .catalog-panel {
+    padding: 0;
+  }
+
+  .o_ztyres_cotizador .flat-table tbody tr {
+    border-radius: 8px;
+    box-shadow: 0 1px 2px rgba(16, 24, 40, .05);
+  }
+}
+
+/* ==========================================================================
+   V33 — prioridad visual para MEDIDA y tabla completa
+   --------------------------------------------------------------------------
+   En mayoreo de llantas la medida es el dato de compra principal. Esta
+   capa compacta la barra superior y la tabla para que las columnas quepan
+   completas, reservando ancho real para MEDIDA y reduciendo texto accesorio.
+   ========================================================================== */
+@media (min-width: 1101px) {
+  .o_ztyres_cotizador .app-topbar {
+    grid-template-columns: minmax(220px, max-content) clamp(300px, 28vw, 560px) minmax(520px, 1fr);
+    gap: 8px;
+  }
+
+  .o_ztyres_cotizador .app-topbar .global-search {
+    width: 100%;
+    min-width: 0;
+    max-width: 560px;
+    justify-self: stretch;
+  }
+
+  .o_ztyres_cotizador .app-topbar .global-search input {
+    font-size: 12.5px;
+  }
+
+  .o_ztyres_cotizador .app-topbar .client-panel-compact {
+    min-width: 520px;
+    justify-self: stretch;
+  }
+
+  .o_ztyres_cotizador .main-grid {
+    grid-template-columns: clamp(250px, 13vw, 310px) minmax(0, 1fr) clamp(300px, 17vw, 360px);
+    gap: 8px;
+  }
+
+  .o_ztyres_cotizador .table-scroll {
+    overflow-x: hidden;
+  }
+
+  .o_ztyres_cotizador .catalog-panel .flat-table {
+    table-layout: fixed;
+    font-size: clamp(9.2px, .55vw, 11px);
+    line-height: 1.18;
+  }
+
+  .o_ztyres_cotizador .catalog-panel .flat-table thead th {
+    font-size: clamp(8px, .48vw, 9.4px);
+    padding: 6px 2px;
+  }
+
+  .o_ztyres_cotizador .catalog-panel .flat-table tbody td {
+    padding: 5px 2px;
+  }
+
+  .o_ztyres_cotizador .catalog-panel .flat-th-clave,
+  .o_ztyres_cotizador .catalog-panel .flat-td-clave { width: 5.4%; }
+  .o_ztyres_cotizador .catalog-panel .flat-th-tier,
+  .o_ztyres_cotizador .catalog-panel .flat-td-tier { width: 3.4%; }
+  .o_ztyres_cotizador .catalog-panel .flat-th-medida,
+  .o_ztyres_cotizador .catalog-panel .flat-td-medida { width: 9.8%; }
+  .o_ztyres_cotizador .catalog-panel .flat-th-marca,
+  .o_ztyres_cotizador .catalog-panel .flat-td-marca { width: 7%; }
+  .o_ztyres_cotizador .catalog-panel .flat-th-modelo,
+  .o_ztyres_cotizador .catalog-panel .flat-td-modelo { width: 9.4%; }
+  .o_ztyres_cotizador .catalog-panel .flat-th-capcara,
+  .o_ztyres_cotizador .catalog-panel .flat-td-capcara { width: 4.8%; }
+  .o_ztyres_cotizador .catalog-panel .flat-th-velind,
+  .o_ztyres_cotizador .catalog-panel .flat-td-velind { width: 4.8%; }
+  .o_ztyres_cotizador .catalog-panel .flat-th-seg,
+  .o_ztyres_cotizador .catalog-panel .flat-td-seg { width: 3.4%; }
+  .o_ztyres_cotizador .catalog-panel .flat-th-tipo,
+  .o_ztyres_cotizador .catalog-panel .flat-td-tipo { width: 3.5%; }
+  .o_ztyres_cotizador .catalog-panel .flat-th-dot,
+  .o_ztyres_cotizador .catalog-panel .flat-td-dot { width: 3.9%; }
+  .o_ztyres_cotizador .catalog-panel .flat-th-eqorig,
+  .o_ztyres_cotizador .catalog-panel .flat-td-eqorig { width: 5.2%; }
+  .o_ztyres_cotizador .catalog-panel .flat-th-disp,
+  .o_ztyres_cotizador .catalog-panel .flat-td-disp { width: 3.5%; }
+  .o_ztyres_cotizador .catalog-panel .flat-th-transit,
+  .o_ztyres_cotizador .catalog-panel .flat-td-transit { width: 5.1%; }
+  .o_ztyres_cotizador .catalog-panel .flat-th-price,
+  .o_ztyres_cotizador .catalog-panel .flat-td-price { width: 7.5%; }
+  .o_ztyres_cotizador .catalog-panel .flat-th-promo,
+  .o_ztyres_cotizador .catalog-panel .flat-td-promo { width: 7%; }
+  .o_ztyres_cotizador .catalog-panel .flat-th-promo-pct,
+  .o_ztyres_cotizador .catalog-panel .flat-td-promo-pct { width: 4.8%; }
+  .o_ztyres_cotizador .catalog-panel .flat-th-giftcard,
+  .o_ztyres_cotizador .catalog-panel .flat-td-giftcard { width: 4.7%; }
+  .o_ztyres_cotizador .catalog-panel .flat-th-action,
+  .o_ztyres_cotizador .catalog-panel .flat-td-action { width: 8.2%; }
+
+  .o_ztyres_cotizador .catalog-panel .flat-td-medida {
+    white-space: nowrap;
+    overflow: visible;
+    text-overflow: clip;
+    font-size: 1.06em;
+    font-weight: 900;
+  }
+
+  .o_ztyres_cotizador .catalog-panel .flat-td-clave,
+  .o_ztyres_cotizador .catalog-panel .flat-td-marca,
+  .o_ztyres_cotizador .catalog-panel .flat-td-modelo,
+  .o_ztyres_cotizador .catalog-panel .flat-td-eqorig,
+  .o_ztyres_cotizador .catalog-panel .flat-td-attr {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .o_ztyres_cotizador .catalog-panel .flat-td-price,
+  .o_ztyres_cotizador .catalog-panel .flat-td-promo,
+  .o_ztyres_cotizador .catalog-panel .flat-td-promo-pct,
+  .o_ztyres_cotizador .catalog-panel .flat-td-giftcard {
+    font-size: .92em;
+  }
+
+  .o_ztyres_cotizador .catalog-panel .flat-table .add-btn {
+    min-height: 26px;
+    padding: .32em .5em;
+    font-size: .84em;
+  }
+}
+
+@media (min-width: 1101px) and (max-width: 1550px) {
+  .o_ztyres_cotizador .app-topbar {
+    grid-template-columns: 220px clamp(270px, 25vw, 440px) minmax(500px, 1fr);
+  }
+
+  .o_ztyres_cotizador .app-topbar .client-panel-compact {
+    min-width: 500px;
+  }
+
+  .o_ztyres_cotizador .main-grid {
+    grid-template-columns: 250px minmax(0, 1fr) 300px;
+  }
+
+  .o_ztyres_cotizador .catalog-panel .flat-table {
+    font-size: 9.4px;
+  }
+}
+
+@media (min-width: 1900px) {
+  .o_ztyres_cotizador .app-topbar {
+    grid-template-columns: 250px clamp(420px, 27vw, 620px) minmax(560px, 1fr);
+  }
+
+  .o_ztyres_cotizador .catalog-panel .flat-table {
+    font-size: 11.6px;
+  }
 }

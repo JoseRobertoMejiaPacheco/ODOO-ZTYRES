@@ -126,24 +126,22 @@ export function setVisibleColumns(cols) {
    "Con IVA". Nunca viaja al servidor. */
 export const IVA_RATE = 0.16;
 
-/* Paleta de colores para las promociones — 10 tonos escogidos a
-   mano por su distancia PERCEPTUAL (no solo angular en HSL): entre
-   dos promos consecutivas del catálogo nunca hay "otro tono del
-   mismo color". El orden ROMPE el ciclo natural del hue para que
-   ids vecinos (1, 2, 3…) caigan en colores completamente distintos:
-   rojo → verde → azul → naranja → violeta → teal → magenta → oliva
-   → índigo → coral. */
+/* Paleta de colores para las promociones. Debe ser literalmente distinta
+   a los colores de producto/tier: sin rojo, rosa, naranja, amarillo,
+   ámbar, café ni gris. Las promos viven en colores fríos/saturados para
+   que una marca como Falken o un tier 3 nunca se confundan con el tinte
+   promocional de la fila. */
 const PROMO_COLORS = [
-  { text: 'hsl(355, 72%, 40%)', tint: 'hsl(355, 82%, 93%)', border: 'hsl(355, 70%, 55%)' }, // rojo
-  { text: 'hsl(140, 62%, 30%)', tint: 'hsl(140, 60%, 90%)', border: 'hsl(140, 55%, 45%)' }, // verde
-  { text: 'hsl(215, 75%, 42%)', tint: 'hsl(215, 82%, 93%)', border: 'hsl(215, 70%, 58%)' }, // azul
-  { text: 'hsl( 28, 80%, 40%)', tint: 'hsl( 28, 85%, 91%)', border: 'hsl( 28, 78%, 55%)' }, // naranja
-  { text: 'hsl(275, 55%, 42%)', tint: 'hsl(275, 65%, 93%)', border: 'hsl(275, 55%, 60%)' }, // violeta
-  { text: 'hsl(180, 60%, 30%)', tint: 'hsl(180, 55%, 90%)', border: 'hsl(180, 55%, 45%)' }, // teal
-  { text: 'hsl(325, 65%, 42%)', tint: 'hsl(325, 75%, 93%)', border: 'hsl(325, 62%, 60%)' }, // magenta
-  { text: 'hsl( 65, 55%, 30%)', tint: 'hsl( 65, 60%, 88%)', border: 'hsl( 65, 55%, 45%)' }, // oliva
-  { text: 'hsl(245, 55%, 45%)', tint: 'hsl(245, 65%, 93%)', border: 'hsl(245, 55%, 60%)' }, // índigo
-  { text: 'hsl(  8, 65%, 42%)', tint: 'hsl(  8, 75%, 92%)', border: 'hsl(  8, 65%, 58%)' }, // coral
+  { text: '#0e7490', tint: '#cffafe', border: '#0891b2' }, // cian
+  { text: '#6d28d9', tint: '#ede9fe', border: '#7c3aed' }, // violeta
+  { text: '#047857', tint: '#d1fae5', border: '#10b981' }, // menta
+  { text: '#1d4ed8', tint: '#dbeafe', border: '#3b82f6' }, // azul
+  { text: '#4d7c0f', tint: '#ecfccb', border: '#84cc16' }, // lima
+  { text: '#a21caf', tint: '#fae8ff', border: '#c026d3' }, // magenta frio
+  { text: '#0f766e', tint: '#ccfbf1', border: '#14b8a6' }, // teal
+  { text: '#4338ca', tint: '#e0e7ff', border: '#6366f1' }, // indigo
+  { text: '#0369a1', tint: '#e0f2fe', border: '#0284c7' }, // cielo
+  { text: '#166534', tint: '#dcfce7', border: '#22c55e' }, // verde
 ];
 export function promoColorFor(id) {
   const n = parseInt(id, 10) || 0;

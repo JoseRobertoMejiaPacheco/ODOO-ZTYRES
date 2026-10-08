@@ -15,11 +15,12 @@ async function apiGet(path) {
   return data;
 }
 
-async function apiPost(path, body) {
+async function apiPost(path, body, options = {}) {
   const res = await fetch(path, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'X-Ztyres-Cotizador': '1' },
     body: JSON.stringify(body),
+    signal: options.signal,
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || ('HTTP ' + res.status));
@@ -43,8 +44,8 @@ export function fetchPromos() {
   return apiGet('/ztyres_promotions/cotizador/promos');
 }
 
-export function fetchQuote(partnerId, lines) {
-  return apiPost('/ztyres_promotions/cotizador/quote', { partner_id: partnerId, lines });
+export function fetchQuote(partnerId, lines, options = {}) {
+  return apiPost('/ztyres_promotions/cotizador/quote', { partner_id: partnerId, lines }, options);
 }
 
 // Disponibilidad/DOT/precio al momento para una lista puntual de

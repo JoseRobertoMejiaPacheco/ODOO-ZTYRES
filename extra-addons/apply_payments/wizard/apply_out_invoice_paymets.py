@@ -75,6 +75,7 @@ class ApplyOutInvoicePayments(models.Model):
 
     name = fields.Char(
         string='Name', copy=False, readonly=True, index=True, default='/')
+    active = fields.Boolean(default=True)
     company_id = fields.Many2one(
         'res.company', string='Compañía', required=True,
         default=lambda self: self.env.company)
@@ -165,9 +166,7 @@ class ApplyOutInvoicePayments(models.Model):
                  'lines.invoice_id.amount_residual', 'lines.payment_amount')
     def _calcular_state(self):
         for record in self:
-            record.state = 'done' if (
-                record.payment_id and record.payment_id.l10n_mx_edi_cfdi_uuid
-            ) or record._is_fully_applied() else 'draft'
+            record.state = 'done' if record._is_fully_applied() else 'draft'
 
     def _is_fully_applied(self):
         self.ensure_one()

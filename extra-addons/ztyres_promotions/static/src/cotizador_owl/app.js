@@ -402,6 +402,8 @@ export class CotizadorOwlApp extends Component {
     this._calcTimer = null;
     this._loadingTimer = null;
     this._toastTimer = null;
+    this._quoteSeq = 0;
+    this._quoteAbort = null;
   }
 
   // Arrow functions (no métodos de clase normales): estas se pasan
@@ -471,6 +473,11 @@ export class CotizadorOwlApp extends Component {
   };
 
   calculate = async () => {
+    const seq = ++this._quoteSeq;
+    if (this._quoteAbort) {
+      this._quoteAbort.abort();
+    }
+    this._quoteAbort = window.AbortController ? new AbortController() : null;
     const lines = Object.entries(this.state.cart).map(([id, qty]) => ({ product_id: parseInt(id), qty }));
     if (!lines.length) {
       // Carrito vacío (se quitó la última llanta): limpiar cualquier
@@ -491,15 +498,26 @@ export class CotizadorOwlApp extends Component {
     // normal; si la respuesta es rápida (el caso normal), nunca
     // llega a mostrarse y el total se siente instantáneo.
     clearTimeout(this._loadingTimer);
-    this._loadingTimer = setTimeout(() => { this.state.quoteLoading = true; }, 220);
+    this._loadingTimer = setTimeout(() => {
+      if (seq === this._quoteSeq) this.state.quoteLoading = true;
+    }, 220);
     try {
-      this.state.quote = await fetchQuote(this.state.partnerId, lines);
+      const quote = await fetchQuote(this.state.partnerId, lines, {
+        signal: this._quoteAbort && this._quoteAbort.signal,
+      });
+      if (seq !== this._quoteSeq) return;
+      this.state.quote = quote;
     } catch (e) {
+      if (e && e.name === 'AbortError') return;
+      if (seq !== this._quoteSeq) return;
       this.state.quoteError = `Error al calcular: ${e.message}`;
       this.state.quote = null;
     } finally {
-      clearTimeout(this._loadingTimer);
-      this.state.quoteLoading = false;
+      if (seq === this._quoteSeq) {
+        clearTimeout(this._loadingTimer);
+        this.state.quoteLoading = false;
+        this._quoteAbort = null;
+      }
     }
   };
 }
